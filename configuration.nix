@@ -56,6 +56,9 @@
     variant = "";
   };
 
+  services.qemuGuest.enable = true;
+  services.spice-vdagentd.enable = true;
+
   # Enable CUPS to print documents.
   services.printing.enable = false;
 
@@ -98,6 +101,20 @@
   programs.neovim.enable = true;
   programs.neovim.defaultEditor = true;
 
+
+  # Enable the 1Password CLI (optional but recommended for integration)
+  programs._1password.enable = true;
+
+  # Enable the 1Password GUI
+  programs._1password-gui = {
+    enable = true;
+    # Certain features, including CLI integration and system authentication support,
+    # require enabling PolKit integration on some desktop environments (e.g. Plasma).
+    # Replace "yourUsernameHere" with your actual username.
+    polkitPolicyOwners = [ "robie" ];
+  };
+  
+
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
 
@@ -107,6 +124,7 @@
   #vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
   wget
   pkgs.home-manager
+  pkgs.spice-vdagent
   #git
   ];
 
