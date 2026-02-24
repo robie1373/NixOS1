@@ -8,6 +8,7 @@
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
+      ./1password.nix
     ];
 
   # Bootloader.
@@ -101,22 +102,15 @@
   programs.neovim.enable = true;
   programs.neovim.defaultEditor = true;
 
-
-  # Enable the 1Password CLI (optional but recommended for integration)
-  programs._1password.enable = true;
-
-  # Enable the 1Password GUI
-  programs._1password-gui = {
-    enable = true;
-    # Certain features, including CLI integration and system authentication support,
-    # require enabling PolKit integration on some desktop environments (e.g. Plasma).
-    # Replace "yourUsernameHere" with your actual username.
-    polkitPolicyOwners = [ "robie" ];
-  };
-  
+  # Install tailscale
+  services.tailscale.enable = true;
 
   # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
+  # nixpkgs.config.allowUnfree = true;
+  nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (pkgs.lib.getName pkg) [
+    "1password"
+    "1password-gui"
+  ];
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
