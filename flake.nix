@@ -1,27 +1,35 @@
 {
-  description = "A very basic flake";
+  description = "Dry Dock. Robies DRY fleet configuration";
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-    home-manager.url = "github:nix-community/home-manager";
-    home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = { nixpkgs, ... } @ inputs: 
+  outputs = { self, nixpkgs, home-manager,  ... } @ inputs: 
   {
+    nixosConfigurations =  {
 
-
-    nixosConfigurations.nixos1 = nixpkgs.lib.nixosSystem {
-      specialArgs = { inherit inputs; };
-      system = "aarch64-linux";
-      modules = [
-        ./hosts/workstation/configuration.nix
-	inputs.home-manager.nixosModules.home-manager {
-	  home-manager.users.robie = {
-	    imports = [ ./modules/home/common.nix ];
-	  };
-	}
-      ];
+      nixos1 = nixpkgs.lib.nixosSystem {
+        specialArgs = { inherit inputs; };
+        system = "aarch64-linux";
+        modules = [
+          ./hosts/nixos1/configuration.nix
+         
+ 
+          inputs.home-manager.nixosModules.home-manager {
+            home-manager.users.robie = {
+              imports = [ 
+	        ./modules/home/common.nix 
+                ./modules/home/1password.nix
+	      ];
+           };
+	  }
+   	];
+      };
     };
   };
 }

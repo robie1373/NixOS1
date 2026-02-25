@@ -8,7 +8,7 @@
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
-      ../../modules/home/1password.nix
+      ../../modules/system/1password.nix
     ];
 
   # Bootloader.
