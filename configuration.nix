@@ -119,6 +119,7 @@
   wget
   pkgs.home-manager
   pkgs.spice-vdagent
+  tree
   #git
   ];
 
