@@ -15,7 +15,12 @@
       specialArgs = { inherit inputs; };
       system = "aarch64-linux";
       modules = [
-        ./configuration.nix
+        ./hosts/workstation/configuration.nix
+	inputs.home-manager.nixosModules.home-manager {
+	  home-manager.users.robie = {
+	    imports = [ ./modules/home/common.nix ];
+	  };
+	}
       ];
     };
   };
