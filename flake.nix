@@ -20,6 +20,9 @@
           ./hosts/nixos1/configuration.nix
           ./modules/system/1password.nix
           ./modules/system/common.nix
+	  ./modules/system/audio.nix
+	  ./modules/system/desktop-kde.nix
+	  ./modules/system/vm-guest.nix
 
  
           inputs.home-manager.nixosModules.home-manager {
