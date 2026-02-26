@@ -5,17 +5,16 @@
 
   programs.ssh = {
     enable = true;
-    extraConfig = ''
-      Host *
-        IdentityAgent "${config.home.homeDirectory}/.1password/agent.sock"
-    '';
+    enableDefaultConfig = false;
+    matchBlocks."*" = {
+      identityAgent = "${config.home.homeDirectory}/.1password/agent.sock";
+    };
   };
-  
   
   programs.bash = {
     enable = true;
     initExtra = ''
-      export SSH_AUTH_SOCK="/home/robie/.1password/agent.sock"
+      export SSH_AUTH_SOCK="${config.home.homeDirectory}/.1password/agent.sock"
     '';
   };
   

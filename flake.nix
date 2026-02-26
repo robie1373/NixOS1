@@ -7,42 +7,15 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-  };
-
-  outputs = { self, nixpkgs, home-manager,  ... } @ inputs: 
-  {
-    nixosConfigurations =  {
-
-      nixos1 = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs; };
-        system = "aarch64-linux";
-        modules = [
-          ./hosts/nixos1/configuration.nix
-          ./modules/system/1password.nix
-          ./modules/system/common.nix
-	  ./modules/system/audio.nix
-	  ./modules/system/desktop-kde.nix
-	  ./modules/system/vm-guest.nix
-
- 
-          inputs.home-manager.nixosModules.home-manager {
-	    home-manager.useGlobalPkgs = true;
-	    home-manager.useUserPackages = true;
-            home-manager.users.robie = {
-              imports = [ 
-		./hosts/nixos1/home.nix
-	        ./modules/home/common.nix 
-                ./modules/home/1password.nix
-		./modules/home/gemini-cli.nix
-	        ./modules/home/claude.nix
-	      ];
-           };
-	  }
-   	];
-      };
-
-
-
+    flake-parts = {
+      url= "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
     };
   };
+
+  outputs = inputs @ { flake-parts, ... }: 
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      systems = [ "aarch64-linux" "x86_64-linux" ];
+      imports = [ ./parts/nixos.nix ];
+    };
 }
