@@ -26,6 +26,7 @@ in
             ../modules/home/1password.nix
             ../modules/home/gemini-cli.nix
             ../modules/home/claude.nix
+	    ../modules/home/obsidian.nix
           ];
 	}
       ];
