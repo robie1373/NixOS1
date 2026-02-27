@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, pkgs, osConfig, ... }:
 
 {
   options.myHome.desktopHyprland.enable =
@@ -20,9 +20,8 @@
         # Use full store paths — PATH is not populated when Hyprland starts via greetd
         exec-once = [
           "${pkgs.waybar}/bin/waybar"
-          "${pkgs.dunst}/bin/dunst"
-          "${pkgs.hyprpaper}/bin/hyprpaper"
-          "${pkgs.hypridle}/bin/hypridle"
+          # dunst, hyprpaper, hypridle are managed as systemd user services
+          # via services.dunst / services.hyprpaper / services.hypridle — no exec-once needed
         ];
 
         # Modifier key: SUPER = the Windows/Command key
@@ -448,7 +447,7 @@
         preload  = [ "/home/robie/nixos-config/media/ComicBookForest.png" ];
         # wallpaper format: "monitor,path"  (empty monitor = all monitors)
         wallpaper = [ ",/home/robie/nixos-config/media/ComicBookForest.png" ];
-        splash    = false;
+        splash    = true;
       };
     };
 
@@ -475,6 +474,7 @@
             on-timeout = "hyprctl dispatch dpms off";
             on-resume  = "hyprctl dispatch dpms on";
           }
+	  ] ++ lib.optionals (!osConfig.mySystem.vmGuest.enable) [
           {
             timeout    = 600;   # 10 min — suspend
             on-timeout = "systemctl suspend";
@@ -545,7 +545,7 @@
       enable = true;
       settings = {
         main = {
-          font       = "JetBrainsMono Nerd Font:size=12";
+          font       = "JetBrainsMono Nerd Font:size=14";
           pad        = "12x12";
         };
 

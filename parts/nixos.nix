@@ -30,6 +30,7 @@ in
             ../modules/home/claude.nix
 	    ../modules/home/obsidian.nix
 	    ../modules/home/desktop-hyprland.nix
+	    ../modules/home/firefox.nix
           ];
 	}
       ];

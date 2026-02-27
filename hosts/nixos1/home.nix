@@ -9,4 +9,5 @@
   home.stateVersion = "25.05"; # Please read the comment before changing.
 
   myHome.desktopHyprland.enable = true;
+  myHome.firefox.enable = true;
 }
