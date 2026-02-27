@@ -20,8 +20,21 @@
               "icon": "lucide-file",
               "title": "03-wiring-up"
             }
+          },
+          {
+            "id": "c56425d9de2b561f",
+            "type": "leaf",
+            "state": {
+              "type": "release-notes",
+              "state": {
+                "currentVersion": "1.11.7"
+              },
+              "icon": "lucide-book-up",
+              "title": "Release Notes 1.11.7"
+            }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "vertical"
@@ -184,7 +197,7 @@
       "bases:Create new base": false
     }
   },
-  "active": "e26e4bdbf50730aa",
+  "active": "c56425d9de2b561f",
   "lastOpenFiles": [
     "README.md",
     "02-home-module.md",

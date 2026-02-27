@@ -30,9 +30,9 @@
         # ── Keybinds ──────────────────────────────────────────────────────
         bind = [
           # Apps
-          "$mod, Return, exec, kitty"
-          "$mod, D, exec, rofi -show drun"
-          "$mod, E, exec, rofi -show window"
+          "$mod, Return, exec, ${pkgs.kitty}/bin/kitty"
+          "$mod, D, exec, ${pkgs.rofi}/bin/rofi -show drun"
+          "$mod, E, exec, ${pkgs.rofi}/bin/rofi -show window"
 
           # Window management
           "$mod, Q, killactive,"
