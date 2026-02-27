@@ -378,7 +378,7 @@
 
     programs.rofi = {
       enable  = true;
-      package = pkgs.rofi-wayland;
+      package = pkgs.rofi;
       terminal = "${pkgs.kitty}/bin/kitty";
       # "catppuccin-macchiato" matches the filename we placed above
       theme   = "catppuccin-macchiato";

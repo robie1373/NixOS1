@@ -17,7 +17,7 @@
       enable = true;
       settings = {
         default_session = {
-          command = "${pkgs.greetd.tuigreet}/bin/tuigreet --time --remember --cmd Hyprland";
+          command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd Hyprland";
           user = "greeter";
         };
       };
@@ -43,7 +43,7 @@
     fonts.packages = with pkgs; [
       nerd-fonts.jetbrains-mono    # glyphs used by Waybar and rofi
       noto-fonts
-      noto-fonts-emoji
+      noto-fonts-color-emoji
     ];
 
     # ── Wayland compatibility env vars ───────────────────────────────────────

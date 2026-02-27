@@ -11,8 +11,8 @@
 
 
   mySystem.audio.enable      = true;
-  mySystem.desktopKde.enable = true;
-  mySystem.desktopHyprland.enable = false;
+  mySystem.desktopKde.enable = false;
+  mySystem.desktopHyprland.enable = true;
   mySystem.vmGuest.enable    = true;
   
   # List packages installed in system profile. To search, run:

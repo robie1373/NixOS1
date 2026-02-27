@@ -394,7 +394,7 @@ part is explained below the full listing.
 
     programs.rofi = {
       enable  = true;
-      package = pkgs.rofi-wayland;
+      package = pkgs.rofi;
       terminal = "${pkgs.kitty}/bin/kitty";
       # "catppuccin-macchiato" matches the filename we placed above
       theme   = "catppuccin-macchiato";
@@ -787,8 +787,9 @@ xdg.configFile."rofi/themes/catppuccin-macchiato.rasi".text = ''...rofi theme co
 `xdg.configFile` is Home Manager's way of writing files under `~/.config/`.  The key
 is a relative path from `~/.config/`.
 
-`pkgs.rofi-wayland` is the rofi fork that uses the wlr-layer-shell Wayland protocol
-instead of X11.  It accepts all the same themes and config as upstream rofi.
+`pkgs.rofi` now includes Wayland support — the separate `rofi-wayland` fork was merged
+into the main rofi package.  It uses the wlr-layer-shell Wayland protocol and accepts
+all the same themes and config as before.
 
 ---
 
