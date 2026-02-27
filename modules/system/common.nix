@@ -37,7 +37,10 @@
     #  thunderbird
     ];
   };
+  users.users.robie.shell = pkgs.fish;
 
+  #enable fish shell 
+  programs.fish.enable = true;
   programs.git.enable = true;
 
   # Install neovim and make it the deafult editor system-wide

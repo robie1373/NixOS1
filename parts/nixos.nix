@@ -16,6 +16,7 @@ in
         ../modules/system/1password.nix
         ../modules/system/audio.nix
         ../modules/system/desktop-kde.nix
+	../modules/system/desktop-hyprland.nix
         ../modules/system/vm-guest.nix
         inputs.home-manager.nixosModules.home-manager {
           home-manager.useGlobalPkgs = true;
@@ -27,6 +28,7 @@ in
             ../modules/home/gemini-cli.nix
             ../modules/home/claude.nix
 	    ../modules/home/obsidian.nix
+	    ../modules/home/desktop-hyprland.nix
           ];
 	}
       ];
