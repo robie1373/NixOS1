@@ -37,7 +37,7 @@
     #  thunderbird
     ];
   };
-  users.users.robie.shell = pkgs.fish;
+#  users.users.robie.shell = pkgs.fish;
 
   #enable fish shell 
   programs.fish.enable = true;
