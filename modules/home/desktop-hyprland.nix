@@ -30,7 +30,7 @@
         # ── Keybinds ──────────────────────────────────────────────────────
         bind = [
           # Apps
-          "$mod, Return, exec, ${pkgs.kitty}/bin/kitty"
+          "$mod, Return, exec, ${pkgs.foot}/bin/foot"
           "$mod, D, exec, ${pkgs.rofi}/bin/rofi -show drun"
           "$mod, E, exec, ${pkgs.rofi}/bin/rofi -show window"
 
@@ -96,10 +96,12 @@
             passes   = 2;
             new_optimizations = true;
           };
-          drop_shadow      = true;
-          shadow_range     = 8;
-          shadow_render_power = 3;
-          "col.shadow"     = "rgba(1a1a2e99)";
+          shadow = {
+            enabled      = true;
+            range        = 8;
+            render_power = 3;
+            color        = "rgba(1a1a2e99)";
+          };
         };
 
         animations = {
@@ -379,7 +381,7 @@
     programs.rofi = {
       enable  = true;
       package = pkgs.rofi;
-      terminal = "${pkgs.kitty}/bin/kitty";
+      terminal = "${pkgs.foot}/bin/foot";
       # "catppuccin-macchiato" matches the filename we placed above
       theme   = "catppuccin-macchiato";
       extraConfig = {
@@ -536,48 +538,48 @@
     };
 
     # ════════════════════════════════════════════════════════════════════════
-    # KITTY — terminal
+    # FOOT — terminal
     # ════════════════════════════════════════════════════════════════════════
-    programs.kitty = {
+    programs.foot = {
       enable = true;
-      font = {
-        name = "JetBrainsMono Nerd Font";
-        size = 12;
-      };
       settings = {
-        # Catppuccin Macchiato palette
-        foreground            = "#cad3f5";
-        background            = "#24273a";
-        selection_background  = "#363a4f";
-        selection_foreground  = "#cad3f5";
-        url_color             = "#8aadf4";
-        cursor                = "#f4dbd6";
-        cursor_text_color     = "#24273a";
+        main = {
+          font       = "JetBrainsMono Nerd Font:size=12";
+          pad        = "12x12";
+        };
 
-        # Black
-        color0 = "#494d64"; color8  = "#5b6078";
-        # Red
-        color1 = "#ed8796"; color9  = "#ed8796";
-        # Green
-        color2 = "#a6da95"; color10 = "#a6da95";
-        # Yellow
-        color3 = "#eed49f"; color11 = "#eed49f";
-        # Blue
-        color4 = "#8aadf4"; color12 = "#8aadf4";
-        # Magenta / Mauve
-        color5 = "#c6a0f6"; color13 = "#c6a0f6";
-        # Cyan / Sky
-        color6 = "#91d7e3"; color14 = "#91d7e3";
-        # White
-        color7 = "#b8c0e0"; color15 = "#a5adcb";
+        scrollback = {
+          lines = 5000;
+        };
 
-        # UX
-        window_padding_width  = 12;
-        confirm_os_window_close = 0;   # don't ask before closing
-        scrollback_lines      = 5000;
+        colors = {
+          # Catppuccin Macchiato palette (foot uses hex without #)
+          foreground           = "cad3f5";
+          background           = "24273a";
+          selection-foreground = "cad3f5";
+          selection-background = "363a4f";
 
-        # Shell integration
-        shell_integration = "enabled";
+          # Black
+          regular0 = "494d64"; bright0 = "5b6078";
+          # Red
+          regular1 = "ed8796"; bright1 = "ed8796";
+          # Green
+          regular2 = "a6da95"; bright2 = "a6da95";
+          # Yellow
+          regular3 = "eed49f"; bright3 = "eed49f";
+          # Blue
+          regular4 = "8aadf4"; bright4 = "8aadf4";
+          # Magenta / Mauve
+          regular5 = "c6a0f6"; bright5 = "c6a0f6";
+          # Cyan / Sky
+          regular6 = "91d7e3"; bright6 = "91d7e3";
+          # White
+          regular7 = "b8c0e0"; bright7 = "a5adcb";
+        };
+
+        cursor = {
+          color = "24273a f4dbd6";   # text background (rosewater cursor)
+        };
       };
     };
 

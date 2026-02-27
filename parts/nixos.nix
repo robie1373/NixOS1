@@ -21,6 +21,7 @@ in
         inputs.home-manager.nixosModules.home-manager {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
+          home-manager.backupFileExtension = "backup";
           home-manager.users.robie.imports = [
             ../hosts/nixos1/home.nix
             ../modules/home/common.nix
