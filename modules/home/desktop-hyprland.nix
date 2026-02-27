@@ -546,6 +546,7 @@
 
         colors = {
           # Catppuccin Macchiato palette (foot uses hex without #)
+	  alpha		       = "0.9";
           foreground           = "cad3f5";
           background           = "24273a";
           selection-foreground = "cad3f5";
