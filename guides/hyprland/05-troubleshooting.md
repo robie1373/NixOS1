@@ -176,22 +176,28 @@ Common causes:
 
 ### Wallpaper not loading (desktop is black or grey)
 
-Check hyprpaper:
+Check whether swaybg is running:
 ```bash
-pkill hyprpaper; hyprpaper &
+pgrep -a swaybg
+```
+
+Restart it manually to see any error output:
+```bash
+pkill swaybg; swaybg -i /home/robie/nixos-config/media/redwoods.png -m fill &
+```
+
+Or use the `wallpaper` Fish function:
+```fish
+wallpaper /home/robie/nixos-config/media/redwoods.png
 ```
 
 Verify the wallpaper path is correct and readable:
 ```bash
-ls -la /home/robie/nixos-config/media/ComicBookForest.png
+ls -la /home/robie/nixos-config/media/redwoods.png
 ```
 
 The path in the Nix config must be an absolute path on the live system.  If you moved
-the nixos-config repo, update the path in the `services.hyprpaper.settings` block.
-
-> **Hint:** If you want a theme-neutral fallback, add `splash = true` to hyprpaper
-> settings — it overlays the Hyprland splash logo on the wallpaper while hyprpaper
-> is loading.
+the nixos-config repo, update the path in the `exec-once` swaybg line and rebuild.
 
 ---
 
@@ -356,14 +362,14 @@ hyprctl version           # Hyprland version
 cat /tmp/hypr/$(ls /tmp/hypr)/hyprland.log
 journalctl --user -b -u waybar
 journalctl --user -b -u dunst
-journalctl --user -b -u hyprpaper
+journalctl --user -b -u hypridle
 journalctl --user -b -u xdg-desktop-portal
 
 # Processes
 pgrep -a waybar
-pgrep -a dunst
-pgrep -a hyprpaper
-pgrep -a hypridle
+pgrep -a swaybg
+systemctl --user status dunst
+systemctl --user status hypridle
 
 # Theme verification
 ls ~/.config/gtk-3.0/settings.ini

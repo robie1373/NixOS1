@@ -211,21 +211,22 @@ hyprctl clients        # list open windows
 hyprctl monitors       # confirm monitor config was applied
 hyprctl activewindow   # current focused window
 
-# User services started by exec-once
+# Processes started by exec-once
 pgrep -a waybar
-pgrep -a dunst
-pgrep -a hyprpaper
-pgrep -a hypridle
+pgrep -a swaybg
+# Dunst and Hypridle run as systemd user services — check them with systemctl:
+systemctl --user status dunst
+systemctl --user status hypridle
 
 # Portal
 systemctl --user status xdg-desktop-portal
 systemctl --user status xdg-desktop-portal-hyprland
 ```
 
-If a service didn't start, you can start it manually to see the error:
+If a process didn't start, you can start it manually to see the error:
 ```bash
 waybar &         # runs in foreground, shows errors
-hyprpaper &
+swaybg -i /home/robie/nixos-config/media/redwoods.png -m fill &
 ```
 
 ---
@@ -262,7 +263,7 @@ modules/home/desktop-hyprland.nix
   └─ programs.waybar
   └─ programs.rofi
   └─ services.dunst
-  └─ services.hyprpaper
+  └─ swaybg (via exec-once + `wallpaper` Fish function)
   └─ services.hypridle
   └─ programs.hyprlock
   └─ programs.foot

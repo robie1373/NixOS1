@@ -16,7 +16,7 @@ is automated.
 | Display manager   | greetd + tuigreet                 |
 | Notifications     | Dunst                             |
 | Desktop portal    | xdg-desktop-portal-hyprland       |
-| Wallpaper         | Hyprpaper                         |
+| Wallpaper         | swaybg                            |
 | Screen locker     | Hyprlock                          |
 | Idle daemon       | Hypridle                          |
 | Terminal          | foot (VMs) / kitty (physical)     |

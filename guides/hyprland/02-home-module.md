@@ -36,9 +36,8 @@ part is explained below the full listing.
         # Use full store paths — PATH is not populated when Hyprland starts via greetd
         exec-once = [
           "${pkgs.waybar}/bin/waybar"
-          "${pkgs.dunst}/bin/dunst"
-          "${pkgs.hyprpaper}/bin/hyprpaper"
-          "${pkgs.hypridle}/bin/hypridle"
+          "${pkgs.swaybg}/bin/swaybg -i /home/robie/nixos-config/media/redwoods.png -m fill"
+          # dunst and hypridle are managed as systemd user services — no exec-once needed
         ];
 
         # Modifier key: SUPER = the Windows/Command key
@@ -453,18 +452,11 @@ part is explained below the full listing.
     };
 
     # ════════════════════════════════════════════════════════════════════════
-    # HYPRPAPER — wallpaper
+    # SWAYBG — wallpaper (launched via exec-once above)
     # ════════════════════════════════════════════════════════════════════════
-    services.hyprpaper = {
-      enable = true;
-      settings = {
-        # preload caches the image at startup
-        preload  = [ "/home/robie/nixos-config/media/ComicBookForest.png" ];
-        # wallpaper format: "monitor,path"  (empty monitor = all monitors)
-        wallpaper = [ ",/home/robie/nixos-config/media/ComicBookForest.png" ];
-        splash    = false;
-      };
-    };
+    # No config needed — swaybg is a plain process, not a Home Manager service.
+    # See exec-once above for startup. Use the `wallpaper` Fish function to
+    # change the wallpaper at runtime without rebuilding.
 
     # ════════════════════════════════════════════════════════════════════════
     # HYPRIDLE — idle management
@@ -606,6 +598,12 @@ part is explained below the full listing.
 
       interactiveShellInit = ''
         set fish_greeting ""   # silence the default welcome banner
+
+        # Change the wallpaper: wallpaper /path/to/image.png
+        function wallpaper
+          pkill swaybg
+          ${pkgs.swaybg}/bin/swaybg -i $argv[1] -m fill &
+        end
       '';
 
       # Fish-specific aliases (these augment home.shellAliases from common.nix)
@@ -658,6 +656,7 @@ part is explained below the full listing.
     # ADDITIONAL PACKAGES
     # ════════════════════════════════════════════════════════════════════════
     home.packages = with pkgs; [
+      swaybg           # wallpaper (launched via exec-once; also used by `wallpaper` function)
       wl-clipboard     # wl-copy / wl-paste (Wayland clipboard)
       grim             # screenshot tool (captures Wayland output)
       slurp            # interactive region selector (used with grim)
@@ -733,18 +732,61 @@ monitor = [
 
 ### `exec-once`
 
-These commands run once when Hyprland starts.  Order matters slightly — Waybar and
-Dunst are safe to start immediately; Hyprpaper should load before you see the desktop.
+These commands run once when Hyprland starts.  Waybar starts immediately; swaybg
+launches right after to paint the wallpaper before the desktop is fully visible.
+
+Dunst and Hypridle run as **systemd user services** — Home Manager's `services.dunst`
+and `services.hypridle` manage their lifecycle automatically.  You do not need (and
+should not add) `exec-once` entries for them.
 
 If you add apps that take a moment to register on D-Bus (like some system tray apps),
 add a brief delay: `"sleep 1 && my-tray-app"`.
 
 > **Always use full nix store paths here.**  When Hyprland is launched by greetd, the
-> user's `~/.nix-profile/bin` is not yet on `PATH`.  Bare commands like `"hyprpaper"`
-> will fail with *bash: hyprpaper: command not found* and the daemon never starts.
-> Use `"${pkgs.hyprpaper}/bin/hyprpaper"` instead — Nix substitutes the exact store
+> user's `~/.nix-profile/bin` is not yet on `PATH`.  Bare commands like `"swaybg"`
+> will fail with *bash: swaybg: command not found* and the daemon never starts.
+> Use `"${pkgs.swaybg}/bin/swaybg …"` instead — Nix substitutes the exact store
 > path at build time, so it's always found regardless of the session environment.
 > The `bind` keybinds follow the same rule for the same reason.
+
+---
+
+### swaybg and the `wallpaper` function
+
+`swaybg` is a simple Wayland wallpaper setter — no daemon, no config file, no IPC.
+It's a single process that reads an image and draws it on the screen.  This makes it
+more predictable than Hyprpaper at the cost of fewer features (no per-monitor wallpaper
+rotation, no hot-reload via IPC).
+
+**How it starts:** the `exec-once` line in `hyprland.settings` launches it at login:
+
+```nix
+"${pkgs.swaybg}/bin/swaybg -i /path/to/image.png -m fill"
+```
+
+The `-m fill` flag scales the image to cover the screen while preserving aspect ratio
+(equivalent to CSS `background-size: cover`).  Other modes: `stretch`, `fit`, `center`,
+`tile`.
+
+**Changing the wallpaper at runtime:** the `wallpaper` Fish function defined in
+`interactiveShellInit` kills the running swaybg process and starts a new one:
+
+```fish
+wallpaper /path/to/new-image.png
+```
+
+Under the hood it's two lines:
+```fish
+pkill swaybg                                           # kill the current instance
+swaybg -i $argv[1] -m fill &                          # start a new one in background
+```
+
+`$argv[1]` is Fish's syntax for the first argument passed to the function.  The `&`
+backgrounds the process so your terminal prompt returns immediately.
+
+> **Note:** The wallpaper path is hardcoded in `exec-once`.  After a `nixos-rebuild
+> switch`, the original path is restored.  If you want a permanent change, update the
+> path in `exec-once` and rebuild.  `wallpaper` is for ad-hoc session changes only.
 
 ---
 
