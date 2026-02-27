@@ -20,8 +20,8 @@
         # Use full store paths — PATH is not populated when Hyprland starts via greetd
         exec-once = [
           "${pkgs.waybar}/bin/waybar"
-          # dunst, hyprpaper, hypridle are managed as systemd user services
-          # via services.dunst / services.hyprpaper / services.hypridle — no exec-once needed
+          "${pkgs.swaybg}/bin/swaybg -i /home/robie/nixos-config/media/redwoods.png -m fill"
+          # dunst and hypridle are managed as systemd user services — no exec-once needed
         ];
 
         # Modifier key: SUPER = the Windows/Command key
@@ -35,8 +35,8 @@
           "$mod, E, exec, ${pkgs.rofi}/bin/rofi -show window"
 
           # Window management
-          "$mod, Q, killactive,"
-          "$mod, M, exit,"
+          "$mod, U, killactive,"
+          "$mod, ], exit,"
           "$mod, F, fullscreen,"
           "$mod, V, togglefloating,"
           "$mod, P, pseudo,"         # dwindle: keep window size when tiling
@@ -438,18 +438,9 @@
     };
 
     # ════════════════════════════════════════════════════════════════════════
-    # HYPRPAPER — wallpaper
+    # SWAYBG — wallpaper (launched via exec-once above)
     # ════════════════════════════════════════════════════════════════════════
-    services.hyprpaper = {
-      enable = true;
-      settings = {
-        # preload caches the image at startup
-        preload  = [ "/home/robie/nixos-config/media/ComicBookForest.png" ];
-        # wallpaper format: "monitor,path"  (empty monitor = all monitors)
-        wallpaper = [ ",/home/robie/nixos-config/media/ComicBookForest.png" ];
-        splash    = true;
-      };
-    };
+    # No config needed — swaybg is a plain process. See exec-once above.
 
     # ════════════════════════════════════════════════════════════════════════
     # HYPRIDLE — idle management
@@ -498,7 +489,7 @@
 
         background = [
           {
-            path         = "/home/robie/nixos-config/media/ComicBookForest.png";
+            path         = "/home/robie/nixos-config/media/redwoods.png";
             blur_passes  = 3;
             blur_size    = 8;
             brightness   = 0.7;
@@ -592,6 +583,12 @@
 
       interactiveShellInit = ''
         set fish_greeting ""   # silence the default welcome banner
+
+        # Change the wallpaper: wallpaper /path/to/image.png
+        function wallpaper
+          pkill swaybg
+          ${pkgs.swaybg}/bin/swaybg -i $argv[1] -m fill &
+        end
       '';
 
       # Fish-specific aliases (these augment home.shellAliases from common.nix)
@@ -644,6 +641,7 @@
     # ADDITIONAL PACKAGES
     # ════════════════════════════════════════════════════════════════════════
     home.packages = with pkgs; [
+      swaybg           # wallpaper (launched via exec-once; also used by `wallpaper` function)
       wl-clipboard     # wl-copy / wl-paste (Wayland clipboard)
       grim             # screenshot tool (captures Wayland output)
       slurp            # interactive region selector (used with grim)
