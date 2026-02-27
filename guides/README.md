@@ -19,7 +19,7 @@ is automated.
 | Wallpaper         | Hyprpaper                         |
 | Screen locker     | Hyprlock                          |
 | Idle daemon       | Hypridle                          |
-| Terminal          | Kitty                             |
+| Terminal          | foot (VMs) / kitty (physical)     |
 | Shell             | Fish                              |
 | GTK theme         | Catppuccin-GTK (Macchiato/Mauve)  |
 | Icons             | Papirus-Dark                      |
@@ -31,11 +31,19 @@ is automated.
 
 ## Why These Tools?
 
-### Kitty
-GPU-accelerated and native Wayland from the start.  It renders fonts with full ligature
-support and implements the *kitty graphics protocol* — images displayed inline in the
-terminal, used by tools like `ranger`, `yazi`, and `neofetch --kitty`.  It's also fast:
-startup is almost instant because it stays resident in memory between windows.
+### foot and kitty
+The config ships with **foot** as the default terminal.  foot is fast, lightweight, and
+native Wayland — it renders entirely on the CPU using the Wayland shared memory
+protocol, so it works in any environment with no special hardware required.
+
+**kitty** is the alternative for physical machines.  kitty is GPU-accelerated and
+expects a real graphics card with working OpenGL.  On QEMU/KVM VMs the virtual GPU
+(VirtIO, QXL) has no proper OpenGL acceleration, so kitty either fails to start or
+renders sluggishly — that's why foot is the default here.  On a physical host, kitty is
+worth trying: it adds the *kitty graphics protocol* (inline image rendering in tools
+like `ranger`, `yazi`, `neofetch --kitty`), slightly sharper font hinting, and a richer
+feature set.  See Guide 02 for the full kitty config and the three lines you need to
+swap.
 
 ### Fish
 Fish gives you auto-suggestions, syntax highlighting, and smart tab-completion **out of
@@ -67,7 +75,7 @@ every app by hand.
 
 2. **[02-home-module.md](./02-home-module.md)** — The Home Manager module
    (`modules/home/desktop-hyprland.nix`).  All user-space config: Hyprland, Waybar,
-   Kitty, Fish, GTK theming, and everything else.
+   foot, Fish, GTK theming, and everything else.
 
 3. **[03-wiring-up.md](./03-wiring-up.md)** — How to connect the modules into your
    existing flake: `flake.nix`, `parts/nixos.nix`, host `configuration.nix`, host

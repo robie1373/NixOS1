@@ -79,8 +79,9 @@ support it.  Instead of copy-pasting hex values into every app config, you write
 catppuccin.flavor = "macchiato";
 catppuccin.accent = "mauve";
 
-programs.kitty.catppuccin.enable = true;
-programs.fish.catppuccin.enable  = true;
+programs.foot.catppuccin.enable   = true;   # use this on VMs
+# programs.kitty.catppuccin.enable = true;  # use this instead on physical hosts
+programs.fish.catppuccin.enable   = true;
 programs.waybar.catppuccin.enable = true;
 # etc.
 ```
@@ -127,7 +128,7 @@ home-manager.users.robie.imports = [
 catppuccin.flavor = "macchiato";
 catppuccin.accent = "mauve";
 
-programs.kitty.catppuccin.enable  = true;
+programs.foot.catppuccin.enable   = true;   # swap for programs.kitty on physical hosts
 programs.fish.catppuccin.enable   = true;
 programs.waybar.catppuccin.enable = true;
 services.dunst.catppuccin.enable  = true;

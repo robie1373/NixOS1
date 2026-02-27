@@ -17,11 +17,12 @@
         monitor = "Virtual-1,1920x1200,0x0,1";
 
         # Programs launched once on startup
+        # Use full store paths — PATH is not populated when Hyprland starts via greetd
         exec-once = [
-          "waybar"
-          "dunst"
-          "hyprpaper"
-          "hypridle"
+          "${pkgs.waybar}/bin/waybar"
+          "${pkgs.dunst}/bin/dunst"
+          "${pkgs.hyprpaper}/bin/hyprpaper"
+          "${pkgs.hypridle}/bin/hypridle"
         ];
 
         # Modifier key: SUPER = the Windows/Command key
@@ -125,7 +126,7 @@
           kb_layout  = "us";
           follow_mouse = 1;        # focus follows cursor
           sensitivity  = 0;        # -1.0 to 1.0; 0 = no accel modification
-          touchpad.natural_scroll = false;
+          touchpad.natural_scroll = true;
         };
 
         misc = {

@@ -265,7 +265,7 @@ modules/home/desktop-hyprland.nix
   └─ services.hyprpaper
   └─ services.hypridle
   └─ programs.hyprlock
-  └─ programs.kitty
+  └─ programs.foot
   └─ programs.fish
   └─ gtk / qt theming
   └─ home.packages (wl-clipboard, grim, etc.)

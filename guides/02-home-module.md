@@ -3,7 +3,7 @@
 **File:** `modules/home/desktop-hyprland.nix`
 
 This module configures everything that lives in your home directory: the Hyprland
-config itself, Waybar, Kitty, Fish, the notification daemon, wallpaper, locker, and
+config itself, Waybar, foot, Fish, the notification daemon, wallpaper, locker, and
 GTK theming.  It mirrors the system module pattern with `myHome.desktopHyprland.enable`.
 
 This is the largest module in the config.  Read through it section by section — every
@@ -33,11 +33,12 @@ part is explained below the full listing.
         monitor = "Virtual-1,1920x1200,0x0,1";
 
         # Programs launched once on startup
+        # Use full store paths — PATH is not populated when Hyprland starts via greetd
         exec-once = [
-          "waybar"
-          "dunst"
-          "hyprpaper"
-          "hypridle"
+          "${pkgs.waybar}/bin/waybar"
+          "${pkgs.dunst}/bin/dunst"
+          "${pkgs.hyprpaper}/bin/hyprpaper"
+          "${pkgs.hypridle}/bin/hypridle"
         ];
 
         # Modifier key: SUPER = the Windows/Command key
@@ -46,7 +47,7 @@ part is explained below the full listing.
         # ── Keybinds ──────────────────────────────────────────────────────
         bind = [
           # Apps
-          "$mod, Return, exec, kitty"
+          "$mod, Return, exec, ${pkgs.foot}/bin/foot"
           "$mod, D, exec, rofi -show drun"
           "$mod, E, exec, rofi -show window"
 
@@ -395,7 +396,7 @@ part is explained below the full listing.
     programs.rofi = {
       enable  = true;
       package = pkgs.rofi;
-      terminal = "${pkgs.kitty}/bin/kitty";
+      terminal = "${pkgs.foot}/bin/foot";
       # "catppuccin-macchiato" matches the filename we placed above
       theme   = "catppuccin-macchiato";
       extraConfig = {
@@ -552,48 +553,48 @@ part is explained below the full listing.
     };
 
     # ════════════════════════════════════════════════════════════════════════
-    # KITTY — terminal
+    # FOOT — terminal
     # ════════════════════════════════════════════════════════════════════════
-    programs.kitty = {
+    programs.foot = {
       enable = true;
-      font = {
-        name = "JetBrainsMono Nerd Font";
-        size = 12;
-      };
       settings = {
-        # Catppuccin Macchiato palette
-        foreground            = "#cad3f5";
-        background            = "#24273a";
-        selection_background  = "#363a4f";
-        selection_foreground  = "#cad3f5";
-        url_color             = "#8aadf4";
-        cursor                = "#f4dbd6";
-        cursor_text_color     = "#24273a";
+        main = {
+          font       = "JetBrainsMono Nerd Font:size=12";
+          pad        = "12x12";
+        };
 
-        # Black
-        color0 = "#494d64"; color8  = "#5b6078";
-        # Red
-        color1 = "#ed8796"; color9  = "#ed8796";
-        # Green
-        color2 = "#a6da95"; color10 = "#a6da95";
-        # Yellow
-        color3 = "#eed49f"; color11 = "#eed49f";
-        # Blue
-        color4 = "#8aadf4"; color12 = "#8aadf4";
-        # Magenta / Mauve
-        color5 = "#c6a0f6"; color13 = "#c6a0f6";
-        # Cyan / Sky
-        color6 = "#91d7e3"; color14 = "#91d7e3";
-        # White
-        color7 = "#b8c0e0"; color15 = "#a5adcb";
+        scrollback = {
+          lines = 5000;
+        };
 
-        # UX
-        window_padding_width  = 12;
-        confirm_os_window_close = 0;   # don't ask before closing
-        scrollback_lines      = 5000;
+        colors = {
+          # Catppuccin Macchiato palette (foot uses hex without #)
+          foreground           = "cad3f5";
+          background           = "24273a";
+          selection-foreground = "cad3f5";
+          selection-background = "363a4f";
 
-        # Shell integration
-        shell_integration = "enabled";
+          # Black
+          regular0 = "494d64"; bright0 = "5b6078";
+          # Red
+          regular1 = "ed8796"; bright1 = "ed8796";
+          # Green
+          regular2 = "a6da95"; bright2 = "a6da95";
+          # Yellow
+          regular3 = "eed49f"; bright3 = "eed49f";
+          # Blue
+          regular4 = "8aadf4"; bright4 = "8aadf4";
+          # Magenta / Mauve
+          regular5 = "c6a0f6"; bright5 = "c6a0f6";
+          # Cyan / Sky
+          regular6 = "91d7e3"; bright6 = "91d7e3";
+          # White
+          regular7 = "b8c0e0"; bright7 = "a5adcb";
+        };
+
+        cursor = {
+          color = "24273a f4dbd6";   # text background (rosewater cursor)
+        };
       };
     };
 
@@ -684,13 +685,13 @@ Hyprland's config format.  A Nix list under a key becomes repeated lines:
 
 ```nix
 # Nix
-bind = [ "SUPER, Q, killactive," "SUPER, Return, exec, kitty" ];
+bind = [ "SUPER, Q, killactive," "SUPER, Return, exec, ${pkgs.foot}/bin/foot" ];
 ```
 becomes:
 ```
 # hyprland.conf
 bind = SUPER, Q, killactive,
-bind = SUPER, Return, exec, kitty
+bind = SUPER, Return, exec, /nix/store/…-foot-…/bin/foot
 ```
 
 A nested attribute set becomes a Hyprland section:
@@ -738,6 +739,13 @@ Dunst are safe to start immediately; Hyprpaper should load before you see the de
 If you add apps that take a moment to register on D-Bus (like some system tray apps),
 add a brief delay: `"sleep 1 && my-tray-app"`.
 
+> **Always use full nix store paths here.**  When Hyprland is launched by greetd, the
+> user's `~/.nix-profile/bin` is not yet on `PATH`.  Bare commands like `"hyprpaper"`
+> will fail with *bash: hyprpaper: command not found* and the daemon never starts.
+> Use `"${pkgs.hyprpaper}/bin/hyprpaper"` instead — Nix substitutes the exact store
+> path at build time, so it's always found regardless of the session environment.
+> The `bind` keybinds follow the same rule for the same reason.
+
 ---
 
 ### Colors in Hyprland config
@@ -769,7 +777,7 @@ Common modules to add:
 Waybar's full module list is at: https://github.com/Alexays/Waybar/wiki/Module:-Custom
 
 > **Troubleshooting hint:** If Waybar doesn't appear, run `waybar` manually in a
-> Kitty terminal to see the error output.  Common causes: syntax error in the JSON
+> foot terminal to see the error output.  Common causes: syntax error in the JSON
 > config (Nix's `settings` → JSON conversion is strict), or a missing module reference.
 
 ---
@@ -869,3 +877,119 @@ keybinds above pipe a screenshot straight to your clipboard.
 
 `grim` captures Wayland outputs (whole screen or specific windows).  `slurp` lets you
 drag a selection region.  Together: `grim -g "$(slurp)"` = click-and-drag screenshot.
+
+---
+
+### foot config and the kitty alternative
+
+The module uses **foot** by default because it has no GPU requirement, making it
+reliable in virtual machines (QEMU/KVM virtual GPUs lack proper OpenGL).  On a
+physical host with a real GPU, **kitty** is a capable alternative that adds the
+*kitty graphics protocol* for inline image rendering and slightly richer features.
+
+To switch from foot to kitty, make these three changes in `desktop-hyprland.nix`:
+
+**1. Replace the terminal program block:**
+
+```nix
+# REMOVE this:
+programs.foot = {
+  enable = true;
+  settings = {
+    main = {
+      font       = "JetBrainsMono Nerd Font:size=12";
+      pad        = "12x12";
+    };
+    scrollback = {
+      lines = 5000;
+    };
+    colors = {
+      foreground           = "cad3f5";
+      background           = "24273a";
+      selection-foreground = "cad3f5";
+      selection-background = "363a4f";
+      regular0 = "494d64"; bright0 = "5b6078";
+      regular1 = "ed8796"; bright1 = "ed8796";
+      regular2 = "a6da95"; bright2 = "a6da95";
+      regular3 = "eed49f"; bright3 = "eed49f";
+      regular4 = "8aadf4"; bright4 = "8aadf4";
+      regular5 = "c6a0f6"; bright5 = "c6a0f6";
+      regular6 = "91d7e3"; bright6 = "91d7e3";
+      regular7 = "b8c0e0"; bright7 = "a5adcb";
+    };
+    cursor = {
+      color = "24273a f4dbd6";
+    };
+  };
+};
+
+# ADD this instead:
+programs.kitty = {
+  enable = true;
+  font = {
+    name = "JetBrainsMono Nerd Font";
+    size = 12;
+  };
+  settings = {
+    # Catppuccin Macchiato palette
+    foreground            = "#cad3f5";
+    background            = "#24273a";
+    selection_background  = "#363a4f";
+    selection_foreground  = "#cad3f5";
+    url_color             = "#8aadf4";
+    cursor                = "#f4dbd6";
+    cursor_text_color     = "#24273a";
+
+    # Black
+    color0 = "#494d64"; color8  = "#5b6078";
+    # Red
+    color1 = "#ed8796"; color9  = "#ed8796";
+    # Green
+    color2 = "#a6da95"; color10 = "#a6da95";
+    # Yellow
+    color3 = "#eed49f"; color11 = "#eed49f";
+    # Blue
+    color4 = "#8aadf4"; color12 = "#8aadf4";
+    # Magenta / Mauve
+    color5 = "#c6a0f6"; color13 = "#c6a0f6";
+    # Cyan / Sky
+    color6 = "#91d7e3"; color14 = "#91d7e3";
+    # White
+    color7 = "#b8c0e0"; color15 = "#a5adcb";
+
+    # UX
+    window_padding_width    = 12;
+    confirm_os_window_close = 0;   # don't ask before closing
+    scrollback_lines        = 5000;
+
+    # Shell integration
+    shell_integration = "enabled";
+  };
+};
+```
+
+Note the color format difference: foot uses bare hex (`cad3f5`), kitty uses `#cad3f5`.
+
+**2. Update the keybind:**
+
+```nix
+# foot (default):
+"$mod, Return, exec, ${pkgs.foot}/bin/foot"
+
+# kitty:
+"$mod, Return, exec, ${pkgs.kitty}/bin/kitty"
+```
+
+**3. Update the rofi terminal:**
+
+```nix
+# foot (default):
+terminal = "${pkgs.foot}/bin/foot";
+
+# kitty:
+terminal = "${pkgs.kitty}/bin/kitty";
+```
+
+> **Note:** Use the full Nix store path (`${pkgs.foot}/bin/foot`) rather than a bare
+> `foot` or `kitty` command.  This ensures Hyprland and rofi find the binary even
+> before your shell PATH is fully populated at session start.
