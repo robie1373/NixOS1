@@ -69,6 +69,12 @@
 
           # Screenshot (requires grim + slurp)
           ", Print, exec, grim -g \"$(slurp)\" - | wl-copy"
+
+          # Touchpad gestures
+          ", swipe:2:r, sendshortcut, ALT, Right, activewindow"    # Browser forward
+          ", swipe:2:l, sendshortcut, ALT, Left, activewindow"     # Browser back
+          ", pinch:2:out, sendshortcut, CTRL, equal, activewindow" # Increase font size
+          ", pinch:2:in, sendshortcut, CTRL, minus, activewindow"  # Decrease font size
         ];
 
         # Mouse binds
