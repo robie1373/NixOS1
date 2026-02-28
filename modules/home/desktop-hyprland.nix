@@ -69,12 +69,14 @@
 
           # Screenshot (requires grim + slurp)
           ", Print, exec, grim -g \"$(slurp)\" - | wl-copy"
+        ];
 
-          # Touchpad gestures
-          ", swipe:2:r, sendshortcut, ALT, Right, activewindow"    # Browser forward
-          ", swipe:2:l, sendshortcut, ALT, Left, activewindow"     # Browser back
-          ", pinch:2:out, sendshortcut, CTRL, equal, activewindow" # Increase font size
-          ", pinch:2:in, sendshortcut, CTRL, minus, activewindow"  # Decrease font size
+        # Touchpad gestures
+        gesture = [
+          "3, right, dispatcher, sendshortcut, ALT, Right, activewindow"     # Browser forward
+          "3, left, dispatcher, sendshortcut, ALT, Left, activewindow"       # Browser back
+          "2, pinchout, dispatcher, sendshortcut, CTRL, equal, activewindow" # Increase font size
+          "2, pinchin, dispatcher, sendshortcut, CTRL, minus, activewindow"  # Decrease font size
         ];
 
         # Mouse binds
@@ -602,6 +604,7 @@
       shellAliases = {
         rebuild = "sudo nixos-rebuild switch --flake /home/robie/nixos-config#nixos1";
         build   = "nixos-rebuild build --flake /home/robie/nixos-config#nixos1";
+	test    = "sudo nixos-rebuild test --flake /home/robie/nixos-config#nixos1";
       };
     };
 
