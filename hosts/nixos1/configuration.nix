@@ -11,7 +11,7 @@
 
 
   mySystem.audio.enable      = true;
-  mySystem.desktopKde.enable = false;
+  #mySystem.desktopKde.enable = false;
   mySystem.desktopHyprland.enable = true;
   mySystem.vmGuest.enable    = true;
   

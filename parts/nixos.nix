@@ -18,8 +18,8 @@ in
         #../modules/system/desktop-kde.nix
 	../modules/system/desktop-hyprland.nix
         ../modules/system/vm-guest.nix
-        inputs.disko.nixosModules.disko
-        ../hosts/flipper/disko.nix
+       # inputs.disko.nixosModules.disko
+       # ../hosts/flipper/disko.nix
         inputs.home-manager.nixosModules.home-manager {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
