@@ -14,7 +14,7 @@
 
       settings = {
 
-        monitor = "Virtual-1,1920x1200,0x0,1";
+        monitor = ",preferred,auto,1";
 
         # Programs launched once on startup
         # Use full store paths — PATH is not populated when Hyprland starts via greetd
@@ -602,9 +602,9 @@
 
       # Fish-specific aliases (these augment home.shellAliases from common.nix)
       shellAliases = {
-        rebuild = "sudo nixos-rebuild switch --flake /home/robie/nixos-config#nixos1";
-        build   = "nixos-rebuild build --flake /home/robie/nixos-config#nixos1";
-	test    = "sudo nixos-rebuild test --flake /home/robie/nixos-config#nixos1";
+        rebuild = "sudo nixos-rebuild switch --flake /home/robie/nixos-config#${osConfig.networking.hostName}";
+        build   = "nixos-rebuild build --flake /home/robie/nixos-config#${osConfig.networking.hostName}";
+        ntest   = "sudo nixos-rebuild test --flake /home/robie/nixos-config#${osConfig.networking.hostName}";
       };
     };
 
