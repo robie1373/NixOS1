@@ -473,7 +473,7 @@
             on-timeout = "hyprctl dispatch dpms off";
             on-resume  = "hyprctl dispatch dpms on";
           }
-	  ] ++ lib.optionals (!osConfig.mySystem.vmGuest.enable) [
+	  ] ++ lib.optionals (!(osConfig.mySystem.vmGuest.enable or false)) [
           {
             timeout    = 600;   # 10 min — suspend
             on-timeout = "systemctl suspend";

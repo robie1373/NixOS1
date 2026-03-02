@@ -32,6 +32,7 @@
     isNormalUser = true;
     description = "Robie";
     extraGroups = [ "networkmanager" "wheel" ];
+    initialPassword = "changeme";
     packages = with pkgs; [
     #  kdePackages.kate
     #  thunderbird
