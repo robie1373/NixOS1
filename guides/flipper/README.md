@@ -18,7 +18,7 @@ and what NixOS config changes fix the broken parts.
 | Keyboard | ✅ Working | |
 | Touchpad | ✅ Working | Pixart ASCP1205, full multi-touch |
 | Touchscreen + stylus | ✅ Working | Ilitek ILIT2901, multi-touch + pen |
-| Media / Fn keys | ✅ Working | `asus-nb-wmi` + Intel HID |
+| Media / Fn keys | ⚠️ Partial | F1–F6 working; F7=Super+P; F8–F12 no OS events — see [02-media-keys.md](./02-media-keys.md) |
 | Keyboard backlight | ✅ Working | 4 levels via `asus::kbd_backlight` |
 | WiFi (Intel BE201, Wi-Fi 7) | ✅ Working | firmware v101 |
 | Bluetooth | ✅ Needs one line | hardware ready, service not enabled |
@@ -77,16 +77,22 @@ Wayland touch input natively.
 
 ### Media Keys and Fn Keys
 
-Two drivers cooperate:
+Two drivers cooperate — but the picture is more nuanced than the driver names suggest:
 
-- **`asus-nb-wmi`** handles the ASUS-specific Fn layer (brightness, keyboard backlight,
-  performance mode, mic mute, etc.).  It also exposes `platform-profile` and
-  `charge_mode` sysfs controls.
-- **`intel_hid`** handles the Intel HID button array (volume up/down/mute and the
-  5-button cluster).
+- **`asus-nb-wmi`** handles keyboard backlight (F4) and exposes `platform-profile` /
+  `charge_mode` sysfs controls.  It creates an input device (`event8`, "Asus WMI hotkeys")
+  that declares mic mute, volume, and other keycodes but **does not emit events** for them
+  on this BIOS version — a firmware limitation.
+- **`acpi_video`** intercepts brightness keys (F5/F6) directly via ACPI and adjusts the
+  backlight without generating input events.  Screen brightness changes without any
+  compositor binding needed.
+- **Volume and mute (F1–F3)** arrive on `event0` (the main AT keyboard device) with
+  correct keycodes and require explicit Hyprland bindings.
 
-Both load automatically.  All keys generate normal evdev events that Hyprland / your
-compositor can bind to.
+F7 is EC-hardcoded to `Super+P`.  F8–F12 generate no OS events at all.
+
+See **[02-media-keys.md](./02-media-keys.md)** for the full key map, NixOS config changes,
+and debugging notes.
 
 ---
 
