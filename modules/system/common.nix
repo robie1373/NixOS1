@@ -33,7 +33,7 @@
     description = "Robie";
     extraGroups = [ "networkmanager" "wheel" ];
     packages = with pkgs; [
-      kdePackages.kate
+    #  kdePackages.kate
     #  thunderbird
     ];
   };
@@ -58,6 +58,11 @@
   ];
 
   nix.settings.experimental-features = ["nix-command" "flakes" ];
+
+  environment.systemPackages = with pkgs; [
+    disko
+    nixos-anywhere
+  ];
 
 
 
