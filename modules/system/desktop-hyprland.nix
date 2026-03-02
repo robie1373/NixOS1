@@ -46,6 +46,9 @@
       noto-fonts-color-emoji
     ];
 
+    # ── Backlight udev rules (allows video group to write brightness) ─────────
+    services.udev.packages = [ pkgs.brightnessctl ];
+
     # ── Wayland compatibility env vars ───────────────────────────────────────
     environment.sessionVariables = {
       NIXOS_OZONE_WL   = "1";            # Electron apps (VS Code, etc.)

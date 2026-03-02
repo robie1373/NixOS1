@@ -85,6 +85,24 @@
           "$mod, mouse:273, resizewindow"  # SUPER + right-drag = resize
         ];
 
+        # Repeating locked binds — volume + brightness (work on lockscreen, repeat while held)
+        bindel = [
+          ", XF86AudioRaiseVolume,  exec, wpctl set-volume @DEFAULT_AUDIO_SINK@   5%+"
+          ", XF86AudioLowerVolume,  exec, wpctl set-volume @DEFAULT_AUDIO_SINK@   5%-"
+          ", XF86MonBrightnessUp,   exec, brightnessctl set 10%+"
+          ", XF86MonBrightnessDown, exec, brightnessctl set 10%-"
+        ];
+
+        # Locked binds — mute + media player (work on lockscreen, no repeat)
+        bindl = [
+          ", XF86AudioMute,    exec, wpctl set-mute @DEFAULT_AUDIO_SINK@   toggle"
+          ", XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
+          ", XF86AudioPlay,    exec, playerctl play-pause"
+          ", XF86AudioPause,   exec, playerctl play-pause"
+          ", XF86AudioNext,    exec, playerctl next"
+          ", XF86AudioPrev,    exec, playerctl previous"
+        ];
+
         # ── Layout ────────────────────────────────────────────────────────
         general = {
           gaps_in  = 5;
@@ -658,6 +676,7 @@
       pavucontrol      # PulseAudio/PipeWire GUI volume control
       nwg-look         # GTK settings GUI (apply theme changes live)
       brightnessctl    # screen brightness control
+      playerctl        # media player control (play/pause/next/prev)
     ];
 
   };
