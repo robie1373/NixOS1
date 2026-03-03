@@ -24,6 +24,9 @@
     LC_TIME = "en_US.UTF-8";
   };
 
+  # Enable GVfs (virtual filesystem daemon for network shares, MTP, etc.)
+  services.gvfs.enable = true;
+
   # Enable CUPS to print documents.
   services.printing.enable = false;
 
@@ -35,7 +38,6 @@
     initialPassword = "changeme";
     packages = with pkgs; [
     #  kdePackages.kate
-    #  thunderbird
     ];
   };
   users.users.robie.shell = pkgs.fish;
