@@ -1,9 +1,9 @@
 { lib, config, pkgs, ... }:                                                              
 {               
-  options.myHome.entertainment.enable =
-    lib.mkEnableOption "Entertainment package";
+  options.myHome.mpv.enable =
+    lib.mkEnableOption "mpv video player with uosc and sponsorblock";
 
-  config = lib.mkIf config.myHome.entertainment.enable {
+  config = lib.mkIf config.myHome.mpv.enable {
 
     programs.mpv = {
       enable = true;

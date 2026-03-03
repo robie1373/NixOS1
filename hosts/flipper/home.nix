@@ -6,5 +6,9 @@
   myHome.desktopHyprland.enable = true;
   myHome.firefox.enable         = true;
   myHome.tablet.enable          = true;
-  myHome.entertainment.enable   = true;
+  myHome.mpv.enable             = true;
+  myHome.zathura.enable         = true;
+  myHome.imv.enable             = true;
+  myHome.mpd.enable             = true;
+  myHome.nas.enable             = true;
 }

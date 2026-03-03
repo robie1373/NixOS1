@@ -29,7 +29,7 @@
     };
 
     # mpc gives you quick shell control: mpc toggle, mpc next, etc.
-    home.packages = [ pkgs.mpc-cli ];
+    home.packages = [ pkgs.mpc ];
 
     # ── ncmpcpp TUI client ───────────────────────────────────────────────
     programs.ncmpcpp = {

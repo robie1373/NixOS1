@@ -8,7 +8,7 @@
 
     home.packages = [
 
-      # nas-mount [//server/share] [/mount/point]
+      # nas-mount [//nas01/fauxbox] [/mnt/fauxbox]
       #
       # Reads credentials from 1Password at runtime — no plaintext secrets
       # on disk. Credentials are written to a tmpfs file for the duration
@@ -25,11 +25,11 @@
       # Then adjust OP_VAULT and OP_ITEM below to match.
       (pkgs.writeShellApplication {
         name = "nas-mount";
-        runtimeInputs = [ pkgs._1password pkgs.cifs-utils ];
+        runtimeInputs = [ pkgs._1password-cli pkgs.cifs-utils ];
         text = ''
           # ── Configure these ──────────────────────────────────────────
-          DEFAULT_SHARE="//your-nas-hostname/share-name"
-          DEFAULT_MOUNT="/mnt/nas"
+          DEFAULT_SHARE="//nas01/fauxbox"
+          DEFAULT_MOUNT="/mnt/nas/fauxbox"
           OP_VAULT="Private"
           OP_ITEM="NAS"
           # ─────────────────────────────────────────────────────────────

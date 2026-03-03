@@ -13,6 +13,7 @@
   mySystem.audio.enable           = true;
   #mySystem.desktopKde.enable      = false;
   mySystem.desktopHyprland.enable = true;
+  mySystem.nas.enable             = true;
 
   # Resume device for hibernate — disko labels swap as "disk-main-swap" (disk name + partition name)
   boot.resumeDevice = "/dev/disk/by-partlabel/disk-main-swap";

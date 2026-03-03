@@ -47,6 +47,7 @@ in
         ../modules/system/audio.nix
         #../modules/system/desktop-kde.nix
         ../modules/system/desktop-hyprland.nix
+        ../modules/system/nas.nix
         inputs.disko.nixosModules.disko
         ../hosts/flipper/disko.nix
         inputs.home-manager.nixosModules.home-manager {
@@ -63,7 +64,11 @@ in
             ../modules/home/desktop-hyprland.nix
             ../modules/home/firefox.nix
             ../modules/home/tablet.nix
-	    ../modules/home/entertainment.nix
+            ../modules/home/mpv.nix
+            ../modules/home/zathura.nix
+            ../modules/home/imv.nix
+            ../modules/home/mpd.nix
+            ../modules/home/nas.nix
           ];
         }
       ];
