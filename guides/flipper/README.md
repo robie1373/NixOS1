@@ -7,6 +7,12 @@
 This document covers what works, what doesn't, why each thing behaves the way it does,
 and what NixOS config changes fix the broken parts.
 
+## Guides
+
+- **[01-speakers-fix.md](./01-speakers-fix.md)** — TAS2781 firmware name mismatch fix
+- **[02-media-keys.md](./02-media-keys.md)** — Fn key map, working keys, Hyprland bindings
+- **[03-disk-encryption.md](./03-disk-encryption.md)** — LUKS plan, TPM2+PIN, YubiKey FIDO2, YubiKey Bio analysis, reinstall overview
+
 ---
 
 ## At a Glance

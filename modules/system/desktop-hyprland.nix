@@ -39,6 +39,11 @@
     # ── Screen locker PAM rule ───────────────────────────────────────────────
     security.pam.services.hyprlock = {};
 
+    # ── Keyring unlock at login ───────────────────────────────────────────────
+    # Unlocks gnome-keyring automatically when greetd authenticates the user,
+    # so 1Password CLI and SSH agent sessions survive across reboots.
+    security.pam.services.greetd.enableGnomeKeyring = true;
+
     # ── Polkit ───────────────────────────────────────────────────────────────
     security.polkit.enable = true;
 

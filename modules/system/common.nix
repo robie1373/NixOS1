@@ -27,6 +27,11 @@
   # Enable GVfs (virtual filesystem daemon for network shares, MTP, etc.)
   services.gvfs.enable = true;
 
+  # Keyring — persists secrets (SSH keys, op CLI session, browser passwords)
+  # across reboots. Without this, 1Password CLI and SSH agent lose their
+  # sessions on every restart and require manual re-authentication.
+  services.gnome.gnome-keyring.enable = true;
+
   # Enable CUPS to print documents.
   services.printing.enable = false;
 

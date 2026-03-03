@@ -15,8 +15,19 @@
   mySystem.desktopHyprland.enable = true;
   mySystem.nas.enable             = true;
 
-  # Resume device for hibernate — disko labels swap as "disk-main-swap" (disk name + partition name)
+  # Resume device for hibernate — swap is unencrypted; label set by disko
+  # (disk name "main" + partition name "swap" → "disk-main-swap")
   boot.resumeDevice = "/dev/disk/by-partlabel/disk-main-swap";
+
+  # ── Disk encryption ────────────────────────────────────────────────────────
+  # systemd initrd is required for systemd-cryptenroll (TPM2 + FIDO2 unlock).
+  # After first boot, enroll additional slots — see guides/flipper/03-disk-encryption.md
+  boot.initrd.systemd.enable = true;
+
+  # TPM2 userspace tools and kernel interface
+  security.tpm2.enable = true;
+  security.tpm2.pkcs11.enable = true;
+  security.tpm2.tctiEnvironment.enable = true;
 
   environment.systemPackages = with pkgs; [
     wget
