@@ -96,11 +96,12 @@
         # Locked binds — mute + media player (work on lockscreen, no repeat)
         bindl = [
           ", XF86AudioMute,    exec, wpctl set-mute @DEFAULT_AUDIO_SINK@   toggle"
-          ", XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
+          ", XF86AudioMicMute, exec, mic-toggle"
           ", XF86AudioPlay,    exec, playerctl play-pause"
           ", XF86AudioPause,   exec, playerctl play-pause"
           ", XF86AudioNext,    exec, playerctl next"
           ", XF86AudioPrev,    exec, playerctl previous"
+          "$mod, M,            exec, mic-toggle"
         ];
 
         # ── Layout ────────────────────────────────────────────────────────
@@ -177,8 +178,8 @@
           modules-left   = [ "hyprland/workspaces" ];
           modules-center = [ "clock" ];
           modules-right  = [
-            "pulseaudio" "network" "cpu" "memory" "tray"
-          ];
+            "pulseaudio" "network" "cpu" "memory" "bluetooth" "tray"
+          ] ++ lib.optionals (config.myHome.tablet.enable or false) [ "custom/tablet" ];
 
           "hyprland/workspaces" = {
             disable-scroll = true;
@@ -215,8 +216,42 @@
             on-click       = "pavucontrol";
           };
 
+	  bluetooth = {
+	    format 			             =  "󰂯 {status}";
+            format-connected                         = "󰂱 {device_alias}";
+            format-connected-battery                 = "󰂱 {device_alias} {device_battery_percentage}%";
+            tooltip-format                           = "{controller_alias}\t{controller_address}";
+            tooltip-format-connected                 = "{controller_alias}\n\n{num_connections} connected\n{device_enumerate}";
+            tooltip-format-enumerate-connected       = "  {device_alias}";
+            tooltip-format-enumerate-connected-battery = " {device_alias}\t{device_battery_percentage}%";
+            on-click                                 = "blueman-manager";
+	  };
+
           tray = {
             spacing = 8;
+          };
+
+          # Tablet mode toggle — only wired up when myHome.tablet.enable = true.
+          # exec outputs nothing on hosts without the tablet scripts, so the
+          # module is invisible there.
+          "custom/tablet" = lib.mkIf (config.myHome.tablet.enable or false) {
+            return-type = "json";
+            exec = "${pkgs.writeShellScript "waybar-tablet-status" ''
+              if test -f /tmp/tablet-mode-devices; then
+                printf '{"text":"󰦟","class":"active","tooltip":"Exit tablet mode"}\n'
+              else
+                printf '{"text":"󰌌","class":"","tooltip":"Enter tablet mode (Super+T)"}\n'
+              fi
+            ''}";
+            on-click = "${pkgs.writeShellScript "waybar-tablet-toggle" ''
+              if test -f /tmp/tablet-mode-devices; then
+                tablet-exit
+              else
+                tablet-enter
+              fi
+            ''}";
+            interval = "once";
+            signal   = 8;
           };
         };
       };
@@ -280,7 +315,12 @@
         #memory       { color: @yellow; padding: 0 8px;  }
         #network      { color: @mauve;  padding: 0 8px;  }
         #pulseaudio   { color: @peach;  padding: 0 8px;  }
+	#bluetooth          { color: @blue;   padding: 0 8px; }
+        #bluetooth.connected { color: @green; }
+        #bluetooth.disabled  { color: @surface1; }
         #tray         { padding: 0 8px; }
+        #custom-tablet        { color: @blue;  padding: 0 8px; }
+        #custom-tablet.active { color: @peach; }
       '';
     };
 
@@ -677,6 +717,32 @@
       nwg-look         # GTK settings GUI (apply theme changes live)
       brightnessctl    # screen brightness control
       playerctl        # media player control (play/pause/next/prev)
+
+      # Mic mute toggle — F9 generates no OS events on this ASUS BIOS, so this
+      # script is bound to Super+M instead. It mutes PipeWire and syncs the LED.
+      # Mutes ALL sources so both the analog and digital mics are silenced together.
+      (pkgs.writeShellScriptBin "mic-toggle" ''
+        # Determine new state: 1=mute, 0=unmute (based on current default source)
+        if wpctl get-volume @DEFAULT_AUDIO_SOURCE@ | grep -q MUTED; then
+          NEW=0
+        else
+          NEW=1
+        fi
+
+        # Apply to every audio source (IDs change each boot, so parse wpctl status)
+        for id in $(wpctl status | awk '
+          /Sources:/  { p=1 }
+          /Filters:/  { p=0 }
+          p && /[0-9]+\./ {
+            for (i=1; i<=NF; i++)
+              if ($i ~ /^[0-9]+\.$/) { gsub(/\./, "", $i); print $i; break }
+          }
+        '); do
+          wpctl set-mute "$id" "$NEW"
+        done
+
+        echo "$NEW" > /sys/class/leds/platform::micmute/brightness
+      '')
     ];
 
   };

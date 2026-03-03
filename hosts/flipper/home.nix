@@ -5,4 +5,6 @@
 
   myHome.desktopHyprland.enable = true;
   myHome.firefox.enable         = true;
+  myHome.tablet.enable          = true;
+  myHome.entertainment.enable   = true;
 }

@@ -31,7 +31,7 @@
   users.users.robie = {
     isNormalUser = true;
     description = "Robie";
-    extraGroups = [ "networkmanager" "wheel" "video" ];
+    extraGroups = [ "networkmanager" "wheel" "video" "input" ];
     initialPassword = "changeme";
     packages = with pkgs; [
     #  kdePackages.kate

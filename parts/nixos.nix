@@ -33,6 +33,7 @@ in
 	    ../modules/home/obsidian.nix
 	    ../modules/home/desktop-hyprland.nix
 	    ../modules/home/firefox.nix
+	    ../modules/home/entertainment.nix
           ];
 	}
       ];
@@ -62,6 +63,7 @@ in
             ../modules/home/obsidian.nix
             ../modules/home/desktop-hyprland.nix
             ../modules/home/firefox.nix
+            ../modules/home/tablet.nix
           ];
         }
       ];

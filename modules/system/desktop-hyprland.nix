@@ -33,6 +33,9 @@
       config.common.default = "*";
     };
 
+    # ---- Bluetooth ----------------
+    services.blueman.enable = true;
+
     # ── Screen locker PAM rule ───────────────────────────────────────────────
     security.pam.services.hyprlock = {};
 

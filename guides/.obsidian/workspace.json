@@ -78,7 +78,8 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 300,
+    "collapsed": true
   },
   "right": {
     "id": "9d9c7fe8f3cd8b94",
@@ -185,10 +186,12 @@
   },
   "active": "b822f65c429e84a1",
   "lastOpenFiles": [
-    "flipper/README.md",
+    "hyprland/06-tablet-mode.md",
     "flipper/02-media-keys.md",
-    "hyprland/README.md",
+    "flipper/README.md",
+    "sharded-zooming-bonbon.md",
     "flipper/01-speakers-fix.md",
+    "hyprland/README.md",
     "flipper",
     "hyprland/01-system-module.md",
     "02-home-module.md.tmp.2089.1772218226817",
