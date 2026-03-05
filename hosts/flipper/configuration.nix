@@ -29,6 +29,11 @@
   security.tpm2.pkcs11.enable = true;
   security.tpm2.tctiEnvironment.enable = true;
 
+  # FIDO2 YubiKey unlock at boot — tells systemd-cryptsetup to try FIDO2
+  # and ensures the USB HID driver is in the initrd so the key is detected
+  boot.initrd.luks.devices."cryptroot".crypttabExtraOpts = [ "fido2-device=auto" ];
+  boot.initrd.kernelModules = [ "usbhid" ];
+
   environment.systemPackages = with pkgs; [
     wget
     tree

@@ -8,9 +8,8 @@
 
   # In your home.nix
   home.shellAliases = {
-    ll = "ls -l";
-    la = "ls -a";
-    llh = "ls -lh";
+    ll = "ls -lh";
+    la = "ls -ah";
     #vim = "nvim";
 
     #update = "sudo nixos-rebuild switch";

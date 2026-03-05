@@ -612,11 +612,12 @@
 
         colors = {
           # Catppuccin Macchiato palette (foot uses hex without #)
-	  alpha		       = "0.9";
+	  alpha		       = "0.8";
           foreground           = "cad3f5";
           background           = "24273a";
           selection-foreground = "cad3f5";
           selection-background = "363a4f";
+          cursor = "24273a f4dbd6";   # text background (rosewater cursor)
 
           # Black
           regular0 = "494d64"; bright0 = "5b6078";
@@ -636,9 +637,6 @@
           regular7 = "b8c0e0"; bright7 = "a5adcb";
         };
 
-        cursor = {
-          color = "24273a f4dbd6";   # text background (rosewater cursor)
-        };
       };
     };
 
@@ -656,6 +654,11 @@
           pkill swaybg
           ${pkgs.swaybg}/bin/swaybg -i $argv[1] -m fill &
         end
+
+	# use nix-shell and acpi to check battery level
+	function battery
+	  nix-shell -p acpi --run "acpi -b"
+	end
       '';
 
       # Fish-specific aliases (these augment home.shellAliases from common.nix)
