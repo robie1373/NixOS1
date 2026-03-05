@@ -12,4 +12,5 @@
   myHome.mpd.enable             = true;
   myHome.nas.enable             = true;
   myHome.yazi.enable		= true;
+  myHome.hyprshot.enable	= true;
 }

@@ -40,6 +40,7 @@ in
             ../modules/home/mpd.nix
             ../modules/home/nas.nix
             ../modules/home/yazi.nix
+	    ../modules/home/hyprshot.nix
           ];
         }
       ];
@@ -71,6 +72,7 @@ in
 	    ../modules/home/desktop-hyprland.nix
 	    ../modules/home/firefox.nix
 	    ../modules/home/yazi.nix
+	    ../modules/home/hyprshot.nix
           ];
 	}
       ];
