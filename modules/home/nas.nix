@@ -18,7 +18,7 @@
       #   op item create \
       #     --category login \
       #     --title "NAS" \
-      #     --vault "Private" \
+      #     --vault "devops" \ op is restricted to the devops vault. Private is unavailable
       #     username="your-nas-user" \
       #     password="your-nas-password"
       #
@@ -30,7 +30,7 @@
           # ── Configure these ──────────────────────────────────────────
           DEFAULT_SHARE="//nas01/fauxbox"
           DEFAULT_MOUNT="/mnt/nas/fauxbox"
-          OP_VAULT="Private"
+          OP_VAULT="devops"
           OP_ITEM="NAS"
           # ─────────────────────────────────────────────────────────────
 

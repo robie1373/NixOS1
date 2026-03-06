@@ -39,16 +39,17 @@
     tree
   ];
 
-#  hardware.firmware = [
-#    (pkgs.runCommand "tas2781-firmware-fix" {} '' 
-#      mkdir -p $out/lib/firmware 
-#      ln -s ${pkgs.linux-firmware}/lib/firmware/TAS2XXX10A40.bin.zst \
-#      $out/lib/firmware/TAS2XXX10A4.bin.zst 
-#    '')
-#  ];
-
   # Enable CUPS to print documents.
   services.printing.enable = false;
+
+  # Fix internal speakers — see guides/flipper/01-speakers-fix.md
+  hardware.firmware = [
+    (pkgs.runCommand "tas2781-firmware-fix" {} ''
+      mkdir -p $out/lib/firmware
+      ln -s ${pkgs.linux-firmware}/lib/firmware/TAS2XXX10A40.bin \
+        $out/lib/firmware/TAS2XXX10A4.bin
+    '')
+  ];
 
   # Set to the NixOS release you first installed this system with.
   # Do not change this after the first install.
