@@ -25,23 +25,23 @@
       # Then adjust OP_VAULT and OP_ITEM below to match.
       (pkgs.writeShellApplication {
         name = "nas-mount";
-        runtimeInputs = [ pkgs._1password-cli pkgs.cifs-utils ];
+        runtimeInputs = [ ];
         text = ''
           # ── Configure these ──────────────────────────────────────────
           DEFAULT_SHARE="//nas01/fauxbox"
-          DEFAULT_MOUNT="/mnt/nas/fauxbox"
           OP_VAULT="devops"
           OP_ITEM="NAS"
           # ─────────────────────────────────────────────────────────────
 
           SHARE="''${1:-$DEFAULT_SHARE}"
-          MOUNT="''${2:-$DEFAULT_MOUNT}"
+          # Derive mount point from share name if not explicitly given
+          SHARE_NAME="$(basename "$SHARE")"
+          MOUNT="''${2:-/mnt/nas/$SHARE_NAME}"
 
-          # Fetch credentials from 1Password.
-          # op will prompt for biometric/master-password auth if the vault
-          # is not already unlocked by the desktop app.
-          NAS_USER=$(op read "op://$OP_VAULT/$OP_ITEM/username")
-          NAS_PASS=$(op read "op://$OP_VAULT/$OP_ITEM/password")
+          sudo mkdir -p "$MOUNT"
+
+          NAS_USER=$(op item get "$OP_ITEM" --vault "$OP_VAULT" --fields username)
+          NAS_PASS=$(op item get "$OP_ITEM" --vault "$OP_VAULT" --fields password --reveal)
 
           # Write to a tmpfs file — never touches a real disk.
           # The trap guarantees cleanup even if mount fails.
@@ -49,10 +49,10 @@
           chmod 600 "$CREDS"
           trap 'rm -f "$CREDS"' EXIT
 
-          printf 'username=%s\npassword=%s\n' "$NAS_USER" "$NAS_PASS" > "$CREDS"
+          printf 'username=%s\npassword=%s\ndomain=%s\n' "$NAS_USER" "$NAS_PASS" "WORKGROUP" > "$CREDS"
 
-          sudo ${pkgs.cifs-utils}/bin/mount.cifs "$SHARE" "$MOUNT" \
-            -o "credentials=$CREDS,uid=$(id -u),gid=$(id -g),file_mode=0644,dir_mode=0755,vers=3.0"
+          sudo mount.cifs "$SHARE" "$MOUNT" \
+            -o "credentials=$CREDS,uid=$(id -u),gid=$(id -g),file_mode=0644,dir_mode=0755,vers=3.0,sec=ntlmssp"
 
           echo "Mounted $SHARE at $MOUNT"
         '';
