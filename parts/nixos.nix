@@ -18,6 +18,7 @@ in
         #../modules/system/desktop-kde.nix
         ../modules/system/desktop-hyprland.nix
         ../modules/system/nas.nix
+        ../modules/system/speaker-fix.nix
         inputs.disko.nixosModules.disko
         ../hosts/flipper/disko.nix
         inputs.home-manager.nixosModules.home-manager {

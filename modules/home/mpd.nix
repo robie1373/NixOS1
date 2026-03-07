@@ -34,9 +34,9 @@
     # ── ncmpcpp TUI client ───────────────────────────────────────────────
     programs.ncmpcpp = {
       enable = true;
+      mpdMusicDir = "~/Music";
 
       settings = {
-        mpd_music_dir    = "~/Music";
 
         # ── Layout ───────────────────────────────────────────────────────
         # "alternative" splits the screen: playlist on top, visualiser below
