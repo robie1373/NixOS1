@@ -1,120 +1,161 @@
 # Guide 01: Fixing Internal Speakers (TAS2781)
 
-The internal speakers are silent because the `tas2781-hda` kernel driver requests a
-firmware file named `TAS2XXX10A4.bin` — a name that doesn't exist.  The correct files
-(`TAS2XXX10A40.bin` and `TAS2XXX10A41.bin`) are present in linux-firmware; the driver
-just can't figure out which one to ask for.  This guide explains exactly why and shows
-the one-block NixOS fix.
+The internal speakers on the ASUS Vivobook 14 Flip TP3407SA require two fixes:
+
+1. **Firmware filename fix** — the kernel driver requests a firmware file that
+   doesn't exist under that name
+2. **Amplifier register fix** — the driver loads firmware but doesn't properly
+   configure the TAS2781 amplifier registers, resulting in nearly silent output
+
+Both are implemented as NixOS modules. The firmware fix lives in
+`hosts/flipper/configuration.nix` and the register fix is in
+`modules/system/speaker-fix.nix`.
 
 ---
 
-## What the Driver Is Trying to Do
+## Problem 1: Missing Firmware Filename
 
-The TAS2781 is a smart amplifier used across many laptop models.  Machines often have
-two of them — one per speaker channel.  The driver identifies which instance it's
-talking to by reading a GPIO pin described in the ACPI/DSDT tables, then appends that
-instance number to the firmware filename before requesting it:
+The TAS2781 is a smart amplifier. The driver identifies which instance it's
+talking to by reading a GPIO pin from the ACPI tables, then appends an instance
+number to the firmware filename:
 
 ```
 instance = 0  →  requests TAS2XXX10A4 0 .bin
 instance = 1  →  requests TAS2XXX10A4 1 .bin
 ```
 
-This ASUS Vivobook has **one** TAS2781.  Its ACPI tables simply don't define the
-speaker-ID GPIO at all.  When the driver tries to read it:
+This ASUS Vivobook has **one** TAS2781. Its ACPI tables don't define the
+speaker-ID GPIO at all:
 
 ```
 tas2781-hda i2c-TIAS2781:00: Get speaker id gpio failed -2
 ```
 
-`-2` is `ENOENT` — the GPIO descriptor doesn't exist in the ACPI namespace.  With no
-instance number to work with, the driver falls back to requesting the base name with
-no suffix:
+With no instance number, the driver falls back to `TAS2XXX10A4.bin` — which
+doesn't exist. The linux-firmware package only ships the suffixed variants
+(`TAS2XXX10A40.bin` and `TAS2XXX10A41.bin`).
 
-```
-tas2781-hda i2c-TIAS2781:00: Direct firmware load for TAS2XXX10A4.bin failed with error -2
-```
+### Fix
 
-That file also doesn't exist.  The linux-firmware package only ships the suffixed
-variants, because for multi-speaker machines that's always what gets requested.
-
----
-
-## The Fix
-
-Create an extra firmware package that provides the missing filename as a copy of
-the instance-0 variant.  Add this to `hosts/flipper/configuration.nix`:
+Copy the instance-0 firmware under the unsuffixed name. In
+`hosts/flipper/configuration.nix`:
 
 ```nix
-{ config, pkgs, ... }:
-
-{
-  # ... existing config ...
-
-  hardware.firmware = [
-    (pkgs.runCommand "tas2781-firmware-fix" {} ''
-      mkdir -p $out/lib/firmware
-      cp ${pkgs.linux-firmware}/lib/firmware/TAS2XXX10A40.bin \
-         $out/lib/firmware/TAS2XXX10A4.bin
-    '')
-  ];
-}
+hardware.firmware = [
+  (pkgs.runCommand "tas2781-firmware-fix" {} ''
+    mkdir -p $out/lib/firmware
+    cp ${pkgs.linux-firmware}/lib/firmware/TAS2XXX10A40.bin \
+       $out/lib/firmware/TAS2XXX10A4.bin
+  '')
+];
 ```
 
-`hardware.firmware` appends extra paths to the firmware search order.  The kernel's
-firmware loader checks all registered paths in sequence, so it will find
-`TAS2XXX10A4.bin` in our extra package.
-
-We use `cp` rather than `ln -s` because NixOS compresses firmware with zstd during
-the build.  A symlink would have `.zst` appended to both its name and target path,
-breaking it when the target isn't zstd-compressed.  Copying the file lets the
-compression step work on a real file.
-
-The copy is of instance 0 (`TAS2XXX10A40.bin`) because this machine has a single
-TAS2781 and instance 0 is the conventional default.
+We use `cp` rather than `ln -s` because NixOS compresses firmware with zstd
+during the build. A symlink would have `.zst` appended to both its name and
+target path, breaking it when the target isn't zstd-compressed.
 
 ---
 
-## Verifying the Fix
+## Problem 2: Amplifier Registers Not Configured
 
-After `nixos-rebuild switch`, reboot (the firmware is loaded during driver probe at
-boot, not on-demand):
+Even with firmware loaded, the speakers produce only very faint sound. The
+`tas2781-hda` driver doesn't properly power on the amplifiers for this ASUS
+model. The amplifiers are at addresses `0x38` and `0x3d` on i2c bus 0.
 
-```bash
-# No more TAS2781 errors
-dmesg | grep -i tas2781
+The fix writes the correct register values over i2c after PipeWire has opened
+the ALSA device. This is critical — writing the registers too early is useless
+because PipeWire re-initializes the device and resets them.
 
-# Should see the amplifier bound successfully:
-#   snd_hda_codec_alc269: bound i2c-TIAS2781:00 (ops tas2781_hda_comp_ops [...])
+### Fix
 
-# Check that a speaker output exists in PipeWire
-pactl list sinks | grep -A5 "Name:"
+`modules/system/speaker-fix.nix` provides `mySystem.speakerFix.enable`. It
+creates a systemd service (`fix-speakers.service`) that:
 
-# Quick test — play something through the internal speakers
-speaker-test -t wav -c 2
+1. Waits for the `pipewire` process to appear (polls for up to 30 seconds)
+2. Sleeps 2 more seconds for PipeWire to open the ALSA sink
+3. Writes amplifier configuration registers via `i2cset` to both TAS2781
+   instances
+
+The service runs after `graphical.target` and also on resume from sleep
+(`sleep.target`).
+
+Enable it in `hosts/flipper/configuration.nix`:
+
+```nix
+mySystem.speakerFix.enable = true;
 ```
 
-If you still see `Firmware is NULL` after the reboot, double-check that the file
-exists on the booted system:
+### Hardware-Specific Values
 
-```bash
-ls -la /run/current-system/firmware/TAS2XXX10A4.bin*
-```
+These were determined by probing this specific machine:
 
-> **If speakers are silent but no driver errors appear:** The TAS2781 firmware loaded
-> but the SOF topology may not have routed audio to it.  Check `alsamixer` to make
-> sure the speaker output isn't muted, and look at `pactl list cards` to confirm the
-> `sof-hda-dsp` card shows speaker ports.  The headphone jack should work regardless
-> of the TAS2781 status.
+| Parameter      | Value                | How to verify                                      |
+|----------------|----------------------|----------------------------------------------------|
+| i2c bus        | `0`                  | `readlink -f /sys/bus/i2c/devices/i2c-TIAS2781:00` |
+| Amp addresses  | `0x3d`, `0x38`       | `sudo i2cdetect -r 0` (with `i2c-dev` loaded)      |
+| Kernel module  | `i2c-dev`            | Loaded automatically via `boot.kernelModules`       |
+
+If the i2c bus number or addresses change (e.g. after a major kernel update),
+update the values in `modules/system/speaker-fix.nix`.
+
+### Boot Delay
+
+The service shows a "start job running" message on the login screen while it
+waits for PipeWire (~25 seconds). This is cosmetic and does not block login.
 
 ---
 
-## Why Not Just Patch the Kernel?
+## Verifying Both Fixes
 
-The right long-term fix is a kernel patch that handles the missing GPIO more gracefully
-— either by defaulting to instance 0 when the GPIO read fails, or by looking up the
-instance through an alternate ACPI method.  That patch has been discussed upstream but
-hasn't landed yet as of kernel 6.18.
+After `nixos-rebuild switch` and reboot:
 
-The firmware copy workaround achieves the same result without touching the kernel
-and is easy to remove once the upstream fix arrives.
+```bash
+# Firmware loaded — should see "bound" with no firmware errors
+sudo dmesg | grep -i tas2781
+
+# Service ran successfully
+systemctl status fix-speakers
+
+# Speakers should be loud — play a test tone
+nix shell nixpkgs#alsa-utils -c speaker-test -t wav -c 2
+```
+
+If speakers are quiet after reboot, re-run the service manually:
+
+```bash
+sudo systemctl restart fix-speakers
+```
+
+If that fixes it, the timing is off — increase the sleep in the script.
+
+---
+
+## Manual Testing
+
+To test the i2c fix without rebooting:
+
+```bash
+nix shell nixpkgs#i2c-tools -c sudo bash /tmp/fix-speakers.sh
+```
+
+(The `/tmp/fix-speakers.sh` script from initial debugging uses the same
+register values as the systemd service.)
+
+---
+
+## Why This Workaround?
+
+The right long-term fix is a kernel patch that properly configures the TAS2781
+amplifier registers during driver probe. The register-write workaround and the
+firmware filename fix are both needed until upstream support improves.
+
+Reference: https://gist.github.com/rraks/4edddb99b50b94fe6298adbf3c9f43eb
+
+---
+
+## If Speakers Stop Working After a Kernel Update
+
+1. Check if the i2c bus number changed: `readlink -f /sys/bus/i2c/devices/i2c-TIAS2781:00`
+2. Check if the amplifier addresses changed: `sudo modprobe i2c-dev && nix shell nixpkgs#i2c-tools -c sudo i2cdetect -r <bus>`
+3. Check if the firmware filename convention changed: `sudo dmesg | grep -i tas2781`
+4. Update `modules/system/speaker-fix.nix` and/or the firmware `cp` accordingly
