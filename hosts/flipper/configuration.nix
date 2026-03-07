@@ -46,7 +46,7 @@
   hardware.firmware = [
     (pkgs.runCommand "tas2781-firmware-fix" {} ''
       mkdir -p $out/lib/firmware
-      ln -s ${pkgs.linux-firmware}/lib/firmware/TAS2XXX10A40.bin \
+      cp ${pkgs.linux-firmware}/lib/firmware/TAS2XXX10A40.bin \
         $out/lib/firmware/TAS2XXX10A4.bin
     '')
   ];

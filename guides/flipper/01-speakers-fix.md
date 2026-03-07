@@ -2,9 +2,9 @@
 
 The internal speakers are silent because the `tas2781-hda` kernel driver requests a
 firmware file named `TAS2XXX10A4.bin` — a name that doesn't exist.  The correct files
-(`TAS2XXX10A40.bin.zst` and `TAS2XXX10A41.bin.zst`) are present in linux-firmware; the
-driver just can't figure out which one to ask for.  This guide explains exactly why
-and shows the one-block NixOS fix.
+(`TAS2XXX10A40.bin` and `TAS2XXX10A41.bin`) are present in linux-firmware; the driver
+just can't figure out which one to ask for.  This guide explains exactly why and shows
+the one-block NixOS fix.
 
 ---
 
@@ -42,7 +42,7 @@ variants, because for multi-speaker machines that's always what gets requested.
 
 ## The Fix
 
-Create an extra firmware package that provides the missing filename as a symlink to
+Create an extra firmware package that provides the missing filename as a copy of
 the instance-0 variant.  Add this to `hosts/flipper/configuration.nix`:
 
 ```nix
@@ -54,8 +54,8 @@ the instance-0 variant.  Add this to `hosts/flipper/configuration.nix`:
   hardware.firmware = [
     (pkgs.runCommand "tas2781-firmware-fix" {} ''
       mkdir -p $out/lib/firmware
-      ln -s ${pkgs.linux-firmware}/lib/firmware/TAS2XXX10A40.bin.zst \
-            $out/lib/firmware/TAS2XXX10A4.bin.zst
+      cp ${pkgs.linux-firmware}/lib/firmware/TAS2XXX10A40.bin \
+         $out/lib/firmware/TAS2XXX10A4.bin
     '')
   ];
 }
@@ -63,11 +63,15 @@ the instance-0 variant.  Add this to `hosts/flipper/configuration.nix`:
 
 `hardware.firmware` appends extra paths to the firmware search order.  The kernel's
 firmware loader checks all registered paths in sequence, so it will find
-`TAS2XXX10A4.bin.zst` in our extra package and decompress it on the fly (the kernel
-has handled `.zst` firmware transparently since 5.19).
+`TAS2XXX10A4.bin` in our extra package.
 
-The symlink points at instance 0 (`TAS2XXX10A40.bin.zst`) because this machine has
-a single TAS2781 and instance 0 is the conventional default.
+We use `cp` rather than `ln -s` because NixOS compresses firmware with zstd during
+the build.  A symlink would have `.zst` appended to both its name and target path,
+breaking it when the target isn't zstd-compressed.  Copying the file lets the
+compression step work on a real file.
+
+The copy is of instance 0 (`TAS2XXX10A40.bin`) because this machine has a single
+TAS2781 and instance 0 is the conventional default.
 
 ---
 
@@ -90,11 +94,11 @@ pactl list sinks | grep -A5 "Name:"
 speaker-test -t wav -c 2
 ```
 
-If you still see `Firmware is NULL` after the reboot, double-check that the symlink
-target exists on the booted system:
+If you still see `Firmware is NULL` after the reboot, double-check that the file
+exists on the booted system:
 
 ```bash
-ls -la /run/current-system/firmware/TAS2XXX10A4.bin.zst
+ls -la /run/current-system/firmware/TAS2XXX10A4.bin*
 ```
 
 > **If speakers are silent but no driver errors appear:** The TAS2781 firmware loaded
@@ -112,5 +116,5 @@ The right long-term fix is a kernel patch that handles the missing GPIO more gra
 instance through an alternate ACPI method.  That patch has been discussed upstream but
 hasn't landed yet as of kernel 6.18.
 
-The firmware symlink workaround achieves the same result without touching the kernel
+The firmware copy workaround achieves the same result without touching the kernel
 and is easy to remove once the upstream fix arrives.
