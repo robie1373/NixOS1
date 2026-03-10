@@ -15,6 +15,7 @@
   mySystem.desktopHyprland.enable = true;
   mySystem.nas.enable             = true;
   mySystem.speakerFix.enable      = true;
+  mySystem.gaming.enable	  = true;
 
   # Resume device for hibernate — swap is unencrypted; label set by disko
   # (disk name "main" + partition name "swap" → "disk-main-swap")
@@ -38,6 +39,8 @@
   environment.systemPackages = with pkgs; [
     wget
     tree
+    terraform
+    ansible
   ];
 
   # Enable CUPS to print documents.

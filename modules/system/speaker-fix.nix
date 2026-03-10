@@ -12,11 +12,14 @@
 
 let
   fix-speakers-script = pkgs.writeShellScript "fix-speakers" ''
-    # Bail out if PipeWire hasn't started yet
-    if ! ${pkgs.procps}/bin/pgrep -x pipewire > /dev/null 2>&1; then
-      echo "PipeWire not running, skipping"
-      exit 0
-    fi
+    # Wait until PipeWire has opened the ALSA device
+    for i in $(seq 1 60); do
+      if ${pkgs.procps}/bin/pgrep -x pipewire > /dev/null 2>&1; then
+        sleep 3
+        break
+      fi
+      sleep 1
+    done
 
     i2c_bus=0
     i2c_addr=(0x3d 0x38)
@@ -84,23 +87,37 @@ in
 
     boot.kernelModules = [ "i2c-dev" ];
 
-    # The service just runs the i2c writes — no polling or sleeping.
+    # The service waits for PipeWire then writes i2c registers.
+    # Triggered by the timer below — never shown on the boot console.
     systemd.services.fix-speakers = {
       description = "Configure TAS2781 speaker amplifiers via i2c";
       serviceConfig = {
         Type = "oneshot";
+        TimeoutStartSec = 120;
         ExecStart = "${fix-speakers-script}";
       };
     };
 
-    # Timer fires 30s after boot (enough for PipeWire to open the sink)
-    # and on every resume from sleep.
+    # Timer fires 5s after boot, then retries every 10s until the service
+    # succeeds (PipeWire is running). Stops retrying after first success.
     systemd.timers.fix-speakers = {
       description = "Delay TAS2781 speaker fix until after PipeWire starts";
-      wantedBy = [ "timers.target" "sleep.target" ];
+      wantedBy = [ "timers.target" ];
       timerConfig = {
-        OnBootSec = "30s";
+        OnBootSec = "5s";
         Unit = "fix-speakers.service";
+      };
+    };
+
+    # Also re-run after resume from sleep (PipeWire reopens the device)
+    systemd.services.fix-speakers-resume = {
+      description = "Reconfigure TAS2781 speakers after resume";
+      after = [ "suspend.target" "hibernate.target" ];
+      wantedBy = [ "sleep.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStartPre = "${pkgs.coreutils}/bin/sleep 5";
+        ExecStart = "${fix-speakers-script}";
       };
     };
   };

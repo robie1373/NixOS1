@@ -21,6 +21,7 @@ in
         ../modules/system/speaker-fix.nix
         inputs.disko.nixosModules.disko
         ../hosts/flipper/disko.nix
+	../modules/system/gaming.nix
         inputs.home-manager.nixosModules.home-manager {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;

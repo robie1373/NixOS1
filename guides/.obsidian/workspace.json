@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "apps/yazi.md",
+                "file": "apps/steam-gaming.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "yazi"
+              "title": "steam-gaming"
             }
           }
         ]
@@ -186,6 +186,7 @@
   },
   "active": "b822f65c429e84a1",
   "lastOpenFiles": [
+    "apps/yazi.md",
     "apps/nas-smb.md",
     "apps/README.md",
     "flipper/01-speakers-fix.md",
