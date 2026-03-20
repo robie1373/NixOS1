@@ -663,9 +663,6 @@
 
       # Fish-specific aliases (these augment home.shellAliases from common.nix)
       shellAliases = {
-        rebuild = "sudo nixos-rebuild switch --flake /home/robie/nixos-config#${osConfig.networking.hostName}";
-        build   = "nixos-rebuild build --flake /home/robie/nixos-config#${osConfig.networking.hostName}";
-        ntest   = "sudo nixos-rebuild test --flake /home/robie/nixos-config#${osConfig.networking.hostName}";
       };
     };
 

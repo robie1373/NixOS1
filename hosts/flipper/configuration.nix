@@ -41,6 +41,7 @@
     tree
     terraform
     ansible
+    btop
   ];
 
   # Enable CUPS to print documents.

@@ -43,6 +43,7 @@ in
             ../modules/home/nas.nix
             ../modules/home/yazi.nix
 	    ../modules/home/hyprshot.nix
+	    ../modules/home/anki-bin.nix
           ];
         }
       ];

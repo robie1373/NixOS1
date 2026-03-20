@@ -13,4 +13,5 @@
   myHome.nas.enable             = true;
   myHome.yazi.enable		= true;
   myHome.hyprshot.enable	= true;
+  myHome.anki-bin.enable	= true;
 }
