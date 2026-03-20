@@ -523,17 +523,17 @@
 
         listener = [
           {
-            timeout    = 300;   # 5 min — lock screen
+            timeout    = 600;   # 5 min — lock screen
             on-timeout = "pidof hyprlock || hyprlock";
           }
           {
-            timeout    = 330;   # 5.5 min — turn off display
+            timeout    = 630;   # 5.5 min — turn off display
             on-timeout = "hyprctl dispatch dpms off";
             on-resume  = "hyprctl dispatch dpms on";
           }
 	  ] ++ lib.optionals (!(osConfig.mySystem.vmGuest.enable or false)) [
           {
-            timeout    = 600;   # 10 min — suspend
+            timeout    = 900;   # 10 min — suspend
             on-timeout = "systemctl suspend";
           }
         ];
@@ -548,7 +548,7 @@
       settings = {
         general = {
           disable_loading_bar = false;
-          grace               = 0;       # seconds before lock is enforced
+          grace               = 5;       # seconds before lock is enforced
           hide_cursor         = true;
           no_fade_in          = false;
         };
