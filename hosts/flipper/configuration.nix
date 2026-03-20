@@ -42,6 +42,7 @@
     terraform
     ansible
     btop
+    ripgrep
   ];
 
   # Enable CUPS to print documents.
