@@ -48,6 +48,11 @@
   # Enable CUPS to print documents.
   services.printing.enable = false;
 
+  services.openssh.enable = true;
+# Optional: Customize other settings
+  services.openssh.settings.PermitRootLogin = "no";
+  services.openssh.settings.PasswordAuthentication = true;
+
   # Fix internal speakers — see guides/flipper/01-speakers-fix.md
   hardware.firmware = [
     (pkgs.runCommand "tas2781-firmware-fix" {} ''
