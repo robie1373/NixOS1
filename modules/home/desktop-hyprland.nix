@@ -533,8 +533,8 @@
           }
 	  ] ++ lib.optionals (!(osConfig.mySystem.vmGuest.enable or false)) [
           {
-            timeout    = 900;   # 10 min — suspend
-            on-timeout = "systemctl suspend";
+            timeout    = 900;   # 15 min — hybrid-sleep (RAM + swap, fast resume)
+            on-timeout = "systemctl hybrid-sleep";
           }
         ];
       };

@@ -17,9 +17,24 @@
   mySystem.speakerFix.enable      = true;
   mySystem.gaming.enable	  = true;
 
-  # Resume device for hibernate — swap is unencrypted; label set by disko
-  # (disk name "main" + partition name "swap" → "disk-main-swap")
+  # ── Power management ────────────────────────────────────────────────────────
+  # Swap is 16G (= RAM) — sufficient for hibernate. resumeDevice tells the
+  # kernel where to find the saved image. Label is set by disko:
+  # disk name "main" + partition name "swap" → "disk-main-swap".
   boot.resumeDevice = "/dev/disk/by-partlabel/disk-main-swap";
+
+  # Lid close → hybrid-sleep (writes RAM to swap AND suspends to RAM).
+  # Fast resume if power survived; falls back to swap image if it didn't.
+  # Use hybrid-sleep on both battery and AC for consistent behaviour.
+  services.logind.lidSwitch              = "hybrid-sleep";
+  services.logind.lidSwitchExternalPower = "hybrid-sleep";
+
+  # Critical battery → hibernate (swap only — don't trust RAM at near-zero power).
+  services.upower.enable               = true;
+  services.upower.criticalPowerAction  = "Hibernate";
+
+  # See guides/flipper/04-power-management.md for full design notes and
+  # the known unencrypted-swap security tradeoff.
 
   # ── Disk encryption ────────────────────────────────────────────────────────
   # systemd initrd is required for systemd-cryptenroll (TPM2 + FIDO2 unlock).
