@@ -178,7 +178,7 @@
           modules-left   = [ "hyprland/workspaces" ];
           modules-center = [ "clock" ];
           modules-right  = [
-            "pulseaudio" "network" "cpu" "memory" "bluetooth" "tray"
+            "battery" "backlight" "pulseaudio" "network" "temperature" "cpu" "memory" "bluetooth" "tray" "custom/power"
           ] ++ lib.optionals (config.myHome.tablet.enable or false) [ "custom/tablet" ];
 
           "hyprland/workspaces" = {
@@ -187,14 +187,39 @@
             format         = "{name}";
           };
 
+          battery = {
+            states = {
+              warning  = 20;
+              critical = 10;
+            };
+            format           = "{icon} {capacity}%";
+            format-charging  = "⚡ {capacity}%";
+            format-plugged   = " {capacity}%";
+            format-icons     = [ "" "" "" "" "" ];
+            tooltip-format   = "{timeTo} · {power:.1f}W";
+          };
+
+          backlight = {
+            format          = "{icon} {percent}%";
+            format-icons    = [ "" "" "" "" "" "" "" "" "" ];
+            on-scroll-up    = "brightnessctl set 1%+";
+            on-scroll-down  = "brightnessctl set 1%-";
+          };
+
+          temperature = {
+            critical-threshold = 80;
+            format       = "{icon} {temperatureC}°C";
+            format-icons = [ "" "" "" ];
+          };
+
           clock = {
-            format     = " {:%H:%M}";
+            format     = " {:%a, %H:%M}";
             format-alt = " {:%A, %B %d, %Y}";
             tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
           };
 
           cpu = {
-            format  = " {usage}%";
+            format  = " CPU:{usage}%";
             tooltip = false;
           };
 
@@ -203,17 +228,20 @@
           };
 
           network = {
-            format-wifi       = " {signalStrength}%";
-            format-ethernet   = " connected";
+            format-wifi         = " {essid} {signalStrength}%";
+            format-ethernet     = " connected";
             format-disconnected = "⚠ offline";
-            tooltip-format-wifi = "{essid} ({signalStrength}%)";
+            tooltip-format-wifi = "{essid} · {signalStrength}% · {ipaddr}";
+            on-click            = "foot -e nmtui";
           };
 
           pulseaudio = {
-            format         = "{icon} {volume}%";
-            format-muted   = " muted";
-            format-icons   = { default = [ "" "" "" ]; };
-            on-click       = "pavucontrol";
+            format          = "{icon} {volume}%";
+            format-muted    = " muted";
+            format-icons    = { default = [ "" "" "" ]; };
+            on-click        = "pavucontrol";
+            on-scroll-up    = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 1%+";
+            on-scroll-down  = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 1%-";
           };
 
 	  bluetooth = {
@@ -229,6 +257,23 @@
 
           tray = {
             spacing = 8;
+          };
+
+          "custom/power" = {
+            format   = "⏻";
+            tooltip  = false;
+            on-click = "${pkgs.writeShellScript "waybar-power-menu" ''
+              chosen=$(printf 'Lock\nSuspend\nHybrid Sleep\nHibernate\nReboot\nShutdown' | \
+                ${pkgs.rofi}/bin/rofi -dmenu -p "⏻ Power")
+              case "$chosen" in
+                "Lock")         pidof hyprlock || hyprlock ;;
+                "Suspend")      systemctl suspend ;;
+                "Hybrid Sleep") systemctl hybrid-sleep ;;
+                "Hibernate")    systemctl hibernate ;;
+                "Reboot")       systemctl reboot ;;
+                "Shutdown")     systemctl poweroff ;;
+              esac
+            ''}";
           };
 
           # Tablet mode toggle — only wired up when myHome.tablet.enable = true.
@@ -311,7 +356,7 @@
         }
 
         #clock        { color: @blue;   padding: 0 10px; }
-        #cpu          { color: @green;  padding: 0 8px;  }
+        #cpu          { color: @ivory;  padding: 0 8px;  }
         #memory       { color: @yellow; padding: 0 8px;  }
         #network      { color: @mauve;  padding: 0 8px;  }
         #pulseaudio   { color: @peach;  padding: 0 8px;  }
@@ -319,6 +364,25 @@
         #bluetooth.connected { color: @green; }
         #bluetooth.disabled  { color: @surface1; }
         #tray         { padding: 0 8px; }
+
+        #battery                { color: @green;  padding: 0 8px; }
+        #battery.warning        { color: @yellow; }
+        #battery.critical       { color: @red;
+                                  animation-name:            blink;
+                                  animation-duration:        0.5s;
+                                  animation-timing-function: steps(1);
+                                  animation-iteration-count: infinite;
+                                  animation-direction:       alternate; }
+        #battery.charging       { color: @blue; }
+        #battery.plugged        { color: @blue; }
+
+        #backlight    { color: @yellow; padding: 0 8px; }
+
+        #temperature           { color: @green; padding: 0 8px; }
+        #temperature.critical  { color: @red; }
+
+        #custom-power  { color: @red; padding: 0 12px; font-size: 15px; }
+
         #custom-tablet        { color: @blue;  padding: 0 8px; }
         #custom-tablet.active { color: @peach; }
       '';
@@ -659,6 +723,11 @@
 	function battery
 	  nix-shell -p acpi --run "acpi -b"
 	end
+
+	# simple command to delete all but the last generation
+	function cleangen
+	  echo "running: sudo nix-env --delete-generations +1 --profile /nix/var/nix/profiles/system && nix-env --delete-generations +1 && nix-collect-garbage" ; sudo nix-env --delete-generations +1 --profile /nix/var/nix/profiles/system && nix-env --delete-generations +1 && nix-collect-garbage
+	  end
       '';
 
       # Fish-specific aliases (these augment home.shellAliases from common.nix)

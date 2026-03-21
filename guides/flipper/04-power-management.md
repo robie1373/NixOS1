@@ -23,20 +23,39 @@
 ```nix
 boot.resumeDevice = "/dev/disk/by-partlabel/disk-main-swap";
 
-services.logind.lidSwitch              = "hybrid-sleep";
-services.logind.lidSwitchExternalPower = "hybrid-sleep";
+services.logind.settings.Login.HandleLidSwitch              = "hybrid-sleep";
+services.logind.settings.Login.HandleLidSwitchExternalPower = "hybrid-sleep";
 
-services.upower.enable              = true;
-services.upower.criticalPowerAction = "Hibernate";
+services.upower = {
+  enable                = true;
+  criticalPowerAction   = "Hibernate";
+  percentageLow         = 20;   # "low" D-Bus signal → dunst normal notification
+  percentageCritical    = 10;   # "critical" D-Bus signal → dunst critical notification
+  percentageAction      = 5;    # triggers criticalPowerAction (hibernate)
+  usePercentageForPolicy = true; # use % thresholds, not time estimates
+};
 ```
 
 - `boot.resumeDevice` — tells the kernel which partition holds the hibernate image. The label `disk-main-swap` is set by disko (disk name "main" + partition "swap").
 - `lidSwitch` / `lidSwitchExternalPower` — what logind does when the lid closes, on battery and on AC respectively.
-- `criticalPowerAction = "Hibernate"` — at critical battery, UPower triggers a plain hibernate (no RAM retention — we don't trust RAM at near-zero power).
+- `criticalPowerAction = "Hibernate"` — at critical battery (5%), UPower triggers a plain hibernate (no RAM retention — we don't trust RAM at near-zero power).
+- `percentageLow` / `percentageCritical` — the thresholds at which UPower emits D-Bus events that poweralertd converts into notifications.
 
 ### `modules/home/desktop-hyprland.nix`
 
 The hypridle idle listener was changed from `systemctl suspend` to `systemctl hybrid-sleep`. After 15 minutes of idle, the machine hybrid-sleeps.
+
+### `hosts/flipper/home.nix`
+
+```nix
+services.poweralertd.enable = true;
+```
+
+`poweralertd` is a small systemd user service that listens to UPower's D-Bus events and fires `notify-send` notifications. It requires no configuration of its own — the thresholds above control when events fire, and Dunst controls how they look.
+
+- Battery low (20%) → `urgency=normal` → Dunst blue-framed notification, auto-dismisses after 10s
+- Battery critical (10%) → `urgency=critical` → Dunst red-framed notification, stays until dismissed
+- AC plugged/unplugged → brief normal notification
 
 ---
 

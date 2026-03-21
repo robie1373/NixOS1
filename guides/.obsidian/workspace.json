@@ -183,8 +183,9 @@
       "bases:Create new base": false
     }
   },
-  "active": "b822f65c429e84a1",
+  "active": "8b8a3d1f00473f11",
   "lastOpenFiles": [
+    "hyprland/07-waybar-improvements.md",
     "apps/yazi.md",
     "apps/nas-smb.md",
     "apps/README.md",

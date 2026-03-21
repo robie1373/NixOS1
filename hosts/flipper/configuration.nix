@@ -26,8 +26,8 @@
   # Lid close → hybrid-sleep (writes RAM to swap AND suspends to RAM).
   # Fast resume if power survived; falls back to swap image if it didn't.
   # Use hybrid-sleep on both battery and AC for consistent behaviour.
-  services.logind.lidSwitch              = "hybrid-sleep";
-  services.logind.lidSwitchExternalPower = "hybrid-sleep";
+  services.logind.settings.Login.HandleLidSwitch             = "hybrid-sleep";
+  services.logind.settings.Login.HandleLidSwitchExternalPower = "hybrid-sleep";
 
   # Critical battery → hibernate (swap only — don't trust RAM at near-zero power).
   services.upower = {
