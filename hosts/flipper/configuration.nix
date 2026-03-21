@@ -30,8 +30,14 @@
   services.logind.lidSwitchExternalPower = "hybrid-sleep";
 
   # Critical battery → hibernate (swap only — don't trust RAM at near-zero power).
-  services.upower.enable               = true;
-  services.upower.criticalPowerAction  = "Hibernate";
+  services.upower = {
+    enable               	= true;
+    criticalPowerAction  	= "Hibernate";
+    percentageLow 		= 20;
+    percentageCritical		= 10;
+    percentageAction		= 5;
+    usePercentageForPolicy	= true;
+  };
 
   # See guides/flipper/04-power-management.md for full design notes and
   # the known unencrypted-swap security tradeoff.
