@@ -8,6 +8,8 @@ Robie's NixOS fleet configuration. Goals: DRY, modular, flexible. Uses flake-par
 
 **Assume planning mode always — do not make changes unless explicitly asked.**
 
+**Always use current NixOS option syntax.** Never use deprecated aliases — use the renamed form even if the alias still works. When in doubt, check nixpkgs source or search.nixos.org. Config longevity is a priority.
+
 ## Key Commands
 
 All run from `~/nixos-config/` on the target host:

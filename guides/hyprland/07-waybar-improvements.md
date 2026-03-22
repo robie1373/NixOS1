@@ -80,9 +80,9 @@ New CSS rules added to the Waybar stylesheet:
 
 **Battery shows "N/A":** Run `ls /sys/class/power_supply/` — the module looks for a `BAT*` device. On this machine it should be `BAT0` or `BAT1`.
 
-**Temperature shows "N/A":** Run `cat /sys/class/hwmon/hwmon*/name` to find the right sensor. If `coretemp` isn't auto-detected, pin `hwmon-path` explicitly:
-```nix
-temperature.hwmon-path = "/sys/class/hwmon/hwmon2/temp1_input"; # adjust index
+**Temperature shows wrong value:** The `hwmon*` glob sorts lexicographically, so `hwmon10` comes before `hwmon2`. On flipper, coretemp = hwmon7 (not hwmon8 as you might expect). Pinned to `/sys/class/hwmon/hwmon7/temp1_input` (CPU package temp). If it ever breaks, re-check with:
+```bash
+for f in /sys/class/hwmon/hwmon*/name; do echo "$f: $(cat $f)"; done
 ```
 
 **Power menu doesn't open:** Waybar's `on-click` runs with the user's PATH active. If rofi isn't found, use the full store path from `which rofi`.

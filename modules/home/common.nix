@@ -12,7 +12,7 @@
     la = "ls -ah";
     #vim = "nvim";
 
-    rebuild = "sudo nixos-rebuild switch --flake /home/robie/nixos-config#${osConfig.networking.hostName}";
+    rebuild = "echo 'running: sudo nixos-rebuild switch --flake /home/robie/nixos-config#${osConfig.networking.hostName}'; sudo nixos-rebuild switch --flake /home/robie/nixos-config#${osConfig.networking.hostName}";
     build   = "nixos-rebuild build --flake /home/robie/nixos-config#${osConfig.networking.hostName}";
     ntest   = "sudo nixos-rebuild test --flake /home/robie/nixos-config#${osConfig.networking.hostName}";
     gc = "sudo nix-env --delete-generations $argv[1] --profile /nix/var/nix/profiles/system && nix-env --delete-generations $argv[1] && sudo nix-collect-garbage";

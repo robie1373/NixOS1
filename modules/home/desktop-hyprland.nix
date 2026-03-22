@@ -178,7 +178,7 @@
           modules-left   = [ "hyprland/workspaces" ];
           modules-center = [ "clock" ];
           modules-right  = [
-            "battery" "backlight" "pulseaudio" "network" "temperature" "cpu" "memory" "bluetooth" "tray" "custom/power"
+            "battery" "backlight" "pulseaudio" "network" "cpu" "temperature" "memory" "bluetooth" "tray" "custom/power"
           ] ++ lib.optionals (config.myHome.tablet.enable or false) [ "custom/tablet" ];
 
           "hyprland/workspaces" = {
@@ -192,24 +192,27 @@
               warning  = 20;
               critical = 10;
             };
-            format           = "{icon} {capacity}%";
-            format-charging  = "⚡ {capacity}%";
-            format-plugged   = " {capacity}%";
-            format-icons     = [ "" "" "" "" "" ];
+            format           = "󰁹 {capacity}%";
+            format-charging  = "󰂄 {capacity}%";
+            format-plugged   = "󰚥 {capacity}%";
+            format-full      = "󰁹 {capacity}%";
             tooltip-format   = "{timeTo} · {power:.1f}W";
           };
 
           backlight = {
-            format          = "{icon} {percent}%";
-            format-icons    = [ "" "" "" "" "" "" "" "" "" ];
-            on-scroll-up    = "brightnessctl set 1%+";
-            on-scroll-down  = "brightnessctl set 1%-";
+            format         = "󰃟 {percent}%";
+            on-scroll-up   = "brightnessctl set 1%+";
+            on-scroll-down = "brightnessctl set 1%-";
           };
 
           temperature = {
             critical-threshold = 80;
-            format       = "{icon} {temperatureC}°C";
-            format-icons = [ "" "" "" ];
+            # hwmon7 = coretemp on flipper (lexicographic glob order puts hwmon10
+            # before hwmon2, so position 9 in `hwmon*` = hwmon7, not hwmon8).
+            # temp1_input = CPU package temp. Verify: for f in /sys/class/hwmon/hwmon*/name; do echo "$f: $(cat $f)"; done
+            hwmon-path = "/sys/class/hwmon/hwmon7/temp1_input";
+            format          = " {temperatureC}°C";
+            format-critical = "󰸁 {temperatureC}°C";
           };
 
           clock = {
@@ -236,9 +239,8 @@
           };
 
           pulseaudio = {
-            format          = "{icon} {volume}%";
-            format-muted    = " muted";
-            format-icons    = { default = [ "" "" "" ]; };
+            format          = "󰕾 {volume}%";
+            format-muted    = "󰖁 muted";
             on-click        = "pavucontrol";
             on-scroll-up    = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 1%+";
             on-scroll-down  = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 1%-";
@@ -356,7 +358,7 @@
         }
 
         #clock        { color: @blue;   padding: 0 10px; }
-        #cpu          { color: @ivory;  padding: 0 8px;  }
+        #cpu          { color: @green;  padding: 0 8px;  }
         #memory       { color: @yellow; padding: 0 8px;  }
         #network      { color: @mauve;  padding: 0 8px;  }
         #pulseaudio   { color: @peach;  padding: 0 8px;  }
@@ -674,7 +676,7 @@
           lines = 5000;
         };
 
-        colors = {
+        colors-dark = {
           # Catppuccin Macchiato palette (foot uses hex without #)
 	  alpha		       = "0.8";
           foreground           = "cad3f5";
