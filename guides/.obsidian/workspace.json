@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "apps/steam-gaming.md",
+                "file": "flipper/03-disk-encryption.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "steam-gaming"
+              "title": "03-disk-encryption"
             }
           }
         ]
@@ -183,8 +183,11 @@
       "bases:Create new base": false
     }
   },
-  "active": "8b8a3d1f00473f11",
+  "active": "b822f65c429e84a1",
   "lastOpenFiles": [
+    "flipper/todo.md",
+    "flipper/README.md",
+    "apps/steam-gaming.md",
     "hyprland/07-waybar-improvements.md",
     "apps/yazi.md",
     "apps/nas-smb.md",
@@ -192,7 +195,6 @@
     "flipper/01-speakers-fix.md",
     "hyprland/06-tablet-mode.md",
     "flipper/02-media-keys.md",
-    "flipper/README.md",
     "sharded-zooming-bonbon.md",
     "hyprland/README.md",
     "flipper",

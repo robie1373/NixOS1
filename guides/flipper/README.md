@@ -7,6 +7,8 @@
 This document covers what works, what doesn't, why each thing behaves the way it does,
 and what NixOS config changes fix the broken parts.
 
+## TODO list
+A tracked [TODO list](todo.md) for keeping track of tasks.
 ## Guides
 
 - **[01-speakers-fix.md](./01-speakers-fix.md)** — TAS2781 firmware name mismatch fix

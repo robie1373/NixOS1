@@ -53,9 +53,13 @@
   security.tpm2.tctiEnvironment.enable = true;
 
   # FIDO2 YubiKey unlock at boot — tells systemd-cryptsetup to try FIDO2
-  # and ensures the USB HID driver is in the initrd so the key is detected
+  # and ensures the USB HID driver is in the initrd so the key is detected.
+  # pcsclite.lib is added to the initrd store because systemd-cryptsetup
+  # tries to dlopen() libpcsclite_real.so.1 at runtime; without it the FIDO2
+  # path fails silently and falls through to TPM2 PIN. See NixOS issue #329135.
   boot.initrd.luks.devices."cryptroot".crypttabExtraOpts = [ "fido2-device=auto" ];
   boot.initrd.kernelModules = [ "usbhid" ];
+  boot.initrd.systemd.storePaths = [ pkgs.pcsclite.lib ];
 
   environment.systemPackages = with pkgs; [
     wget
@@ -64,6 +68,8 @@
     ansible
     btop
     ripgrep
+    ifuse 		# for mounting iphone
+    libimobiledevice  	# for mounting iphone
   ];
 
   # Enable CUPS to print documents.
@@ -73,6 +79,16 @@
 # Optional: Customize other settings
   services.openssh.settings.PermitRootLogin = "no";
   services.openssh.settings.PasswordAuthentication = true;
+
+# iPhone mounting via ifuse
+  # usbmuxd handles the USB pairing layer; ifuse mounts the filesystem.
+  # udev rules trigger systemd user services on plug/unplug.
+  # ENV{DEVTYPE}=="usb_device" ensures only the device event fires, not each USB interface.
+  services.usbmuxd.enable = true;
+  services.udev.extraRules = ''
+    SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="05ac", ACTION=="add", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}="ifuse-mount.service"
+    SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="05ac", ACTION=="remove", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}="ifuse-unmount.service"
+  '';
 
   # Fix internal speakers — see guides/flipper/01-speakers-fix.md
   hardware.firmware = [

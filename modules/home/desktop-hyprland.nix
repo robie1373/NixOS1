@@ -178,7 +178,7 @@
           modules-left   = [ "hyprland/workspaces" ];
           modules-center = [ "clock" ];
           modules-right  = [
-            "battery" "backlight" "pulseaudio" "network" "cpu" "temperature" "memory" "bluetooth" "tray" "custom/power"
+            "battery" "backlight" "pulseaudio" "network" "cpu" "temperature" "memory" "bluetooth" "custom/iphone" "tray" "custom/power"
           ] ++ lib.optionals (config.myHome.tablet.enable or false) [ "custom/tablet" ];
 
           "hyprland/workspaces" = {
@@ -278,6 +278,24 @@
             ''}";
           };
 
+          # iPhone mount status — visible only when iPhone is mounted.
+          # Clicking unmounts. Auto-mount is triggered by udev on plug-in.
+          "custom/iphone" = {
+            return-type = "json";
+            interval    = 2;
+            exec = "${pkgs.writeShellScript "waybar-iphone-status" ''
+              icon=$'\uf179'
+              if ${pkgs.util-linux}/bin/mountpoint -q "$HOME/mnt/iphone" 2>/dev/null; then
+                printf '{"text":"%s","class":"mounted","tooltip":"iPhone mounted · click to unmount"}\n' "$icon"
+              else
+                printf '{"text":"%s","class":""}\n' "$icon"
+              fi
+            ''}";
+            on-click = "${pkgs.writeShellScript "waybar-iphone-unmount" ''
+              /run/wrappers/bin/fusermount -u "$HOME/mnt/iphone"
+            ''}";
+          };
+
           # Tablet mode toggle — only wired up when myHome.tablet.enable = true.
           # exec outputs nothing on hosts without the tablet scripts, so the
           # module is invisible there.
@@ -317,6 +335,7 @@
         @define-color red      #ed8796;
         @define-color yellow   #eed49f;
         @define-color peach    #f5a97f;
+        @define-color ivory    #f5f0e0;
 
         * {
           font-family: "JetBrainsMono Nerd Font";
@@ -382,6 +401,9 @@
 
         #temperature           { color: @green; padding: 0 8px; }
         #temperature.critical  { color: @red; }
+
+        #custom-iphone         { padding: 0; font-size: 15px; }
+        #custom-iphone.mounted { color: @ivory; padding: 0 8px; }
 
         #custom-power  { color: @red; padding: 0 12px; font-size: 15px; }
 
@@ -734,6 +756,7 @@
 
       # Fish-specific aliases (these augment home.shellAliases from common.nix)
       shellAliases = {
+        mount-phone = "mkdir -p ~/mnt/iphone && ${pkgs.ifuse}/bin/ifuse ~/mnt/iphone";
       };
     };
 
@@ -815,6 +838,28 @@
         echo "$NEW" > /sys/class/leds/platform::micmute/brightness
       '')
     ];
+
+    # ════════════════════════════════════════════════════════════════════════
+    # IPHONE — auto-mount via ifuse (triggered by udev on plug-in)
+    # ════════════════════════════════════════════════════════════════════════
+
+    systemd.user.services.ifuse-mount = {
+      Unit.Description = "Mount iPhone via ifuse";
+      Service = {
+        Type            = "oneshot";
+        RemainAfterExit = "yes";
+        ExecStartPre    = "${pkgs.coreutils}/bin/mkdir -p %h/mnt/iphone";
+        ExecStart       = "${pkgs.ifuse}/bin/ifuse %h/mnt/iphone";
+      };
+    };
+
+    systemd.user.services.ifuse-unmount = {
+      Unit.Description = "Unmount iPhone";
+      Service = {
+        Type      = "oneshot";
+        ExecStart = "/run/wrappers/bin/fusermount -u %h/mnt/iphone";
+      };
+    };
 
   };
 }
