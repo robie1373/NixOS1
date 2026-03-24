@@ -59,7 +59,16 @@
   # path fails silently and falls through to TPM2 PIN. See NixOS issue #329135.
   boot.initrd.luks.devices."cryptroot".crypttabExtraOpts = [ "fido2-device=auto" ];
   boot.initrd.kernelModules = [ "usbhid" ];
-  boot.initrd.systemd.storePaths = [ pkgs.pcsclite.lib ];
+  # NixOS includes libcryptsetup-token-systemd-tpm2.so automatically when TPM2 is
+  # configured, but does NOT include the FIDO2 equivalent. We add it manually along
+  # with libfido2 (dloaded at runtime by libsystemd-shared) and pcsclite (dloaded
+  # by systemd-cryptsetup for smart card paths). Without these, FIDO2 unlock silently
+  # falls through to TPM2 PIN with no prompt. See NixOS issue #329135.
+  boot.initrd.systemd.storePaths = [
+    pkgs.pcsclite.lib
+    pkgs.libfido2
+    "${config.boot.initrd.systemd.package}/lib/cryptsetup/libcryptsetup-token-systemd-fido2.so"
+  ];
 
   environment.systemPackages = with pkgs; [
     wget

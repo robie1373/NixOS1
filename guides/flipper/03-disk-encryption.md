@@ -1,8 +1,9 @@
 # Disk Encryption — flipper
 
-**Status as of 2026-03-22:** Disk **is encrypted** (LUKS2). PIN unlock works. YubiKey
-FIDO2 path is enrolled but has an OTP interference problem that has not been resolved yet.
-Swap is **not encrypted** (known gap — see todo).
+**Status as of 2026-03-22:** Disk **is encrypted** (LUKS2). TPM2+PIN unlock works (daily
+path). YubiKey FIDO2 path is enrolled; OTP interference fixed; FIDO2 prompt still not
+appearing at boot — investigation in progress (see section below). Swap is **not
+encrypted** (known gap — see todo).
 
 ---
 
@@ -259,3 +260,85 @@ a 1Password Linux bug.
 
 **Resolution path:** YubiKey Bio MPE + `pam_u2f` → enables 1Password system auth via
 hardware biometric. This is the cleanest long-term fix and is bundled with the Bio purchase.
+
+---
+
+## FIDO2 Boot Unlock — Investigation Log (2026-03-22)
+
+### What works
+- TPM2+PIN (slot 1): working, daily path
+- FIDO2 slot (slot 2): enrolled, OTP interference resolved (OTP disabled on 5C via ykman)
+- No journal errors from `systemd-cryptsetup@cryptroot` after fixes applied
+
+### Symptom
+With 5C plugged in at boot, only the TPM2 PIN prompt appears. No FIDO2 presence prompt.
+Touching the 5C has no effect. Entering the PIN works as normal. Boot photo confirmed.
+`journalctl -b -u systemd-cryptsetup@cryptroot` shows ~17s gap between start and finish
+with no errors — consistent with FIDO2 silently timing out before falling through to TPM2.
+
+### Investigation findings
+
+**pcsclite error (RESOLVED):** Original error was:
+```
+loading ".../pcsclite-2.4.1-lib/lib/libpcsclite_real.so.1" failed: No such file or directory
+```
+Fixed by adding `pkgs.pcsclite.lib` to `boot.initrd.systemd.storePaths`. Error is gone.
+
+**No crypttab in initrd:** Searched the initrd binary directly — no strings `crypttab`,
+`fido2-device`, or `cryptroot` appear anywhere. This means `boot.initrd.luks.devices."cryptroot".crypttabExtraOpts = ["fido2-device=auto"]` is NOT being written into
+the initrd. However, systemd-cryptsetup-generator discovers LUKS2 tokens by reading the
+LUKS2 header directly, so a crypttab entry may not be required.
+
+**Two systemd-259 packages in the nix store:**
+- `r042cd7600rhl130idnmwxqyjc9126s4-systemd-259` — initrd build (wrapper is 32-bit/static)
+- `wxyn8d3m8g4fnn6xazinjwhzhzdg6wib-systemd-259` — full system build
+
+Both have all three cryptsetup token plugins in `lib/cryptsetup/`:
+- `libcryptsetup-token-systemd-fido2.so`
+- `libcryptsetup-token-systemd-tpm2.so`
+- `libcryptsetup-token-systemd-pkcs11.so`
+
+The wrapper for each sets `LD_LIBRARY_PATH` to its own `lib/cryptsetup/` directory so that
+cryptsetup's `dlopen()` can locate the plugins.
+
+**Built-in FIDO2 support confirmed:** Strings in the initrd
+`.systemd-cryptsetup-wrapped` binary include `acquire_fido2_key`, `acquire_fido2_key_auto`,
+`fido2-device=`, `fido2-up`, `fido2-uv` — the built-in FIDO2 code is compiled in.
+
+**Current storePaths additions (may be wrong package):**
+```nix
+boot.initrd.systemd.storePaths = [
+  pkgs.pcsclite.lib
+  pkgs.libfido2
+  "${config.boot.initrd.systemd.package}/lib/cryptsetup/libcryptsetup-token-systemd-fido2.so"
+];
+```
+The `libfido2` package reference may not match what the initrd systemd binary actually
+dlopens (it searches for a specific nix store path). This is the next thing to verify.
+
+### Next investigation steps
+
+1. **Verify libfido2 path:** Check what nix store path the initrd's `libsystemd-shared-259.so`
+   dlopens for `libfido2.so.1`. Run:
+   ```bash
+   nix-shell -p binutils --run "strings /nix/store/r042cd7600rhl130idnmwxqyjc9126s4-systemd-259/lib/systemd/libsystemd-shared-259.so" | grep "libfido2\|nix/store.*fido"
+   ```
+   The output will show the expected nix store path. Add that specific store path to
+   `boot.initrd.systemd.storePaths` instead of (or in addition to) `pkgs.libfido2`.
+
+2. **Check if FIDO2 plugin is already in the initrd closure:** Since
+   `config.boot.initrd.systemd.package` is `r042cd7600rhl130idnmwxqyjc9126s4-systemd-259`
+   and that package already has the FIDO2 plugin, adding it to storePaths may be redundant —
+   it might already be included. If so, the issue is purely libfido2 not being findable.
+
+3. **Add boot debug logging:** Boot with `systemd.log_level=debug` kernel parameter to
+   capture full systemd-cryptsetup output, which will show exactly why FIDO2 is skipped.
+
+4. **Check udev/hidraw timing:** The 5C might not be enumerated as a FIDO2 HID device before
+   systemd-cryptsetup runs its auto-detection. Adding `udev-trigger` or a small sleep before
+   the cryptsetup unit might help if it's a timing issue.
+
+5. **Consider `boot.initrd.systemd.tpm2.enable`:** NixOS explicitly adds the TPM2 plugin
+   for this option. There may be a similar mechanism needed for FIDO2, or a bug where FIDO2
+   plugin inclusion is conditional on something not set. Worth checking the NixOS module for
+   any `fido2.enable` style option.

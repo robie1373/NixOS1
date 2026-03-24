@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "flipper/03-disk-encryption.md",
+                "file": "comparison/niri-and-noctalia.md",
                 "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "03-disk-encryption"
+              "title": "niri-and-noctalia"
             }
           }
         ]
@@ -185,6 +185,8 @@
   },
   "active": "b822f65c429e84a1",
   "lastOpenFiles": [
+    "flipper/todo.md~",
+    "flipper/03-disk-encryption.md",
     "flipper/todo.md",
     "flipper/README.md",
     "apps/steam-gaming.md",
