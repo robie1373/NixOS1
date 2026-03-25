@@ -31,6 +31,11 @@ in
 
     # proxmox format produces a .vma.zst file ready for `qmrestore` or Proxmox UI import
     format = "proxmox";
+    # REWRITE NOTE: nixos-generators is deprecated as of NixOS 25.05 — its functionality
+    # has been upstreamed into nixpkgs. Migrate this to the native nixpkgs image API:
+    #   (nixpkgs.lib.nixosSystem { modules = [ config "${nixpkgs}/nixos/modules/image/proxmox.nix" ]; })
+    #   .config.system.build.proxmoxImage
+    # The nixos-generators flake still works but will eventually be removed.
 
     modules = [{
       # Root SSH access via ansible2 key only — no password auth ever
@@ -52,6 +57,11 @@ in
       # by nixos-anywhere) and lives only on the trusted lab network during provisioning.
       # The real host config (in nixos-config#<hostname>) enables its own firewall.
       networking.firewall.enable = false;
+
+      # Explicit disk size — suppresses deprecation warning from proxmox image module
+      # (proxmox.qemuConf.diskSize was renamed to virtualisation.diskSize).
+      # 4GB is sufficient for a bootstrap image; the real host gets its own disko layout.
+      virtualisation.diskSize = 4 * 1024;
 
       # stateVersion for the bootstrap system itself. This value is irrelevant in practice
       # because nixos-anywhere wipes the disk and installs fresh from the target flake attr.
