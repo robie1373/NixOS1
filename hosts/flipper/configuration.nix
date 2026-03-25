@@ -12,7 +12,7 @@
   # VLAN 20. This tells flipper to send VLAN 20 traffic to OPNsense instead.
   # Required for: SSH to lab VMs, nixos-anywhere, Director operations.
   # Long-term: configure this on eero so all 192.168.7.x devices benefit.
-  networking.routes = [{
+  networking.interfaces.wlo1.ipv4.routes = [{
     address = "192.168.20.0";
     prefixLength = 24;
     via = "192.168.7.254";

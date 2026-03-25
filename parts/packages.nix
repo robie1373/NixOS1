@@ -14,7 +14,7 @@
 # After import, mark the VM as a template in Proxmox UI.
 # New hosts: clone 9001 → assign VMID + IP → start → nixos-anywhere.
 
-{ inputs, ... }:
+{ inputs, lib, ... }:
 
 let
   # ansible2 automation key — baked into the bootstrap image so Director (and manual
@@ -60,7 +60,8 @@ in
 
       # DHCP on all interfaces — bootstrap VM needs an IP so nixos-anywhere can
       # connect. The real host config sets a static IP; this is throwaway state.
-      networking.useDHCP = true;
+      # lib.mkForce required: proxmox-image.nix sets useDHCP = false internally.
+      networking.useDHCP = lib.mkForce true;
 
       # Explicit disk size — suppresses deprecation warning from proxmox image module
       # (proxmox.qemuConf.diskSize was renamed to virtualisation.diskSize).
