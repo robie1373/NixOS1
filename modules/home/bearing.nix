@@ -136,6 +136,19 @@ let
           --allowedTools "WebSearch,WebFetch,Write"
   '';
 
+  # bearing-activity: runs claude non-interactively to summarise yesterday's git activity.
+  # Reads prompt from ~/work/templates/activity-gather.md via stdin pipe.
+  # Claude writes output to ~/work/briefing/YYYY-MM-DD-activity.md per template instructions.
+  # Requires templates/activity-gather.md to exist in workDir.
+  # No network tools needed — git log is local. SSH_AUTH_SOCK cleared in service.
+  bearingActivity = pkgs.writeShellScriptBin "bearing-activity" ''
+    mkdir -p ${cfg.workDir}/briefing
+    cd ${cfg.workDir}
+    cat ${cfg.workDir}/templates/activity-gather.md \
+      | ${pkgs.claude-code}/bin/claude --print \
+          --allowedTools "Bash,Write"
+  '';
+
 in {
   options.myHome.bearing = {
     enable = lib.mkEnableOption "The Bearing life-tracking assistant";
@@ -187,7 +200,7 @@ in {
   config = lib.mkIf cfg.enable {
 
     # ── Scripts on PATH ────────────────────────────────────────────────────
-    home.packages = [ bearingCmd bearingNotify bearingNtfy bearingCheckin bearingBriefing ];
+    home.packages = [ bearingCmd bearingNotify bearingNtfy bearingCheckin bearingBriefing bearingActivity ];
 
     # ── Systemd timer + service units ──────────────────────────────────────
 
@@ -204,6 +217,26 @@ in {
     };
     systemd.user.timers.bearing-briefing = {
       Unit.Description = "The Bearing — morning briefing pre-gather timer";
+      Timer = {
+        OnCalendar = "Mon-Sun ${cfg.schedule.briefing}";
+        Persistent = true;
+      };
+      Install.WantedBy = [ "timers.target" ];
+    };
+
+    systemd.user.services.bearing-activity = {
+      Unit = {
+        Description = "The Bearing — git activity pre-gather";
+        After       = [ "default.target" ];
+      };
+      Service = {
+        Type        = "oneshot";
+        ExecStart   = "${bearingActivity}/bin/bearing-activity";
+        Environment = [ "SSH_AUTH_SOCK=" ];  # git log is local; no 1Password prompts
+      };
+    };
+    systemd.user.timers.bearing-activity = {
+      Unit.Description = "The Bearing — git activity pre-gather timer";
       Timer = {
         OnCalendar = "Mon-Sun ${cfg.schedule.briefing}";
         Persistent = true;
