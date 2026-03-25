@@ -6,7 +6,7 @@
 # after PipeWire has had time to open the ALSA device.
 #
 # See: https://gist.github.com/rraks/4edddb99b50b94fe6298adbf3c9f43eb
-# See: guides/flipper/01-speakers-fix.md
+# See: docs/flipper/01-speakers-fix.md
 
 { lib, config, pkgs, ... }:
 

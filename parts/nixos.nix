@@ -27,12 +27,14 @@ in
           home-manager.useUserPackages = true;
           home-manager.backupFileExtension = "backup";
           home-manager.users.robie.imports = [
+            inputs.nix-index-database.hmModules.nix-index
             ../hosts/flipper/home.nix
             ../modules/home/common.nix
             ../modules/home/1password.nix
             ../modules/home/gemini-cli.nix
             ../modules/home/claude.nix
             ../modules/home/obsidian.nix
+            ../modules/home/bearing.nix
             ../modules/home/desktop-hyprland.nix
             ../modules/home/firefox.nix
             ../modules/home/tablet.nix
@@ -66,12 +68,14 @@ in
           home-manager.useUserPackages = true;
           home-manager.backupFileExtension = "backup";
           home-manager.users.robie.imports = [
+            inputs.nix-index-database.hmModules.nix-index
             ../hosts/nixos1/home.nix
             ../modules/home/common.nix
             ../modules/home/1password.nix
             ../modules/home/gemini-cli.nix
             ../modules/home/claude.nix
 	    ../modules/home/obsidian.nix
+            ../modules/home/bearing.nix
 	    ../modules/home/desktop-hyprland.nix
 	    ../modules/home/firefox.nix
 	    ../modules/home/yazi.nix

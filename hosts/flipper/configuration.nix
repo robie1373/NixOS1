@@ -39,12 +39,12 @@
     usePercentageForPolicy	= true;
   };
 
-  # See guides/flipper/04-power-management.md for full design notes and
+  # See docs/flipper/04-power-management.md for full design notes and
   # the known unencrypted-swap security tradeoff.
 
   # ── Disk encryption ────────────────────────────────────────────────────────
   # systemd initrd is required for systemd-cryptenroll (TPM2 + FIDO2 unlock).
-  # After first boot, enroll additional slots — see guides/flipper/03-disk-encryption.md
+  # After first boot, enroll additional slots — see docs/flipper/03-disk-encryption.md
   boot.initrd.systemd.enable = true;
 
   # TPM2 userspace tools and kernel interface
@@ -99,7 +99,7 @@
     SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="05ac", ACTION=="remove", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}="ifuse-unmount.service"
   '';
 
-  # Fix internal speakers — see guides/flipper/01-speakers-fix.md
+  # Fix internal speakers — see docs/flipper/01-speakers-fix.md
   hardware.firmware = [
     (pkgs.runCommand "tas2781-firmware-fix" {} ''
       mkdir -p $out/lib/firmware

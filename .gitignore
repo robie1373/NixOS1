@@ -4,4 +4,7 @@ todo.md
 kitty_output.log
 resumeClaude.sh
 result
-guides/.obsidian/
+docs/.obsidian/
+
+# The Bearing coordination file (ephemeral session state)
+BEARING.md

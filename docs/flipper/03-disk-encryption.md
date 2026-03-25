@@ -17,7 +17,7 @@ nvme0n1
 ```
 
 Swap is outside LUKS, meaning hibernate writes full RAM contents (including LUKS keys,
-browser sessions) to plaintext disk. This is a known gap — see `guides/flipper/todo.md`.
+browser sessions) to plaintext disk. This is a known gap — see `docs/flipper/todo.md`.
 
 ---
 

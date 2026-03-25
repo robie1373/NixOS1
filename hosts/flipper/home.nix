@@ -14,5 +14,10 @@
   myHome.yazi.enable		= true;
   myHome.hyprshot.enable	= true;
 
+  myHome.bearing = {
+    enable   = true;
+    terminal = "foot";
+  };
+
   services.poweralertd.enable = true;
 }

@@ -12,16 +12,21 @@
     la = "ls -ah";
     #vim = "nvim";
 
-    rebuild = "echo 'running: sudo nixos-rebuild switch --flake /home/robie/nixos-config#${osConfig.networking.hostName}'; sudo nixos-rebuild switch --flake /home/robie/nixos-config#${osConfig.networking.hostName}";
-    build   = "nixos-rebuild build --flake /home/robie/nixos-config#${osConfig.networking.hostName}";
-    ntest   = "sudo nixos-rebuild test --flake /home/robie/nixos-config#${osConfig.networking.hostName}";
+    rebuild = "nh os switch /home/robie/nixos-config";
+    build   = "nh os build /home/robie/nixos-config";
+    ntest   = "nh os test /home/robie/nixos-config";
     gc = "sudo nix-env --delete-generations $argv[1] --profile /nix/var/nix/profiles/system && nix-env --delete-generations $argv[1] && sudo nix-collect-garbage";
     #update = "sudo nixos-rebuild switch";
     gs = "git status";
   };
 
+  # nix-index: pre-built package index for command-not-found + comma
+  # comma: run any nixpkgs binary without installing it: ", ffmpeg ..."
+  programs.nix-index-database.comma.enable = true;
+  programs.nix-index.enable = true;
+
     # Configure git
-  programs.git = { 
+  programs.git = {
     enable = true;
     settings = {
       user = {

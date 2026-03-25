@@ -69,6 +69,12 @@
 
           # Screenshot (requires grim + slurp)
           ", Print, exec, grim -g \"$(slurp)\" - | wl-copy"
+
+          # Which-key popup
+          "$mod, slash, exec, ${pkgs.wlr-which-key}/bin/wlr-which-key"
+
+          # The Bearing — open a bearing session in a new terminal
+          "$mod, B, exec, ${pkgs.foot}/bin/foot -- bash -c 'cd ~/work && claude bearing; exec bash'"
         ];
 
         # Touchpad gestures
@@ -803,6 +809,7 @@
     # ADDITIONAL PACKAGES
     # ════════════════════════════════════════════════════════════════════════
     home.packages = with pkgs; [
+      wlr-which-key    # keybind cheatsheet popup (Super+/)
       swaybg           # wallpaper (launched via exec-once; also used by `wallpaper` function)
       wl-clipboard     # wl-copy / wl-paste (Wayland clipboard)
       grim             # screenshot tool (captures Wayland output)
@@ -838,6 +845,68 @@
         echo "$NEW" > /sys/class/leds/platform::micmute/brightness
       '')
     ];
+
+    # ════════════════════════════════════════════════════════════════════════
+    # WLR-WHICH-KEY — keybind cheatsheet popup (Super+/)
+    # ════════════════════════════════════════════════════════════════════════
+
+    xdg.configFile."wlr-which-key/config.yaml".text = ''
+      font: "JetBrainsMono Nerd Font 14"
+      background: "#24273a"
+      color: "#cad3f5"
+      border: "#8aadf4"
+      border_width: 2
+      corner_r: 10
+      padding: 20
+      margin_top: 20
+      margin_right: 20
+      margin_bottom: 20
+      margin_left: 20
+      anchor: center
+
+      menu:
+        - key: Return
+          desc: "terminal"
+          cmd: "${pkgs.kitty}/bin/kitty"
+        - key: d
+          desc: "app launcher"
+          cmd: "${pkgs.rofi}/bin/rofi -show drun"
+        - key: e
+          desc: "window switcher"
+          cmd: "${pkgs.rofi}/bin/rofi -show window"
+        - key: w
+          desc: "windows →"
+          submenu:
+            - key: u
+              desc: "close"
+              cmd: "hyprctl dispatch killactive"
+            - key: f
+              desc: "fullscreen"
+              cmd: "hyprctl dispatch fullscreen"
+            - key: v
+              desc: "float toggle"
+              cmd: "hyprctl dispatch togglefloating"
+        - key: m
+          desc: "media →"
+          submenu:
+            - key: u
+              desc: "vol +"
+              cmd: "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"
+              keep_open: true
+            - key: d
+              desc: "vol -"
+              cmd: "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
+              keep_open: true
+            - key: m
+              desc: "mute toggle"
+              cmd: "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+            - key: p
+              desc: "play/pause"
+              cmd: "playerctl play-pause"
+            - key: n
+              desc: "next track"
+              cmd: "playerctl next"
+    '';
 
     # ════════════════════════════════════════════════════════════════════════
     # IPHONE — auto-mount via ifuse (triggered by udev on plug-in)

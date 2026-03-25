@@ -10,6 +10,38 @@ Robie's NixOS fleet configuration. Goals: DRY, modular, flexible. Uses flake-par
 
 **Always use current NixOS option syntax.** Never use deprecated aliases — use the renamed form even if the alias still works. When in doubt, check nixpkgs source or search.nixos.org. Config longevity is a priority.
 
+## Model use — subagent delegation
+
+This session runs on Sonnet (supervisor). Discrete mechanical subtasks should be delegated to Haiku subagents via the Agent tool to preserve Sonnet context and cost.
+
+**Good Haiku candidates in this project:**
+
+- Searching nixpkgs/NixOS option documentation for correct current syntax (e.g. "what is the current non-deprecated option for X?")
+- Reading multiple files to summarise current state — e.g. scanning all `modules/home/*.nix` to list which `myHome` options exist, or reading `parts/nixos.nix` to list all host module imports
+- Checking `docs/` files for relevant existing documentation before planning new work
+- Summarising BEARING.md pending tasks or extracting specific notes
+- Writing or updating docs files in `docs/` once the content is decided
+- Grepping for option names, attribute paths, or patterns across the repo (e.g. finding all places a deprecated alias is used)
+- Diffing or comparing two config files to report differences
+- Drafting routine BEARING.md updates (moving completed items, writing outcome notes)
+
+**Keep on Sonnet:**
+
+- Any Nix reasoning that crosses module boundaries — e.g. working out why a home-manager activation error occurs, or how `useGlobalPkgs` interacts with `allowUnfreePredicate`
+- Architecture decisions: adding a host, restructuring `parts/nixos.nix`, deciding module namespace layout
+- Debugging build failures — attribute errors, infinite recursion, type mismatches
+- Anything touching LUKS/TPM2/FIDO2, disko, or hardware-specific config where a wrong change bricks the machine
+- Security-relevant changes (polkit rules, SSH config, 1Password integration)
+- Planning new features: reading, reasoning about options, writing the plan in docs/ before implementing
+
+**Invocation example:**
+
+```python
+Agent(prompt="Read modules/home/ and list every myHome option defined", model="haiku")
+```
+
+---
+
 ## Key Commands
 
 All run from `~/nixos-config/` on the target host:
@@ -116,20 +148,33 @@ Both halves must be listed separately in `parts/nixos.nix` — the system module
 4. Create `hosts/<name>/home.nix` with correct `home.stateVersion`
 5. Add `mkHost` block to `parts/nixos.nix` with appropriate system and home module lists
 
-## guides/ Directory
+## The Bearing
 
-The `guides/` directory is Robie's notebook and textbook for understanding the system. Treat it as a first-class deliverable alongside the code.
+This project coordinates with The Bearing — Robie's life and project tracker (`~/work/`).
 
-**Keep guides up to date when making changes.** If a config change affects something documented in guides/ (hardware behavior, a module's rationale, a workflow), update the relevant guide in the same session.
+**"Read the bearing"** — when asked, check `BEARING.md` in the root of this repo:
+- Review **Pending** tasks delegated from The Bearing
+- Check **Notes to The Bearing** from previous sessions
+- Report what's there, then ask if you should start on anything
 
-**Record planning in guides/ before new work.** When planning a new feature or investigating a problem, write up the plan, options considered, and reasoning in a new or existing guide file before implementing. This is the record of *why* decisions were made.
+**After completing delegated work:** Update `BEARING.md` — move items to Completed with a brief outcome, add findings to Notes to The Bearing. The Bearing monitors `~/work/DELEGATIONS.md` for status updates.
 
-The `guides/` directory contains detailed reference docs — consult these before making hardware or desktop config changes:
+---
 
-- `guides/flipper/README.md` — hardware compatibility table for the ASUS Vivobook 14 Flip (flipper). Documents what works, what's broken, and why (speakers firmware, ISH accelerometer, media keys, NPU, etc.)
-- `guides/flipper/03-disk-encryption.md` — LUKS + TPM2 + FIDO2/YubiKey setup
-- `guides/hyprland/` — rationale for tool choices (greetd vs SDDM, foot vs kitty, Catppuccin) and troubleshooting
-- `guides/apps/README.md` — app stack overview (mpv, zathura, imv, MPD/ncmpcpp, yazi, NAS mount)
+## docs/ Directory
+
+The `docs/` directory is Robie's notebook and textbook for understanding the system. Treat it as a first-class deliverable alongside the code.
+
+**Keep guides up to date when making changes.** If a config change affects something documented in docs/ (hardware behavior, a module's rationale, a workflow), update the relevant guide in the same session.
+
+**Record planning in docs/ before new work.** When planning a new feature or investigating a problem, write up the plan, options considered, and reasoning in a new or existing guide file before implementing. This is the record of *why* decisions were made.
+
+The `docs/` directory contains detailed reference docs — consult these before making hardware or desktop config changes:
+
+- `docs/flipper/README.md` — hardware compatibility table for the ASUS Vivobook 14 Flip (flipper). Documents what works, what's broken, and why (speakers firmware, ISH accelerometer, media keys, NPU, etc.)
+- `docs/flipper/03-disk-encryption.md` — LUKS + TPM2 + FIDO2/YubiKey setup
+- `docs/hyprland/` — rationale for tool choices (greetd vs SDDM, foot vs kitty, Catppuccin) and troubleshooting
+- `docs/apps/README.md` — app stack overview (mpv, zathura, imv, MPD/ncmpcpp, yazi, NAS mount)
 
 **foot vs kitty:** VMs use `foot` (CPU-rendered, works everywhere). Physical hosts use `kitty` (GPU-accelerated, requires real OpenGL — fails on QEMU/KVM virtual GPUs).
 
