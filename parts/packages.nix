@@ -58,6 +58,10 @@ in
       # The real host config (in nixos-config#<hostname>) enables its own firewall.
       networking.firewall.enable = false;
 
+      # DHCP on all interfaces — bootstrap VM needs an IP so nixos-anywhere can
+      # connect. The real host config sets a static IP; this is throwaway state.
+      networking.useDHCP = true;
+
       # Explicit disk size — suppresses deprecation warning from proxmox image module
       # (proxmox.qemuConf.diskSize was renamed to virtualisation.diskSize).
       # 4GB is sufficient for a bootstrap image; the real host gets its own disko layout.
