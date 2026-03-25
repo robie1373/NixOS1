@@ -7,6 +7,7 @@ _Last updated: 2026-03-24_
 ## Pending
 _Tasks delegated by The Bearing, not yet started._
 
+- [ ] **Architecture question: multi-host module sharing.** Robie's understanding is that wrapped/custom modules currently live under the host directory (e.g. `hosts/flipper/`). As he adds more hosts, how do we avoid duplicating common modules across hosts? Read the current repo structure and answer: (1) where do modules actually live right now, (2) what is the standard NixOS pattern for sharing modules across multiple hosts in a flake-based config, (3) what changes (if any) should be made to this repo's structure to support a second host cleanly. Write the answer as a design doc in the repo or as Notes to The Bearing — whichever is more appropriate given what you find. No implementation needed, just the answer and a recommended path forward.
 - [ ] **[FUTURE — after GitHub repo exists]** Refactor bearing.nix into a thin import wrapper. Once `the-bearing` exists as an external flake, bearing.nix should only: add it as a flake input, enable the module, and set user config (ntfy topic, schedule, workDir, terminal). All scripts, templates, and module logic move to the external repo. See architecture notes below.
 
 ## In Progress
@@ -66,6 +67,13 @@ _Tasks delegated by The Bearing, not yet started._
   - `bearing` dunst rule: `appname = "The Bearing"`, `script = ${bearingOpen}` (store path)
   - `bearing-notify` simplified to non-blocking `dunstify` — no `-A` flag, no hanging service
   - Both fixes live in `modules/home/bearing.nix` alongside the scripts
+
+## Notes from The Bearing
+
+**Inter-project coordination — homeLab edits to nixos-config (2026-03-25):**
+homeLab is working on NixOS-related infrastructure tasks and will be making additions or suggestions to configuration that ultimately lives in nixos-config. homeLab has been instructed to annotate those changes with comments explaining intent and context. nixos-config has full ownership over the final disposition of that config — homeLab's comments are input, not decisions. When you encounter commented additions from homeLab, review them, understand the goal, and produce configuration that actually works and fits the existing nixos-config architecture. You are not obligated to use homeLab's exact approach — only to accomplish the stated goal correctly.
+
+---
 
 ## Notes to The Bearing
 _Anything this project's Claude session wants to report back._

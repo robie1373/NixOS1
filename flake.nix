@@ -21,6 +21,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # agenix: age-encrypted secrets management for NixOS hosts.
+    # Secrets are encrypted with the host's SSH public key and decrypted at boot.
+    # Only freely-rotatable secrets go here (service passwords, API tokens, TLS creds).
+    # Hard-to-rotate secrets (CA keys, master credentials) stay in 1Password only.
+    # Rewrite note: agenix is a lab-wide concern. Keep in any flake managing lab servers.
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # nixos-generators: builds NixOS images in various formats (proxmox, iso, qcow2, etc.)
     # Used here to produce the golden bootstrap image imported into Proxmox as a template.
     # New lab VMs are cloned from that template; nixos-anywhere then installs the real config.

@@ -1,0 +1,89 @@
+# modules/system/server-common.nix
+#
+# Baseline configuration imported by every headless lab server.
+# Provides: boot, SSH, networking foundation, Tailscale, agenix, timezone.
+#
+# What belongs here: things every lab server needs unconditionally.
+# What does NOT belong here: service-specific config, static IPs (host concern),
+# stateVersion (generated at install time, set in host config).
+#
+# Rewrite note: this module is lab-infrastructure only. No desktop, no home-manager.
+# Safe to keep as-is or move to a dedicated lab flake during the rewrite.
+
+{ inputs, config, lib, pkgs, ... }:
+
+{
+  imports = [
+    inputs.agenix.nixosModules.default
+  ];
+
+  # ── Boot ────────────────────────────────────────────────────────────────────
+  # systemd-boot requires UEFI. Proxmox VMs default to UEFI when SeaBIOS is not
+  # explicitly selected. The disko config must include an ESP partition.
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+
+  # ── Networking foundation ────────────────────────────────────────────────────
+  # Disable DHCP globally — servers use static IPs configured per-host.
+  # Each host config defines networking.interfaces.<name>.ipv4.addresses and
+  # networking.defaultGateway. networkmanager is not used on servers.
+  networking.useDHCP = false;
+  networking.usePredictableInterfaceNames = true;
+
+  # ── SSH ─────────────────────────────────────────────────────────────────────
+  services.openssh = {
+    enable = true;
+    settings = {
+      # Key auth only — no passwords, no root password login
+      PermitRootLogin = "prohibit-password";
+      PasswordAuthentication = false;
+    };
+    # Host key is pre-generated and planted by nixos-anywhere via --extra-files.
+    # Private key lives in 1Password (devops/"<hostname> host SSH key").
+    # Public key is committed to hosts/<hostname>/ssh_host_ed25519_key.pub
+    # and used as the age recipient in secrets/secrets.nix.
+    hostKeys = [{
+      path = "/etc/ssh/ssh_host_ed25519_key";
+      type = "ed25519";
+    }];
+  };
+
+  # ansible2 automation key — allows Director and manual provisioning to SSH in.
+  # Personal key (id_ed25519) is NOT included here; it goes in individual host
+  # configs if interactive access is needed.
+  users.users.root.openssh.authorizedKeys.keys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKD+F2AoDhUcKLXji5jOmPI/XduaADEs2cxAF1w/HSnr"
+  ];
+
+  # ── Tailscale ────────────────────────────────────────────────────────────────
+  # Enabled on all lab servers for mesh connectivity and Director access.
+  # After first boot: run `tailscale up --authkey <key>` to join the network.
+  # Future: automate via agenix-encrypted auth key.
+  services.tailscale.enable = true;
+  networking.firewall.trustedInterfaces = [ "tailscale0" ];
+
+  # ── Locale and timezone ──────────────────────────────────────────────────────
+  time.timeZone = "America/New_York";
+  i18n.defaultLocale = "en_US.UTF-8";
+
+  # ── Base packages ────────────────────────────────────────────────────────────
+  # Minimal set only. Service-specific packages belong in service modules.
+  environment.systemPackages = with pkgs; [
+    git
+    curl
+    htop
+    jq
+  ];
+
+  # ── Nix settings ────────────────────────────────────────────────────────────
+  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+
+  # ── Configuration revision ───────────────────────────────────────────────────
+  # Embeds the nixos-config git revision into the running system closure.
+  # Director reads this via `nixos-version --json` to detect drift:
+  #   deployed rev != git HEAD of nixos-config → update needed
+  # Note: self.rev is only set on clean git trees. Dirty builds produce null,
+  # which Director treats as a signal that the host was deployed from uncommitted
+  # state — also surfaced as drift.
+  system.configurationRevision = inputs.self.rev or null;
+}

@@ -1,13 +1,35 @@
 { inputs, ... }:
 let
+  # mkHost: desktop/workstation hosts — includes home-manager, Hyprland, etc.
+  # Rewrite note: this is the desktop-side helper. Modify freely during the rewrite.
   mkHost = { system, modules }: inputs.nixpkgs.lib.nixosSystem {
+    specialArgs = { inherit inputs; };
+    inherit system modules;
+  };
+
+  # mkServer: headless lab servers — no home-manager, no desktop, no audio.
+  # Used for all NixOS VMs provisioned in Proxmox (ntfy, Kanidm, Blocky, etc.).
+  # Rewrite note: this is the lab-infrastructure helper. Keep separate from mkHost
+  # so the desktop rewrite cannot accidentally affect server configs.
+  mkServer = { system, modules }: inputs.nixpkgs.lib.nixosSystem {
     specialArgs = { inherit inputs; };
     inherit system modules;
   };
 in
 {
   flake.nixosConfigurations = {
-    
+
+    # ── Lab servers (mkServer — no home-manager, no desktop) ─────────────────
+
+    ntfy = mkServer {
+      system = "x86_64-linux";
+      modules = [
+        ../hosts/ntfy/configuration.nix
+      ];
+    };
+
+    # ── Desktop / workstation hosts (mkHost — includes home-manager) ─────────
+
     flipper = mkHost {
       system = "x86_64-linux";
       modules = [
