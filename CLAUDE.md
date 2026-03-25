@@ -42,6 +42,18 @@ Agent(prompt="Read modules/home/ and list every myHome option defined", model="h
 
 ---
 
+## Git practices
+
+Commit frequently. Small, atomic commits are strongly preferred — any time a logical unit of work is complete (a module option is added, a script is fixed, a build is verified), commit it without waiting to be asked.
+
+**Commit messages:** Write them. Robie's own messages are intentionally minimal — yours should be detailed: what changed, why it changed, and any context that will matter in six months. Use imperative mood ("Add bearing-activity timer", "Fix SSH_AUTH_SOCK in briefing service"). Do not use "I", "Claude", or "we" — these are Robie's commits documenting his work. You are the instrument; the work is his.
+
+**Commit transparently:** Make commits as part of normal work. Mention what you committed in passing ("committed the timer fix") but don't make a production of it. Never ask permission for routine commits.
+
+**Pushing:** Never push to origin without being asked. After a productive session with several commits, offer once: "Want me to push this to origin?" — don't repeat it if he declines.
+
+---
+
 ## Key Commands
 
 All run from `~/nixos-config/` on the target host:
