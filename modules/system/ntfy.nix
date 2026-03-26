@@ -142,11 +142,10 @@ in
           proxyPass = "http://127.0.0.1:${toString cfg.listenPort}";
           proxyWebsockets = true;  # required for ntfy real-time subscriptions
           extraConfig = ''
-            # ntfy requires these headers for Web Push and long-poll to work
-            proxy_set_header Host $host;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            # Allow long-lived connections for ntfy subscriptions
+            # Allow long-lived connections for ntfy subscriptions (Web Push, long-poll).
+            # Note: Host/X-Forwarded-* headers are already set by recommendedProxySettings;
+            # do NOT redeclare them here — duplicate Host headers cause ntfy (Go HTTP) to
+            # return 400 Bad Request per RFC 7230 §5.4.
             proxy_read_timeout 3600;
             proxy_send_timeout 3600;
           '';
