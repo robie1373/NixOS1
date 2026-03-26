@@ -6,7 +6,8 @@
 #   - Valid Let's Encrypt cert, no self-signed warnings
 #   - No public port exposure — Tailscale-only access
 #   - No AWS/Route53 credentials needed
-#   - Cert managed by tailscaled, nginx reads it via permitCertUid
+#   - tailscale cert writes to /var/lib/nginx-certs/ (a path we own);
+#     Tailscale's own state dir (/var/lib/tailscale/) is never touched.
 #
 # Auth strategy: local SQLite user database initially.
 #   After Kanidm is deployed, migrate to LDAP and remove ntfy-admin-password secret.
@@ -17,6 +18,7 @@
 
 let
   cfg = config.mySystem.ntfy;
+  certDir = "/var/lib/nginx-certs";
 in
 {
   options.mySystem.ntfy = {
@@ -66,35 +68,62 @@ in
 
     # ── Admin user provisioning ───────────────────────────────────────────────
     # Creates the admin user on first boot using the agenix-decrypted password.
-    # The ntfy-admin-password secret contains a bcrypt hash (generate with:
-    #   nix run nixpkgs#ntfy-sh -- user add --role=admin admin
-    # or htpasswd-style: ntfy user add admin)
+    # Uses --ignore-exists so it is safe to re-run on every nixos-rebuild.
+    # Password is fed via stdin — ntfy user add does not accept a --password flag.
     # TODO: remove this block after Kanidm LDAP migration
     systemd.services.ntfy-sh-admin-setup = {
       description = "Provision ntfy admin user";
       after = [ "ntfy-sh.service" ];
       wantedBy = [ "multi-user.target" ];
-      # Run once — skip if user already exists
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
         ExecStart = pkgs.writeShellScript "ntfy-admin-setup" ''
-          if ! ${pkgs.ntfy-sh}/bin/ntfy user list 2>/dev/null | grep -q '^admin '; then
+          # ntfy user add prompts for password then confirm — pipe it twice.
+          # --ignore-exists makes this idempotent across rebuilds.
+          password="$(cat ${config.age.secrets.ntfy-admin-password.path})"
+          printf '%s\n%s\n' "$password" "$password" | \
             ${pkgs.ntfy-sh}/bin/ntfy user add \
               --role=admin \
-              --password="$(cat ${config.age.secrets.ntfy-admin-password.path})" \
+              --ignore-exists \
               admin
-          fi
         '';
       };
     };
 
     # ── Tailscale HTTPS certificate ───────────────────────────────────────────
-    # Allow nginx to read the Tailscale-managed TLS cert for this host.
-    # Tailscale provisions a valid Let's Encrypt cert for <hostname>.ts.net.
-    # After joining the tailnet, run: tailscale cert <hostname>
-    # (or configure tailscale to auto-provision — see services.tailscale below)
+    # tailscale cert fetches a valid Let's Encrypt cert for this host's TS FQDN.
+    # Certs are written to /var/lib/nginx-certs/ — a path we own — so nginx can
+    # read them without any changes to Tailscale's state directory permissions.
+    # The service re-runs on each boot; tailscale cert is a no-op if the cert is
+    # still valid, so the copy is cheap.
     services.tailscale.permitCertUid = "nginx";
+
+    systemd.services.tailscale-cert = {
+      description = "Provision Tailscale TLS cert for nginx";
+      after = [ "tailscaled.service" "network-online.target" ];
+      wants = [ "network-online.target" ];
+      before = [ "nginx.service" ];
+      wantedBy = [ "multi-user.target" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = pkgs.writeShellScript "tailscale-cert" ''
+          set -euo pipefail
+          # Write to a path we own — never touch /var/lib/tailscale/
+          mkdir -p ${certDir}
+          chmod 711 ${certDir}
+          ${pkgs.tailscale}/bin/tailscale cert \
+            --cert-file ${certDir}/${cfg.hostname}.crt \
+            --key-file  ${certDir}/${cfg.hostname}.key \
+            ${cfg.hostname}
+          # nginx must read the key; cert is already world-readable from tailscale
+          chown root:nginx ${certDir}/${cfg.hostname}.key
+          chmod 640        ${certDir}/${cfg.hostname}.key
+          chmod 644        ${certDir}/${cfg.hostname}.crt
+        '';
+      };
+    };
 
     # ── nginx reverse proxy ───────────────────────────────────────────────────
     services.nginx = {
@@ -105,9 +134,8 @@ in
       recommendedGzipSettings = true;
 
       virtualHosts."${cfg.hostname}" = {
-        # Tailscale cert paths — tailscaled writes these after `tailscale cert`
-        sslCertificate = "/var/lib/tailscale/certs/${cfg.hostname}.crt";
-        sslCertificateKey = "/var/lib/tailscale/certs/${cfg.hostname}.key";
+        sslCertificate    = "${certDir}/${cfg.hostname}.crt";
+        sslCertificateKey = "${certDir}/${cfg.hostname}.key";
         forceSSL = true;
 
         locations."/" = {

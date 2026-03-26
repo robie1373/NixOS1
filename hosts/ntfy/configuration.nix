@@ -7,11 +7,12 @@
 # Access: https://ntfy.vimba-stairs.ts.net (Tailscale only, no public exposure)
 #
 # After provisioning:
-#   1. SSH in: ssh root@ntfy.vimba-stairs.ts.net (after tailscale up)
-#      or:     ssh root@192.168.20.10 (before Tailscale is activated)
-#   2. Run: tailscale up --authkey <key from 1Password>
-#   3. Run: tailscale cert ntfy.vimba-stairs.ts.net
-#   4. ntfy is then accessible at https://ntfy.vimba-stairs.ts.net
+#   1. SSH in: ssh root@192.168.20.10 (before Tailscale is activated)
+#   2. Run: tailscale up --authkey <key from 1Password devops/"Tailscale Auth Key"> \
+#             --ssh --hostname=ntfy --advertise-tags=tag:terraformhost
+#   3. That's it. `tailscale-cert.service` runs on each boot and provisions
+#      the TLS cert to /var/lib/tailscale/certs/ with correct nginx permissions.
+#   4. Access: https://ntfy.vimba-stairs.ts.net (once Tailscale is up)
 
 { inputs, config, lib, pkgs, ... }:
 

@@ -42,6 +42,8 @@ Agent(prompt="Read modules/home/ and list every myHome option defined", model="h
 
 ---
 
+> **Session start:** Run `/loop 1h /compact` to enable hourly compaction. Long sessions degrade without it.
+
 ## Git practices
 
 Commit frequently. Small, atomic commits are strongly preferred — any time a logical unit of work is complete (a module option is added, a script is fixed, a build is verified), commit it without waiting to be asked.
