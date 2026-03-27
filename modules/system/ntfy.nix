@@ -53,10 +53,11 @@ in
         cache-file = "/var/lib/ntfy-sh/cache.db";
         cache-duration = "24h";
 
-        # Auth: local user database — deny all by default, explicit grants required
+        # Auth: local user database for admin management.
+        # Default access is read-write — Tailscale-only service, low friction preferred.
         # Migrate to LDAP (Kanidm) when that service is deployed
         auth-file = "/var/lib/ntfy-sh/user.db";
-        auth-default-access = "deny-all";
+        auth-default-access = "read-write";
 
         # Attachment storage
         attachment-cache-dir = "/var/lib/ntfy-sh/attachments";
