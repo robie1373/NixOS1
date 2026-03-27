@@ -79,6 +79,7 @@
     ripgrep
     ifuse 		# for mounting iphone
     libimobiledevice  	# for mounting iphone
+    bambu-studio
   ];
 
   # Enable CUPS to print documents.

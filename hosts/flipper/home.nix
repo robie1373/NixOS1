@@ -15,8 +15,9 @@
   myHome.hyprshot.enable	= true;
 
   myHome.bearing = {
-    enable   = true;
-    terminal = "foot";
+    enable       = true;
+    terminal     = "foot";
+    ntfy.server  = "https://ntfy.vimba-stairs.ts.net";
   };
 
   services.poweralertd.enable = true;
