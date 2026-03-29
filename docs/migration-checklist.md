@@ -73,26 +73,31 @@ Independent of the migration. Can be done now, in any order.
 
 ### 1.2 — Add Inputs, Wire import-tree, Validate
 
-- [ ] Create branch: `git checkout -b refactor/dendritic`
-- [ ] Add `import-tree` input to `flake.nix`:
+- [x] Create branch: `git checkout -b refactor/dendritic`
+- [x] Add `import-tree` input to `flake.nix`:
   ```
   import-tree.url = "github:vic/import-tree";
   ```
-- [ ] Add `nix-wrapper-modules` input:
+- [x] Add `nix-wrapper-modules` input:
   ```
   nix-wrapper-modules.url = "github:BirdeeHub/nix-wrapper-modules";
   ```
-- [ ] `nix flake update` to pull new inputs
-- [ ] **Create `modules/theme.nix`** — Catppuccin Macchiato palette as `self.theme` flake output
+- [x] `nix flake update` to pull new inputs
+- [x] Rename module directories for import-tree discovery:
+  - `modules/system/` → `modules/_system/`
+  - `modules/home/` → `modules/_home/`
+- [x] **Create `modules/theme.nix`** — Catppuccin Macchiato palette as `self.theme` flake output
   - All hex values in one place; every wrapper imports `self.theme` rather than hardcoding colors
   - Wire as `flake.theme = { ... }` in the flake-parts module
-- [ ] Rewrite `flake.nix` to use `import-tree`:
+- [x] Rewrite `flake.nix` to use `import-tree`:
   ```nix
   outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; }
     (inputs.import-tree ./modules);
   ```
   - Move or adapt `parts/nixos.nix` so import-tree discovers it — existing host wiring stays intact
-- [ ] **Acceptance:** `nix flake show` lists both hosts; `nixos-rebuild build .#flipper` passes; `nix eval .#theme` returns the palette
+- [x] **Acceptance:** `nix flake show` lists both hosts; `nixos-rebuild build .#flipper` passes; `nix eval .#theme` returns the palette
+
+> **Gotcha — untracked files:** Nix flake evaluation only sees staged or committed files, even in a dirty git tree. New modules/ files must be `git add`ed before `nix eval` or `nixos-rebuild build` can find them. Also: `import-tree` result must be passed directly to `mkFlake` as its second argument, not nested inside `imports = [...]`.
 
 ### 1.3 — Create New Module Directory Structure
 
