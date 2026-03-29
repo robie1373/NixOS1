@@ -13,3 +13,4 @@ BEARING.md
 # Public keys (.pub) are safe to commit and are age recipients for agenix
 hosts/**/ssh_host_ed25519_key
 hosts/**/ssh_host_rsa_key
+BEARING.md

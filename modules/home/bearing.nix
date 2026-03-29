@@ -67,60 +67,34 @@ let
       "$TITLE" "$BODY"
   '';
 
-  # bearing-ntfy: sends a push notification to phone via ntfy.
-  # Topic is read from ~/work/.ntfy-topic at runtime — populate once with:
+  # bearing-checkin: called by systemd timers. Fires desktop (dunst) and phone (ntfy) notifications.
+  # ntfy topic is read from ~/work/.ntfy-topic at runtime — populate with:
   #   op read 'op://devops/temp ntfy topic bearing/password' > ~/work/.ntfy-topic
-  # Silently skips if the file is missing (self-hosted migration will revisit this).
-  bearingNtfy = pkgs.writeShellScriptBin "bearing-ntfy" ''
-    NTFY_SERVER="${cfg.ntfy.server}"
-    NTFY_TOPIC="$(cat ${cfg.workDir}/.ntfy-topic 2>/dev/null)"
-    [ -z "$NTFY_TOPIC" ] && exit 0
-    TYPE="''${1:-ping}"
-    case "$TYPE" in
-      morning)
-        TITLE="Morning Bearing"
-        MSG="Time to take a bearing."
-        PRIORITY="default"
-        TAGS="compass"
-        ;;
-      checkin)
-        TITLE="Check-in"
-        MSG="Worth a quick recalibration."
-        PRIORITY="low"
-        TAGS="clock"
-        ;;
-      afternoon)
-        TITLE="Afternoon Bearing"
-        MSG="Last check-in of the day."
-        PRIORITY="low"
-        TAGS="sunset"
-        ;;
-      korean)
-        TITLE="Korean lesson"
-        MSG="Today's lesson is waiting."
-        PRIORITY="default"
-        TAGS="books"
-        ;;
-      *)
-        TITLE="The Bearing"
-        MSG="''${*:-Check in.}"
-        PRIORITY="default"
-        TAGS="bell"
-        ;;
-    esac
-    ${pkgs.curl}/bin/curl -s \
-      -H "Title: $TITLE" \
-      -H "Priority: $PRIORITY" \
-      -H "Tags: $TAGS" \
-      -d "$MSG" \
-      "$NTFY_SERVER/$NTFY_TOPIC" > /dev/null
-  '';
-
-  # bearing-checkin: called by systemd timers. Fires both desktop and phone notifications.
+  # Silently skips ntfy if the file is missing.
   bearingCheckin = pkgs.writeShellScriptBin "bearing-checkin" ''
     TYPE="''${1:-checkin}"
     ${bearingNotify}/bin/bearing-notify "$TYPE" &
-    ${bearingNtfy}/bin/bearing-ntfy "$TYPE" &
+    TOPIC="$(cat ${cfg.workDir}/.ntfy-topic 2>/dev/null)"
+    if [ -n "$TOPIC" ]; then
+      case "$TYPE" in
+        morning)
+          TITLE="Morning Bearing"; MSG="Time to take a bearing."; PRI="default"; TAGS="compass" ;;
+        checkin)
+          TITLE="Check-in"; MSG="Worth a quick recalibration."; PRI="low"; TAGS="clock" ;;
+        afternoon)
+          TITLE="Afternoon Bearing"; MSG="Last check-in of the day."; PRI="low"; TAGS="sunset" ;;
+        korean)
+          TITLE="Korean lesson"; MSG="Today's lesson is waiting."; PRI="default"; TAGS="books" ;;
+        *)
+          TITLE="The Bearing"; MSG="Check in."; PRI="default"; TAGS="bell" ;;
+      esac
+      ${pkgs.curl}/bin/curl -s \
+        -H "Title: $TITLE" \
+        -H "Priority: $PRI" \
+        -H "Tags: $TAGS" \
+        -d "$MSG" \
+        "${cfg.ntfy.server}/$TOPIC"
+    fi
     wait
   '';
 
@@ -200,7 +174,7 @@ in {
   config = lib.mkIf cfg.enable {
 
     # ── Scripts on PATH ────────────────────────────────────────────────────
-    home.packages = [ bearingCmd bearingNotify bearingNtfy bearingCheckin bearingBriefing bearingActivity ];
+    home.packages = [ bearingCmd bearingNotify bearingCheckin bearingBriefing bearingActivity ];
 
     # ── Systemd timer + service units ──────────────────────────────────────
 

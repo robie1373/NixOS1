@@ -19,9 +19,7 @@ _Tasks delegated by The Bearing, not yet started._
   - No repeating tasks left without a runbook. "Updating flake inputs" is too simple to warrant one (two commands, already in Key Commands).
 
 - [x] **[NEXT — pri 2] Architecture question: multi-host module sharing.** — 2026-03-29
-  - Written up as `docs/architecture/multi-host-sharing.md`
-  - Short answer: modules already live in `modules/system/` and `modules/home/`, not under host directories. The architecture is already correct — `nixos1` proves it. No changes needed now.
-  - One housekeeping improvement identified for when a third desktop host is added: `desktopSystemModules`/`desktopHomeModules` let-bindings in `parts/nixos.nix` to DRY the repeated import lists. Design doc includes the exact code.
+  - Closed. The line of reasoning pursued was not what was intended. Work product archived to `docs/archive/multi-host-sharing.md` and is of no value. No conclusions to carry forward.
 - [ ] **Refactor bearing.nix into a thin import wrapper.** Repo confirmed created: `git@github.com:robie1373/the-bearing.git`. bearing.nix should only: add it as a flake input, enable the module, and set user config (ntfy topic, schedule, workDir, terminal). All scripts, templates, and module logic move to the external repo. See architecture notes below.
 
 ## In Progress
@@ -94,7 +92,6 @@ _Anything this project's Claude session wants to report back._
 
 **Cold-start audit complete (2026-03-29).** Three runbooks written in `docs/runbooks/`: `add-module.md`, `add-host.md`, `debug-build.md`. CLAUDE.md updated with routing. "Flake input update" was the only repeating task left without a dedicated runbook — it's two commands and already in CLAUDE.md Key Commands, so no separate doc was warranted.
 
-**Multi-host module sharing design complete (2026-03-29).** See `docs/architecture/multi-host-sharing.md`. Modules already live in `modules/`, not host directories — the architecture is sound. Only action deferred: add `desktopSystemModules`/`desktopHomeModules` let-bindings in `parts/nixos.nix` when a third desktop host is added.
 
 **Services call bearing-checkin (desktop + phone notifications), not bearing-open (terminal).** If the intent changes to open a terminal directly from the timer instead of notifying, revise ExecStart in the three check-in services in `modules/home/bearing.nix`.
 
