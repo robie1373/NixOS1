@@ -45,8 +45,15 @@ Independent of the migration. Can be done now, in any order.
 
 ## Phase 1: Dendritic + Wrapper-Modules Migration
 
-**Goal:** Restructure the entire config to match vimjoyer's pattern.
-Each feature = one file = one derivation. Home-manager retained only for 1Password.
+**Goal:** Replace the current module system (manual imports in `parts/nixos.nix`, `mySystem`/`myHome` enable flags) with import-tree auto-discovery and nix-wrapper-modules program derivations. home-manager is retained only for 1Password.
+
+**Acceptance criteria:**
+- `nix flake show` evaluates cleanly and lists both hosts
+- Both hosts build: `nixos-rebuild build .#flipper` and `nixos-rebuild build .#nixos1`
+- flipper switches and boots: Hyprland launches, all wrapped programs work
+- 1Password: `op item get` works, SSH agent active, git/GitHub functional
+- `nix eval .#theme` returns the Catppuccin Macchiato palette
+- `modules/system/`, `modules/home/`, and `parts/` directories deleted
 
 ### 1.1 — Study and Prepare
 
@@ -64,7 +71,7 @@ Each feature = one file = one derivation. Home-manager retained only for 1Passwo
 - `modules/theme.nix` (Catppuccin Macchiato palette as `self.theme`) is the first thing built in Phase 1, before any module work
 - 1Password is Phase 2 — mechanical plumbing, planning doc before implementation
 
-### 1.2 — New Flake Inputs + Theme
+### 1.2 — Add Inputs, Wire import-tree, Validate
 
 - [ ] Create branch: `git checkout -b refactor/dendritic`
 - [ ] Add `import-tree` input to `flake.nix`:
@@ -76,28 +83,37 @@ Each feature = one file = one derivation. Home-manager retained only for 1Passwo
   nix-wrapper-modules.url = "github:BirdeeHub/nix-wrapper-modules";
   ```
 - [ ] `nix flake update` to pull new inputs
-- [ ] Verify `flake.lock` updated cleanly: `nix flake check`
 - [ ] **Create `modules/theme.nix`** — Catppuccin Macchiato palette as `self.theme` flake output
   - All hex values in one place; every wrapper imports `self.theme` rather than hardcoding colors
   - Wire as `flake.theme = { ... }` in the flake-parts module
-  - Verify `nix eval .#theme` returns the palette
-
-### 1.3 — Restructure `flake.nix`
-
 - [ ] Rewrite `flake.nix` to use `import-tree`:
   ```nix
   outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; }
     (inputs.import-tree ./modules);
   ```
-- [ ] Verify the flake evaluates: `nix flake show`
-- [ ] Keep `parts/nixos.nix` intact until new host modules are ready (do not delete yet)
+  - Move or adapt `parts/nixos.nix` so import-tree discovers it — existing host wiring stays intact
+- [ ] **Acceptance:** `nix flake show` lists both hosts; `nixos-rebuild build .#flipper` passes; `nix eval .#theme` returns the palette
 
-### 1.4 — Create New Module Directory Structure
+### 1.3 — Create New Module Directory Structure
 
 - [ ] Create `modules/hosts/` directory
 - [ ] Create `modules/features/` directory (or mirror vimjoyer's layout exactly)
 - [ ] Create `modules/programs/` directory for wrapper-module derivations
 - [ ] Do NOT delete any existing files yet — new and old coexist during migration
+
+### 1.4 — Zathura Spike: Validate nix-wrapper-modules
+
+Wrap zathura as the first wrapper-module derivation before committing to migrating all programs. If this fails or the pattern doesn't fit, the problem surfaces now rather than mid-migration.
+
+- [ ] Read vimjoyer's wrapper-module implementation for reference pattern
+- [ ] Create `modules/programs/zathura/default.nix` as a nix-wrapper-modules derivation
+  - Catppuccin Macchiato theme (reference current `modules/home/zathura.nix` for options)
+- [ ] Wire into flipper's host module (replacing `modules/home/zathura.nix` import)
+- [ ] `nixos-rebuild build .#flipper` — clean build
+- [ ] `nixos-rebuild test` on flipper — activates without becoming boot default
+- [ ] Manual test: open a PDF — Catppuccin theme present, keyboard navigation works
+- [ ] Remove `modules/home/zathura.nix` from flipper's import list once confirmed working
+- [ ] **Acceptance:** zathura works via wrapper-module derivation; `modules/home/zathura.nix` no longer needed for flipper
 
 ### 1.5 — Migrate Host Definitions
 
@@ -111,6 +127,7 @@ Each feature = one file = one derivation. Home-manager retained only for 1Passwo
 - [ ] Verify both hosts build: `nixos-rebuild build --flake .#flipper`
 
 ### 1.6 — Migrate System Feature Modules
+
 
 Migrate each module from `modules/system/` to dendritic files. Do one at a time, build-test after each.
 
@@ -190,6 +207,10 @@ Only after all modules are migrated and the config builds and boots cleanly.
 
 ## Phase 2: Eliminate Home-Manager
 
+### Pre-flight: Goal and Acceptance Criteria
+- [ ] Write phase goal and acceptance criteria before beginning any implementation
+- [ ] Review whether this phase should be combined with an adjacent phase or split for cleaner separation of concerns and more effective testing
+
 **Goal:** Remove the last home-manager dependency (1Password). Then remove HM from the flake entirely.
 
 - [ ] **Research:** How does vimjoyer (or the community) handle 1Password GUI + CLI without HM?
@@ -210,6 +231,10 @@ Only after all modules are migrated and the config builds and boots cleanly.
 ---
 
 ## Phase 3: Niri + Noctalia
+
+### Pre-flight: Goal and Acceptance Criteria
+- [ ] Write phase goal and acceptance criteria before beginning any implementation
+- [ ] Review whether this phase should be combined with an adjacent phase or split for cleaner separation of concerns and more effective testing
 
 **Goal:** Replace Hyprland + Waybar + dunst + rofi + hyprlock + hypridle + hyprpaper with niri + noctalia.
 
@@ -271,6 +296,10 @@ Only after all modules are migrated and the config builds and boots cleanly.
 ---
 
 ## Phase 4: Graphical Greeter (ReGreet)
+
+### Pre-flight: Goal and Acceptance Criteria
+- [ ] Write phase goal and acceptance criteria before beginning any implementation
+- [ ] Review whether this phase should be combined with an adjacent phase or split for cleaner separation of concerns and more effective testing
 
 **Goal:** Replace plain tuigreet with a styled GTK4 greeter.
 
