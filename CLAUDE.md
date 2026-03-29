@@ -156,6 +156,8 @@ Both halves must be listed separately in `parts/nixos.nix` — the system module
 
 ## Adding a New Host
 
+**Before doing this: read `docs/runbooks/add-host.md`** — full checklist with gotchas.
+
 1. Run `nixos-generate-config` on target → get `hardware-configuration.nix` + `stateVersion`
 2. Copy `hardware-configuration.nix` to `hosts/<name>/`
 3. Create `hosts/<name>/configuration.nix` (based on an existing host, set correct `stateVersion`, hostname, feature flags)
@@ -165,6 +167,11 @@ Both halves must be listed separately in `parts/nixos.nix` — the system module
 ## The Bearing
 
 This project coordinates with The Bearing — Robie's life and project tracker (`~/work/`).
+
+**Key files:**
+- `modules/home/bearing.nix` — The Bearing's Nix module (scripts, systemd timers, dunst config)
+- ntfy server: `https://ntfy.vimba-stairs.ts.net` (configured in `hosts/flipper/home.nix`)
+- ntfy topic: read at runtime from `~/work/.ntfy-topic`
 
 **"Read the bearing"** — when asked, check `BEARING.md` in the root of this repo:
 - Review **Pending** tasks delegated from The Bearing
@@ -194,7 +201,13 @@ The `docs/` directory contains detailed reference docs — consult these before 
 
 ## Adding a New Feature Module
 
+**Before doing this: read `docs/runbooks/add-module.md`** — full checklist with gotchas and skeletons.
+
 1. Create `modules/system/<name>.nix` and/or `modules/home/<name>.nix`
 2. Define `options.mySystem.<name>.enable = lib.mkEnableOption "..."` in the system module
 3. Add the module file to the relevant host's module list in `parts/nixos.nix`
 4. Enable it in `hosts/<hostname>/configuration.nix`
+
+## Debugging a Build Failure
+
+**Before spending time diagnosing: read `docs/runbooks/debug-build.md`** — maps common error messages to causes and fixes.

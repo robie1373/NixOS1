@@ -7,8 +7,19 @@ _Last updated: 2026-03-24_
 ## Pending
 _Tasks delegated by The Bearing, not yet started._
 
-- [ ] **Architecture question: multi-host module sharing.** Robie's understanding is that wrapped/custom modules currently live under the host directory (e.g. `hosts/flipper/`). As he adds more hosts, how do we avoid duplicating common modules across hosts? Read the current repo structure and answer: (1) where do modules actually live right now, (2) what is the standard NixOS pattern for sharing modules across multiple hosts in a flake-based config, (3) what changes (if any) should be made to this repo's structure to support a second host cleanly. Write the answer as a design doc in the repo or as Notes to The Bearing — whichever is more appropriate given what you find. No implementation needed, just the answer and a recommended path forward.
-- [ ] **[FUTURE — after GitHub repo exists]** Refactor bearing.nix into a thin import wrapper. Once `the-bearing` exists as an external flake, bearing.nix should only: add it as a flake input, enable the module, and set user config (ntfy topic, schedule, workDir, terminal). All scripts, templates, and module logic move to the external repo. See architecture notes below.
+> **Next up — do these first, in order:**
+> 1. Multi-host module sharing design doc
+> 2. Bearing refactor
+
+- [x] **[NEXT — pri 1] Cold-start efficiency audit.** — 2026-03-29
+  - Created `docs/runbooks/add-module.md` — system and home module checklist, gotchas (unfree, foot vs kitty, parts/nixos.nix wiring), skeletons
+  - Created `docs/runbooks/add-host.md` — new host checklist, desktop vs server distinction, stateVersion gotchas, VM notes
+  - Created `docs/runbooks/debug-build.md` — maps common error types (attribute missing, infinite recursion, type errors, HM activation failures) to causes and commands
+  - Updated `CLAUDE.md` with explicit routing directives: "before doing X, read docs/runbooks/Y.md"
+  - No repeating tasks left without a runbook. "Updating flake inputs" is too simple to warrant one (two commands, already in Key Commands).
+
+- [ ] **[NEXT — pri 2] Architecture question: multi-host module sharing.** Robie's understanding is that wrapped/custom modules currently live under the host directory (e.g. `hosts/flipper/`). As he adds more hosts, how do we avoid duplicating common modules across hosts? Read the current repo structure and answer: (1) where do modules actually live right now, (2) what is the standard NixOS pattern for sharing modules across multiple hosts in a flake-based config, (3) what changes (if any) should be made to this repo's structure to support a second host cleanly. Write the answer as a design doc in the repo or as Notes to The Bearing — whichever is more appropriate given what you find. No implementation needed, just the answer and a recommended path forward.
+- [ ] **Refactor bearing.nix into a thin import wrapper.** Repo confirmed created: `git@github.com:robie1373/the-bearing.git`. bearing.nix should only: add it as a flake input, enable the module, and set user config (ntfy topic, schedule, workDir, terminal). All scripts, templates, and module logic move to the external repo. See architecture notes below.
 
 ## In Progress
 
@@ -78,13 +89,7 @@ homeLab is working on NixOS-related infrastructure tasks and will be making addi
 ## Notes to The Bearing
 _Anything this project's Claude session wants to report back._
 
-**bearing-activity added (2026-03-25).** Requires `~/work/templates/activity-gather.md` to exist before the 06:30 timer fires. Test manually first:
-```bash
-cd ~/work && cat templates/activity-gather.md | bearing-activity
-```
-(after `rebuild` activates the new package)
-
-**bearing-briefing requires `~/work/templates/briefing-gather.md`.** Already noted — confirm it exists before 06:30.
+**Cold-start audit complete (2026-03-29).** Three runbooks written in `docs/runbooks/`: `add-module.md`, `add-host.md`, `debug-build.md`. CLAUDE.md updated with routing. "Flake input update" was the only repeating task left without a dedicated runbook — it's two commands and already in CLAUDE.md Key Commands, so no separate doc was warranted.
 
 **Services call bearing-checkin (desktop + phone notifications), not bearing-open (terminal).** If the intent changes to open a terminal directly from the timer instead of notifying, revise ExecStart in the three check-in services in `modules/home/bearing.nix`.
 
