@@ -17,6 +17,8 @@ let
   };
 in
 {
+  systems = [ "aarch64-linux" "x86_64-linux" ];
+
   flake.nixosConfigurations = {
 
     # ── Lab servers (mkServer — no home-manager, no desktop) ─────────────────
@@ -34,16 +36,16 @@ in
       system = "x86_64-linux";
       modules = [
         ../hosts/flipper/configuration.nix
-        ../modules/system/common.nix
-        ../modules/system/1password.nix
-        ../modules/system/audio.nix
-        #../modules/system/desktop-kde.nix
-        ../modules/system/desktop-hyprland.nix
-        ../modules/system/nas.nix
-        ../modules/system/speaker-fix.nix
+        ./_system/common.nix
+        ./_system/1password.nix
+        ./_system/audio.nix
+        #./_system/desktop-kde.nix
+        ./_system/desktop-hyprland.nix
+        ./_system/nas.nix
+        ./_system/speaker-fix.nix
         inputs.disko.nixosModules.disko
         ../hosts/flipper/disko.nix
-	../modules/system/gaming.nix
+        ./_system/gaming.nix
         inputs.home-manager.nixosModules.home-manager {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
@@ -51,23 +53,23 @@ in
           home-manager.users.robie.imports = [
             inputs.nix-index-database.hmModules.nix-index
             ../hosts/flipper/home.nix
-            ../modules/home/common.nix
-            ../modules/home/1password.nix
-            ../modules/home/gemini-cli.nix
-            ../modules/home/claude.nix
-            ../modules/home/obsidian.nix
-            ../modules/home/bearing.nix
-            ../modules/home/desktop-hyprland.nix
-            ../modules/home/firefox.nix
-            ../modules/home/tablet.nix
-            ../modules/home/mpv.nix
-            ../modules/home/zathura.nix
-            ../modules/home/imv.nix
-            ../modules/home/mpd.nix
-            ../modules/home/nas.nix
-            ../modules/home/yazi.nix
-	    ../modules/home/hyprshot.nix
-	    ../modules/home/anki-bin.nix
+            ./_home/common.nix
+            ./_home/1password.nix
+            ./_home/gemini-cli.nix
+            ./_home/claude.nix
+            ./_home/obsidian.nix
+            ./_home/bearing.nix
+            ./_home/desktop-hyprland.nix
+            ./_home/firefox.nix
+            ./_home/tablet.nix
+            ./_home/mpv.nix
+            ./_home/zathura.nix
+            ./_home/imv.nix
+            ./_home/mpd.nix
+            ./_home/nas.nix
+            ./_home/yazi.nix
+            ./_home/hyprshot.nix
+            ./_home/anki-bin.nix
           ];
         }
       ];
@@ -77,14 +79,12 @@ in
       system = "aarch64-linux";
       modules = [
         ../hosts/nixos1/configuration.nix
-        ../modules/system/common.nix
-        ../modules/system/1password.nix
-        ../modules/system/audio.nix
-        #../modules/system/desktop-kde.nix
-	../modules/system/desktop-hyprland.nix
-        ../modules/system/vm-guest.nix
-       # inputs.disko.nixosModules.disko
-       # ../hosts/flipper/disko.nix
+        ./_system/common.nix
+        ./_system/1password.nix
+        ./_system/audio.nix
+        #./_system/desktop-kde.nix
+        ./_system/desktop-hyprland.nix
+        ./_system/vm-guest.nix
         inputs.home-manager.nixosModules.home-manager {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
@@ -92,18 +92,18 @@ in
           home-manager.users.robie.imports = [
             inputs.nix-index-database.hmModules.nix-index
             ../hosts/nixos1/home.nix
-            ../modules/home/common.nix
-            ../modules/home/1password.nix
-            ../modules/home/gemini-cli.nix
-            ../modules/home/claude.nix
-	    ../modules/home/obsidian.nix
-            ../modules/home/bearing.nix
-	    ../modules/home/desktop-hyprland.nix
-	    ../modules/home/firefox.nix
-	    ../modules/home/yazi.nix
-	    ../modules/home/hyprshot.nix
+            ./_home/common.nix
+            ./_home/1password.nix
+            ./_home/gemini-cli.nix
+            ./_home/claude.nix
+            ./_home/obsidian.nix
+            ./_home/bearing.nix
+            ./_home/desktop-hyprland.nix
+            ./_home/firefox.nix
+            ./_home/yazi.nix
+            ./_home/hyprshot.nix
           ];
-	}
+        }
       ];
     };
 
@@ -112,17 +112,17 @@ in
 #      system = "x86_64-linux";
 #      modules = [
 #        ../hosts/nixos1/configuration.nix
-#        ../modules/system/common.nix
-#        ../modules/system/1password.nix
-#        ../modules/system/audio.nix
-#        ../modules/system/desktop-kde.nix
+#        ./_system/common.nix
+#        ./_system/1password.nix
+#        ./_system/audio.nix
+#        ./_system/desktop-kde.nix
 #        inputs.home-manager.nixosModules.home-manager {
 #          home-manager.useGlobalPkgs = true;
 #          home-manager.useUserPackages = true;
 #          home-manager.users.robie.imports = [
 #            ../hosts/nixos2/home.nix
-#            ../modules/home/common.nix
-#            ../modules/home/1password.nix
+#            ./_home/common.nix
+#            ./_home/1password.nix
 #          ];
 #	}
 #      ];
@@ -132,24 +132,22 @@ in
 #      system = "x86_64-linux";
 #      modules = [
 #        ../hosts/major-ant/configuration.nix
-#        ../modules/system/common.nix
-#        ../modules/system/1password.nix
-#        ../modules/system/audio.nix
-#        ../modules/system/desktop-kde.nix
-#        ../modules/system/vm-guest.nix
+#        ./_system/common.nix
+#        ./_system/1password.nix
+#        ./_system/audio.nix
+#        ./_system/desktop-kde.nix
+#        ./_system/vm-guest.nix
 #        inputs.home-manager.nixosModules.home-manager {
 #          home-manager.useGlobalPkgs = true;
 #          home-manager.useUserPackages = true;
 #          home-manager.users.robie.imports = [
 #            ../hosts/major-ant/home.nix
-#            ../modules/home/common.nix
-#            ../modules/home/1password.nix
+#            ./_home/common.nix
+#            ./_home/1password.nix
 #          ];
 #	}
 #      ];
 #    };
-
-
 
   };
 }

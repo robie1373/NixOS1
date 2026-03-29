@@ -22,34 +22,28 @@
     };
 
     # agenix: age-encrypted secrets management for NixOS hosts.
-    # Secrets are encrypted with the host's SSH public key and decrypted at boot.
-    # Only freely-rotatable secrets go here (service passwords, API tokens, TLS creds).
-    # Hard-to-rotate secrets (CA keys, master credentials) stay in 1Password only.
-    # Rewrite note: agenix is a lab-wide concern. Keep in any flake managing lab servers.
     agenix = {
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # nixos-generators: builds NixOS images in various formats (proxmox, iso, qcow2, etc.)
-    # Used here to produce the golden bootstrap image imported into Proxmox as a template.
-    # New lab VMs are cloned from that template; nixos-anywhere then installs the real config.
-    # Rewrite note: this is a lab-infrastructure concern, not a desktop concern.
-    # Keep in any flake that manages server provisioning; safe to omit from a desktop-only flake.
+    # nixos-generators: builds NixOS images (proxmox, iso, qcow2, etc.)
+    # Rewrite note: deprecated as of NixOS 25.05 — migrate to native nixpkgs image API.
     nixos-generators = {
       url = "github:nix-community/nixos-generators";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # import-tree: auto-discovers all .nix files under ./modules as flake-parts modules.
+    # Directories prefixed with _ are excluded (used to quarantine legacy NixOS modules
+    # during migration — see modules/_system/ and modules/_home/).
+    import-tree.url = "github:vic/import-tree";
+
+    # nix-wrapper-modules: wraps programs as standalone derivations with embedded config.
+    # Used in Phase 1 migration to replace home-manager program modules.
+    nix-wrapper-modules.url = "github:BirdeeHub/nix-wrapper-modules";
   };
 
-  outputs = inputs @ { flake-parts, ... }: 
-    flake-parts.lib.mkFlake { inherit inputs; } {
-      systems = [ "aarch64-linux" "x86_64-linux" ];
-      imports = [
-        ./parts/nixos.nix      # nixosConfigurations: all hosts (desktop + lab servers)
-        ./parts/packages.nix   # packages: lab tooling outputs (bootstrap image, etc.)
-                               # Rewrite note: packages.nix is lab-infrastructure only.
-                               # Desktop rewrite can ignore or exclude it safely.
-      ];
-    };
+  outputs = inputs:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } (inputs.import-tree ./modules);
 }

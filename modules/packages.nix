@@ -1,4 +1,4 @@
-# parts/packages.nix
+# modules/packages.nix
 #
 # Package outputs for lab tooling. Currently produces the Proxmox golden bootstrap
 # image used to provision new NixOS VMs without any manual console interaction.

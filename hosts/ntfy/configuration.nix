@@ -21,8 +21,8 @@
     ./hardware-configuration.nix
     ./disko.nix
     inputs.disko.nixosModules.disko
-    ../../modules/system/server-common.nix
-    ../../modules/system/ntfy.nix
+    ../../modules/_system/server-common.nix
+    ../../modules/_system/ntfy.nix
   ];
 
   # ── Identity ─────────────────────────────────────────────────────────────
