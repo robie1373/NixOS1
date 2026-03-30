@@ -314,37 +314,8 @@
     # foot: configured via modules/programs/foot/default.nix wrapper derivation.
     # Installed in home.packages in the host's home.nix.
 
-    # ════════════════════════════════════════════════════════════════════════
-    # FISH — shell
-    # ════════════════════════════════════════════════════════════════════════
-    programs.fish = {
-      enable = true;
-
-      interactiveShellInit = ''
-        set fish_greeting ""   # silence the default welcome banner
-
-        # Change the wallpaper: wallpaper /path/to/image.png
-        function wallpaper
-          pkill swaybg
-          ${pkgs.swaybg}/bin/swaybg -i $argv[1] -m fill &
-        end
-
-	# use nix-shell and acpi to check battery level
-	function battery
-	  nix-shell -p acpi --run "acpi -b"
-	end
-
-	# simple command to delete all but the last generation
-	function cleangen
-	  echo "running: sudo nix-env --delete-generations +1 --profile /nix/var/nix/profiles/system && nix-env --delete-generations +1 && nix-collect-garbage" ; sudo nix-env --delete-generations +1 --profile /nix/var/nix/profiles/system && nix-env --delete-generations +1 && nix-collect-garbage
-	  end
-      '';
-
-      # Fish-specific aliases (these augment home.shellAliases from common.nix)
-      shellAliases = {
-        mount-phone = "mkdir -p ~/mnt/iphone && ${pkgs.ifuse}/bin/ifuse ~/mnt/iphone";
-      };
-    };
+    # fish: configured via modules/programs/fish/default.nix wrapper derivation.
+    # Installed in home.packages in the host's home.nix.
 
     # ════════════════════════════════════════════════════════════════════════
     # GTK THEME

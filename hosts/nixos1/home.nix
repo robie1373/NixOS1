@@ -16,5 +16,6 @@
     foot
     rofi
     waybar
+    fish
   ];
 }

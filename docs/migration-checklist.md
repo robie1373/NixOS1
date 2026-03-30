@@ -342,6 +342,7 @@ These are not part of the migration sequence but should not be forgotten.
 - [ ] **hardware.enableRedistributableFirmware = true** — WiFi, BT, audio, NPU firmware on flipper.
 - [ ] **Themed greetd session** — tuigreet is plain. Addressed in Phase 4.
 - [ ] **YubiKey Bio MPE** — purchase and enroll as primary FIDO2 key. Blocked on FIDO2 boot unlock investigation.
+- [ ] **Switch flipper terminal from foot to kitty** (priority 3) — wrap kitty with nix-wrapper-modules, update keybinds and bearing terminal setting, then remove foot from flipper's home.packages. Blocked on: dendritic migration complete (Phase 1.11).
 - [ ] **`direnv` + `nix-direnv`** — useful for dev work. Add whenever convenient, independent of migration.
 - [ ] **DeepFilterNet noise cancellation** — PipeWire LADSPA plugin. Add post-migration.
 - [ ] **`impermanence`** — opt-in persistence on Btrfs. Long-term consideration, requires planning.
