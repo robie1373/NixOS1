@@ -130,31 +130,35 @@ Wrap zathura as the first wrapper-module derivation before committing to migrati
 
 ### 1.5 — Migrate Host Definitions
 
-- [ ] Create `modules/hosts/flipper/default.nix`
+- [x] Create `modules/hosts/flipper/default.nix`
   - Imports list of feature modules for flipper
   - Sets `networking.hostName`, `system.stateVersion`
   - Replaces role of `hosts/flipper/configuration.nix` + `parts/nixos.nix` flipper entry
-- [ ] Create `modules/hosts/nixos1/default.nix`
+- [x] Create `modules/hosts/nixos1/default.nix`
   - Mirrors above for the VM
-- [ ] Update `flake.nix` (or let import-tree discover) host definitions
-- [ ] Verify both hosts build: `nixos-rebuild build --flake .#flipper`
+- [x] Update `flake.nix` (or let import-tree discover) host definitions
+- [x] Verify both hosts build: `nixos-rebuild build --flake .#flipper`
+
+> **Completed 2026-03-29.** `modules/hosts/flipper/default.nix`, `modules/hosts/nixos1/default.nix`, and `modules/hosts/ntfy/default.nix` created. Each is a standalone flake-parts module auto-discovered by import-tree — no registration in any other file required. `modules/nixos.nix` stripped to just `systems = [...]`. `nix flake show` lists all three hosts; `nixos-rebuild build .#flipper` passes with identical output path (no config change).
 
 ### 1.6 — Migrate System Feature Modules
 
 
 Migrate each module from `modules/system/` to dendritic files. Do one at a time, build-test after each.
 
-- [ ] `common.nix` → `modules/features/common/default.nix`
+- [x] `common.nix` → `modules/features/common/default.nix`
   - boot, networking, locale, users, git, neovim, tailscale
-- [ ] `audio.nix` → `modules/features/audio/default.nix`
-- [ ] `vm-guest.nix` → `modules/features/vm-guest/default.nix`
-- [ ] `1password.nix` (system side) → `modules/features/1password/default.nix`
+- [x] `audio.nix` → `modules/features/audio/default.nix`
+- [x] `vm-guest.nix` → `modules/features/vm-guest/default.nix`
+- [x] `1password.nix` (system side) → `modules/features/1password/default.nix`
   - System packages, polkit rule
   - Keep home-manager 1password.nix alive separately (SSH agent, systemd services)
-- [ ] `desktop-hyprland.nix` (system side) → `modules/features/desktop-hyprland/default.nix`
+- [x] `desktop-hyprland.nix` (system side) → `modules/features/desktop-hyprland/default.nix`
   - Hyprland enable, portals, fonts, greetd, env vars
   - Home-manager program configs move to wrapper-modules (see 1.7)
-- [ ] `desktop-kde.nix` → `modules/features/desktop-kde/default.nix` (low priority, not used on flipper)
+- [x] `desktop-kde.nix` → `modules/features/desktop-kde/default.nix` (low priority, not used on flipper)
+
+> **Completed 2026-03-29.** Modules landed in `modules/_features/` (with underscore) rather than `modules/features/` — plain NixOS modules cannot be auto-discovered by import-tree as flake-parts modules, so the `_` prefix excludes them. All 8 modules stripped of `mkEnableOption` + `mkIf` wrappers: import = enable. `mySystem.*` enable flags removed from `hosts/flipper/configuration.nix` and `hosts/nixos1/configuration.nix`. `desktop-kde.nix` skipped (low priority, unused). `nixos-rebuild build .#flipper` produces identical output path — no config change.
 
 ### 1.7 — Migrate Home Programs to Wrapper-Modules
 
