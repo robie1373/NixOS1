@@ -5,11 +5,11 @@
     specialArgs = { inherit inputs self; };
     modules = [
       ../../../hosts/nixos1/configuration.nix
-      ../../_system/common.nix
-      ../../_system/1password.nix
-      ../../_system/audio.nix
-      ../../_system/desktop-hyprland.nix
-      ../../_system/vm-guest.nix
+      ../../_features/common.nix
+      ../../_features/1password.nix
+      ../../_features/audio.nix
+      ../../_features/desktop-hyprland.nix
+      ../../_features/vm-guest.nix
       inputs.home-manager.nixosModules.home-manager
       {
         home-manager.useGlobalPkgs         = true;

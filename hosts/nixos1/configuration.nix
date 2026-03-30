@@ -10,11 +10,6 @@
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
 
-  mySystem.audio.enable      = true;
-  #mySystem.desktopKde.enable = false;
-  mySystem.desktopHyprland.enable = true;
-  mySystem.vmGuest.enable    = true;
-  
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [

@@ -10,13 +10,6 @@
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
 
-  mySystem.audio.enable           = true;
-  #mySystem.desktopKde.enable      = false;
-  mySystem.desktopHyprland.enable = true;
-  mySystem.nas.enable             = true;
-  mySystem.speakerFix.enable      = true;
-  mySystem.gaming.enable	  = true;
-
   # ── Power management ────────────────────────────────────────────────────────
   # Swap is 16G (= RAM) — sufficient for hibernate. resumeDevice tells the
   # kernel where to find the saved image. Label is set by disko:

@@ -5,15 +5,15 @@
     specialArgs = { inherit inputs self; };
     modules = [
       ../../../hosts/flipper/configuration.nix
-      ../../_system/common.nix
-      ../../_system/1password.nix
-      ../../_system/audio.nix
-      ../../_system/desktop-hyprland.nix
-      ../../_system/nas.nix
-      ../../_system/speaker-fix.nix
+      ../../_features/common.nix
+      ../../_features/1password.nix
+      ../../_features/audio.nix
+      ../../_features/desktop-hyprland.nix
+      ../../_features/nas.nix
+      ../../_features/speaker-fix.nix
       inputs.disko.nixosModules.disko
       ../../../hosts/flipper/disko.nix
-      ../../_system/gaming.nix
+      ../../_features/gaming.nix
       inputs.home-manager.nixosModules.home-manager
       {
         home-manager.useGlobalPkgs         = true;
