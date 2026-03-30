@@ -1,16 +1,14 @@
-{ inputs, ... }:
+{ inputs, self, ... }:
 let
   # mkHost: desktop/workstation hosts — includes home-manager, Hyprland, etc.
-  # Rewrite note: this is the desktop-side helper. Modify freely during the rewrite.
+  # self is passed so host and home modules can reference flake packages
+  # (e.g. self.packages.${pkgs.system}.zathura for wrapper-module derivations).
   mkHost = { system, modules }: inputs.nixpkgs.lib.nixosSystem {
-    specialArgs = { inherit inputs; };
+    specialArgs = { inherit inputs self; };
     inherit system modules;
   };
 
   # mkServer: headless lab servers — no home-manager, no desktop, no audio.
-  # Used for all NixOS VMs provisioned in Proxmox (ntfy, Kanidm, Blocky, etc.).
-  # Rewrite note: this is the lab-infrastructure helper. Keep separate from mkHost
-  # so the desktop rewrite cannot accidentally affect server configs.
   mkServer = { system, modules }: inputs.nixpkgs.lib.nixosSystem {
     specialArgs = { inherit inputs; };
     inherit system modules;
@@ -50,6 +48,7 @@ in
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.backupFileExtension = "backup";
+          home-manager.extraSpecialArgs = { inherit self; };
           home-manager.users.robie.imports = [
             inputs.nix-index-database.hmModules.nix-index
             ../hosts/flipper/home.nix
@@ -63,7 +62,6 @@ in
             ./_home/firefox.nix
             ./_home/tablet.nix
             ./_home/mpv.nix
-            ./_home/zathura.nix
             ./_home/imv.nix
             ./_home/mpd.nix
             ./_home/nas.nix
