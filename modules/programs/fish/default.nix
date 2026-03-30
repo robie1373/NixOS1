@@ -54,11 +54,14 @@
           exec ${pkgs.fish}/bin/fish --init-command "source ${configFish}" "$@"
         '';
       in
-      pkgs.symlinkJoin {
+      # NixOS environment.shells and users.users.*.shell require packages to have
+      # a shellPath attribute.  symlinkJoin doesn't inherit it from pkgs.fish,
+      # so we add it with //.
+      (pkgs.symlinkJoin {
         name = "fish";
         # fishWrapper listed first — its bin/fish shadows pkgs.fish's bin/fish.
         # pkgs.fish still provides completions, functions, man pages, and $__fish_data_dir.
         paths = [ fishWrapper pkgs.fish ];
-      };
+      }) // { shellPath = "/bin/fish"; };
   };
 }

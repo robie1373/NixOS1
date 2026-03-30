@@ -42,7 +42,8 @@
     extraGroups   = [ "networkmanager" "wheel" "video" "input" ];
     initialPassword = "changeme";
   };
-  users.users.robie.shell = pkgs.fish;
+  # Login shell set per-host (hosts/*/configuration.nix) to the wrapped fish
+  # derivation so the baked-in config is active in every terminal.
 
   programs.fish.enable = true;
   programs.git.enable  = true;

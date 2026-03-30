@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, self, ... }:
 
 {
   imports = [
@@ -104,5 +104,11 @@
 
   # Set to the NixOS release you first installed this system with.
   # Do not change this after the first install.
+  # Use the wrapped fish derivation as the login shell so baked-in config is
+  # active for every terminal session. Also register it in /etc/shells so
+  # login succeeds (programs.fish.enable only registers pkgs.fish).
+  users.users.robie.shell = self.packages.${pkgs.system}.fish;
+  environment.shells      = [ self.packages.${pkgs.system}.fish ];
+
   system.stateVersion = "25.11";
 }
