@@ -1,7 +1,7 @@
 # Dry Dock Migration Checklist
 
 Living document. Check items off as completed.
-Last updated: 2026-03-24.
+Last updated: 2026-03-29.
 
 Reference: `docs/comparison/niri-migration-plan.md` for rationale.
 Reference: `github.com/vimjoyer/nixconf` for pattern examples.
@@ -101,24 +101,32 @@ Independent of the migration. Can be done now, in any order.
 
 ### 1.3 — Create New Module Directory Structure
 
-- [ ] Create `modules/hosts/` directory
-- [ ] Create `modules/features/` directory (or mirror vimjoyer's layout exactly)
-- [ ] Create `modules/programs/` directory for wrapper-module derivations
-- [ ] Do NOT delete any existing files yet — new and old coexist during migration
+- [x] Create `modules/hosts/` directory
+- [x] Create `modules/features/` directory (or mirror vimjoyer's layout exactly)
+- [x] Create `modules/programs/` directory for wrapper-module derivations
+- [x] Do NOT delete any existing files yet — new and old coexist during migration
+
+> **Completed 2026-03-29.** Placeholder `.gitkeep` files created in each directory.
 
 ### 1.4 — Zathura Spike: Validate nix-wrapper-modules
 
 Wrap zathura as the first wrapper-module derivation before committing to migrating all programs. If this fails or the pattern doesn't fit, the problem surfaces now rather than mid-migration.
 
-- [ ] Read vimjoyer's wrapper-module implementation for reference pattern
-- [ ] Create `modules/programs/zathura/default.nix` as a nix-wrapper-modules derivation
+- [x] Read vimjoyer's wrapper-module implementation for reference pattern
+- [x] Create `modules/programs/zathura/default.nix` as a nix-wrapper-modules derivation
   - Catppuccin Macchiato theme (reference current `modules/home/zathura.nix` for options)
-- [ ] Wire into flipper's host module (replacing `modules/home/zathura.nix` import)
-- [ ] `nixos-rebuild build .#flipper` — clean build
-- [ ] `nixos-rebuild test` on flipper — activates without becoming boot default
-- [ ] Manual test: open a PDF — Catppuccin theme present, keyboard navigation works
-- [ ] Remove `modules/home/zathura.nix` from flipper's import list once confirmed working
-- [ ] **Acceptance:** zathura works via wrapper-module derivation; `modules/home/zathura.nix` no longer needed for flipper
+- [x] Wire into flipper's host module (replacing `modules/home/zathura.nix` import)
+- [x] `nixos-rebuild build .#flipper` — clean build
+- [x] `nixos-rebuild test` on flipper — activates without becoming boot default
+- [x] Manual test: open a PDF — Catppuccin theme present, keyboard navigation works
+- [x] Remove `modules/home/zathura.nix` from flipper's import list once confirmed working
+- [x] **Acceptance:** zathura works via wrapper-module derivation; `modules/home/zathura.nix` no longer needed for flipper
+
+> **Completed 2026-03-29.** `modules/programs/zathura/default.nix` created as a nix-wrapper-modules derivation. Catppuccin Macchiato theme applied. Three issues found and fixed during spike:
+> - **Plugin missing**: nix-wrapper-modules zathura defaults to `[zathura_cb zathura_djvu zathura_ps]` — no PDF plugin. Fixed by explicitly passing `plugins = with pkgs.zathuraPkgs; [ zathura_pdf_poppler zathura_cb zathura_djvu zathura_ps ]`. Note: correct attr path is `pkgs.zathuraPkgs`, not `pkgs.zathuraPlugins`.
+> - **8-digit hex unsupported**: girara does not accept `#rrggbbaa` format. `highlight-color` and `highlight-active-color` removed.
+> - **Unknown option**: `smooth-scroll` is not a valid zathura option in current nixpkgs. Removed.
+> `nixos-rebuild test` activated cleanly. PDF opens with Catppuccin theme and no warnings. `modules/_home/zathura.nix` retained (legacy, excluded by import-tree `/_` filter) but flipper no longer imports it.
 
 ### 1.5 — Migrate Host Definitions
 
