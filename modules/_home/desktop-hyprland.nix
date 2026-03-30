@@ -1,4 +1,4 @@
-{ lib, config, pkgs, osConfig, ... }:
+{ lib, config, pkgs, osConfig, self, ... }:
 
 {
   options.myHome.desktopHyprland.enable =
@@ -19,7 +19,7 @@
         # Programs launched once on startup
         # Use full store paths — PATH is not populated when Hyprland starts via greetd
         exec-once = [
-          "${pkgs.waybar}/bin/waybar"
+          "${self.packages.${pkgs.system}.waybar}/bin/waybar"
           "${pkgs.swaybg}/bin/swaybg -i /home/robie/nixos-config/media/redwoods.png -m fill"
           # dunst and hypridle are managed as systemd user services — no exec-once needed
         ];
@@ -30,9 +30,9 @@
         # ── Keybinds ──────────────────────────────────────────────────────
         bind = [
           # Apps
-          "$mod, Return, exec, ${pkgs.foot}/bin/foot"
-          "$mod, D, exec, ${pkgs.rofi}/bin/rofi -show drun"
-          "$mod, E, exec, ${pkgs.rofi}/bin/rofi -show window"
+          "$mod, Return, exec, ${self.packages.${pkgs.system}.foot}/bin/foot"
+          "$mod, D, exec, ${self.packages.${pkgs.system}.rofi}/bin/rofi -show drun"
+          "$mod, E, exec, ${self.packages.${pkgs.system}.rofi}/bin/rofi -show window"
 
           # Window management
           "$mod, U, killactive,"
@@ -74,7 +74,7 @@
           "$mod, slash, exec, ${pkgs.wlr-which-key}/bin/wlr-which-key"
 
           # The Bearing — open a bearing session in a new terminal
-          "$mod, B, exec, ${pkgs.foot}/bin/foot -- bash -c 'cd ~/work && claude bearing; exec bash'"
+          "$mod, B, exec, ${self.packages.${pkgs.system}.foot}/bin/foot -- bash -c 'cd ~/work && claude bearing; exec bash'"
         ];
 
         # Touchpad gestures
@@ -169,389 +169,11 @@
       };
     };
 
-    # ════════════════════════════════════════════════════════════════════════
-    # WAYBAR — status bar
-    # ════════════════════════════════════════════════════════════════════════
-    programs.waybar = {
-      enable = true;
+    # waybar: configured via modules/programs/waybar/default.nix wrapper derivation.
+    # Installed in home.packages in the host's home.nix.
 
-      settings = {
-        mainBar = {
-          layer    = "top";
-          position = "top";
-          height   = 32;
-
-          modules-left   = [ "hyprland/workspaces" ];
-          modules-center = [ "clock" ];
-          modules-right  = [
-            "battery" "backlight" "pulseaudio" "network" "cpu" "temperature" "memory" "bluetooth" "custom/iphone" "tray" "custom/power"
-          ] ++ lib.optionals (config.myHome.tablet.enable or false) [ "custom/tablet" ];
-
-          "hyprland/workspaces" = {
-            disable-scroll = true;
-            all-outputs    = true;
-            format         = "{name}";
-          };
-
-          battery = {
-            states = {
-              warning  = 20;
-              critical = 10;
-            };
-            format           = "󰁹 {capacity}%";
-            format-charging  = "󰂄 {capacity}%";
-            format-plugged   = "󰚥 {capacity}%";
-            format-full      = "󰁹 {capacity}%";
-            tooltip-format   = "{timeTo} · {power:.1f}W";
-          };
-
-          backlight = {
-            format         = "󰃟 {percent}%";
-            on-scroll-up   = "brightnessctl set 1%+";
-            on-scroll-down = "brightnessctl set 1%-";
-          };
-
-          temperature = {
-            critical-threshold = 80;
-            # hwmon7 = coretemp on flipper (lexicographic glob order puts hwmon10
-            # before hwmon2, so position 9 in `hwmon*` = hwmon7, not hwmon8).
-            # temp1_input = CPU package temp. Verify: for f in /sys/class/hwmon/hwmon*/name; do echo "$f: $(cat $f)"; done
-            hwmon-path = "/sys/class/hwmon/hwmon7/temp1_input";
-            format          = " {temperatureC}°C";
-            format-critical = "󰸁 {temperatureC}°C";
-          };
-
-          clock = {
-            format     = " {:%a, %H:%M}";
-            format-alt = " {:%A, %B %d, %Y}";
-            tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
-          };
-
-          cpu = {
-            format  = " CPU:{usage}%";
-            tooltip = false;
-          };
-
-          memory = {
-            format = " {used:.1f}G";
-          };
-
-          network = {
-            format-wifi         = " {essid} {signalStrength}%";
-            format-ethernet     = " connected";
-            format-disconnected = "⚠ offline";
-            tooltip-format-wifi = "{essid} · {signalStrength}% · {ipaddr}";
-            on-click            = "foot -e nmtui";
-          };
-
-          pulseaudio = {
-            format          = "󰕾 {volume}%";
-            format-muted    = "󰖁 muted";
-            on-click        = "pavucontrol";
-            on-scroll-up    = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 1%+";
-            on-scroll-down  = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 1%-";
-          };
-
-	  bluetooth = {
-	    format 			             =  "󰂯 {status}";
-            format-connected                         = "󰂱 {device_alias}";
-            format-connected-battery                 = "󰂱 {device_alias} {device_battery_percentage}%";
-            tooltip-format                           = "{controller_alias}\t{controller_address}";
-            tooltip-format-connected                 = "{controller_alias}\n\n{num_connections} connected\n{device_enumerate}";
-            tooltip-format-enumerate-connected       = "  {device_alias}";
-            tooltip-format-enumerate-connected-battery = " {device_alias}\t{device_battery_percentage}%";
-            on-click                                 = "blueman-manager";
-	  };
-
-          tray = {
-            spacing = 8;
-          };
-
-          "custom/power" = {
-            format   = "⏻";
-            tooltip  = false;
-            on-click = "${pkgs.writeShellScript "waybar-power-menu" ''
-              chosen=$(printf 'Lock\nSuspend\nHybrid Sleep\nHibernate\nReboot\nShutdown' | \
-                ${pkgs.rofi}/bin/rofi -dmenu -p "⏻ Power")
-              case "$chosen" in
-                "Lock")         pidof hyprlock || hyprlock ;;
-                "Suspend")      systemctl suspend ;;
-                "Hybrid Sleep") systemctl hybrid-sleep ;;
-                "Hibernate")    systemctl hibernate ;;
-                "Reboot")       systemctl reboot ;;
-                "Shutdown")     systemctl poweroff ;;
-              esac
-            ''}";
-          };
-
-          # iPhone mount status — visible only when iPhone is mounted.
-          # Clicking unmounts. Auto-mount is triggered by udev on plug-in.
-          "custom/iphone" = {
-            return-type = "json";
-            interval    = 2;
-            exec = "${pkgs.writeShellScript "waybar-iphone-status" ''
-              icon=$'\uf179'
-              if ${pkgs.util-linux}/bin/mountpoint -q "$HOME/mnt/iphone" 2>/dev/null; then
-                printf '{"text":"%s","class":"mounted","tooltip":"iPhone mounted · click to unmount"}\n' "$icon"
-              else
-                printf '{"text":"%s","class":""}\n' "$icon"
-              fi
-            ''}";
-            on-click = "${pkgs.writeShellScript "waybar-iphone-unmount" ''
-              /run/wrappers/bin/fusermount -u "$HOME/mnt/iphone"
-            ''}";
-          };
-
-          # Tablet mode toggle — only wired up when myHome.tablet.enable = true.
-          # exec outputs nothing on hosts without the tablet scripts, so the
-          # module is invisible there.
-          "custom/tablet" = lib.mkIf (config.myHome.tablet.enable or false) {
-            return-type = "json";
-            exec = "${pkgs.writeShellScript "waybar-tablet-status" ''
-              if test -f /tmp/tablet-mode-devices; then
-                printf '{"text":"󰦟","class":"active","tooltip":"Exit tablet mode"}\n'
-              else
-                printf '{"text":"󰌌","class":"","tooltip":"Enter tablet mode (Super+T)"}\n'
-              fi
-            ''}";
-            on-click = "${pkgs.writeShellScript "waybar-tablet-toggle" ''
-              if test -f /tmp/tablet-mode-devices; then
-                tablet-exit
-              else
-                tablet-enter
-              fi
-            ''}";
-            interval = "once";
-            signal   = 8;
-          };
-        };
-      };
-
-      # Catppuccin Macchiato color palette
-      style = ''
-        @define-color base     #24273a;
-        @define-color mantle   #1e2030;
-        @define-color surface0 #363a4f;
-        @define-color surface1 #494d64;
-        @define-color text     #cad3f5;
-        @define-color subtext1 #b8c0e0;
-        @define-color mauve    #c6a0f6;
-        @define-color blue     #8aadf4;
-        @define-color green    #a6da95;
-        @define-color red      #ed8796;
-        @define-color yellow   #eed49f;
-        @define-color peach    #f5a97f;
-        @define-color ivory    #f5f0e0;
-
-        * {
-          font-family: "JetBrainsMono Nerd Font";
-          font-size: 13px;
-          min-height: 0;
-        }
-
-        window#waybar {
-          background-color: @base;
-          color: @text;
-          border-bottom: 2px solid @mauve;
-        }
-
-        .modules-left,
-        .modules-center,
-        .modules-right {
-          margin: 4px 8px;
-        }
-
-        #workspaces button {
-          padding: 2px 8px;
-          background-color: @surface0;
-          color: @subtext1;
-          border-radius: 6px;
-          margin: 4px 2px;
-          border: 1px solid transparent;
-          transition: all 0.2s ease;
-        }
-
-        #workspaces button.active {
-          background-color: @mauve;
-          color: @base;
-          font-weight: bold;
-        }
-
-        #workspaces button:hover {
-          background-color: @surface1;
-          color: @text;
-        }
-
-        #clock        { color: @blue;   padding: 0 10px; }
-        #cpu          { color: @green;  padding: 0 8px;  }
-        #memory       { color: @yellow; padding: 0 8px;  }
-        #network      { color: @mauve;  padding: 0 8px;  }
-        #pulseaudio   { color: @peach;  padding: 0 8px;  }
-	#bluetooth          { color: @blue;   padding: 0 8px; }
-        #bluetooth.connected { color: @green; }
-        #bluetooth.disabled  { color: @surface1; }
-        #tray         { padding: 0 8px; }
-
-        #battery                { color: @green;  padding: 0 8px; }
-        #battery.warning        { color: @yellow; }
-        #battery.critical       { color: @red;
-                                  animation-name:            blink;
-                                  animation-duration:        0.5s;
-                                  animation-timing-function: steps(1);
-                                  animation-iteration-count: infinite;
-                                  animation-direction:       alternate; }
-        #battery.charging       { color: @blue; }
-        #battery.plugged        { color: @blue; }
-
-        #backlight    { color: @yellow; padding: 0 8px; }
-
-        #temperature           { color: @green; padding: 0 8px; }
-        #temperature.critical  { color: @red; }
-
-        #custom-iphone         { padding: 0; font-size: 15px; }
-        #custom-iphone.mounted { color: @ivory; padding: 0 8px; }
-
-        #custom-power  { color: @red; padding: 0 12px; font-size: 15px; }
-
-        #custom-tablet        { color: @blue;  padding: 0 8px; }
-        #custom-tablet.active { color: @peach; }
-      '';
-    };
-
-    # ════════════════════════════════════════════════════════════════════════
-    # ROFI — app launcher
-    # ════════════════════════════════════════════════════════════════════════
-
-    # Place the Catppuccin Macchiato rofi theme file
-    xdg.configFile."rofi/themes/catppuccin-macchiato.rasi".text = ''
-      * {
-        bg-col:          #24273a;
-        bg-col-light:    #363a4f;
-        border-col:      #24273a;
-        selected-col:    #363a4f;
-        blue:            #8aadf4;
-        fg-col:          #cad3f5;
-        fg-col2:         #ed8796;
-        grey:            #6e738d;
-
-        width:           600;
-        font:            "JetBrainsMono Nerd Font 14";
-      }
-
-      element-text, element-icon, mode-switcher {
-        background-color: inherit;
-        text-color:       inherit;
-      }
-
-      window {
-        height:           360px;
-        border:           3px;
-        border-color:     @border-col;
-        background-color: @bg-col;
-        border-radius:    12px;
-      }
-
-      mainbox {
-        background-color: @bg-col;
-      }
-
-      inputbar {
-        children:         [ prompt, entry ];
-        background-color: @bg-col;
-        border-radius:    5px;
-        padding:          2px;
-      }
-
-      prompt {
-        background-color: @blue;
-        padding:          6px;
-        text-color:       @bg-col;
-        border-radius:    3px;
-        margin:           20px 0 0 20px;
-      }
-
-      textbox-prompt-colon {
-        expand:           false;
-        str:              ":";
-      }
-
-      entry {
-        padding:          6px;
-        margin:           20px 0 0 10px;
-        text-color:       @fg-col;
-        background-color: @bg-col;
-      }
-
-      listview {
-        border:           0 2px 0;
-        padding:          6px 0 6px;
-        margin:           10px 0 0 20px;
-        columns:          2;
-        lines:            5;
-        background-color: @bg-col;
-      }
-
-      element {
-        padding:          5px;
-        background-color: @bg-col;
-        text-color:       @fg-col;
-      }
-
-      element-icon {
-        size:             25px;
-      }
-
-      element selected {
-        background-color: @selected-col;
-        text-color:       @fg-col2;
-      }
-
-      mode-switcher {
-        spacing:          0;
-      }
-
-      button {
-        padding:          10px;
-        background-color: @bg-col-light;
-        text-color:       @grey;
-        vertical-align:   0.5;
-        horizontal-align: 0.5;
-      }
-
-      button selected {
-        background-color: @bg-col;
-        text-color:       @fg-col;
-      }
-
-      message {
-        background-color: @bg-col-light;
-        margin:           2px;
-        padding:          2px;
-        border-radius:    5px;
-      }
-
-      textbox {
-        padding:          6px;
-        margin:           20px 0 0 20px;
-        text-color:       @fg-col;
-        background-color: @bg-col-light;
-      }
-    '';
-
-    programs.rofi = {
-      enable  = true;
-      package = pkgs.rofi;
-      terminal = "${pkgs.foot}/bin/foot";
-      # "catppuccin-macchiato" matches the filename we placed above
-      theme   = "catppuccin-macchiato";
-      extraConfig = {
-        modi        = "drun,run,window";
-        show-icons  = true;
-        icon-theme  = "Papirus-Dark";
-        drun-display-format = "{name}";
-        disable-history     = false;
-      };
-    };
+    # rofi: configured via modules/programs/rofi/default.nix wrapper derivation.
+    # Installed in home.packages in the host's home.nix.
 
     # ════════════════════════════════════════════════════════════════════════
     # DUNST — notification daemon
@@ -625,7 +247,7 @@
             on-timeout = "hyprctl dispatch dpms off";
             on-resume  = "hyprctl dispatch dpms on";
           }
-	  ] ++ lib.optionals (!(osConfig.mySystem.vmGuest.enable or false)) [
+          ] ++ lib.optionals (!(osConfig.services.qemuGuest.enable or false)) [
           {
             timeout    = 900;   # 15 min — hybrid-sleep (RAM + swap, fast resume)
             on-timeout = "systemctl hybrid-sleep";
@@ -689,50 +311,8 @@
       };
     };
 
-    # ════════════════════════════════════════════════════════════════════════
-    # FOOT — terminal
-    # ════════════════════════════════════════════════════════════════════════
-    programs.foot = {
-      enable = true;
-      settings = {
-        main = {
-          font       = "JetBrainsMono Nerd Font:size=14";
-          pad        = "12x12";
-        };
-
-        scrollback = {
-          lines = 5000;
-        };
-
-        colors-dark = {
-          # Catppuccin Macchiato palette (foot uses hex without #)
-	  alpha		       = "0.8";
-          foreground           = "cad3f5";
-          background           = "24273a";
-          selection-foreground = "cad3f5";
-          selection-background = "363a4f";
-          cursor = "24273a f4dbd6";   # text background (rosewater cursor)
-
-          # Black
-          regular0 = "494d64"; bright0 = "5b6078";
-          # Red
-          regular1 = "ed8796"; bright1 = "ed8796";
-          # Green
-          regular2 = "a6da95"; bright2 = "a6da95";
-          # Yellow
-          regular3 = "eed49f"; bright3 = "eed49f";
-          # Blue
-          regular4 = "8aadf4"; bright4 = "8aadf4";
-          # Magenta / Mauve
-          regular5 = "c6a0f6"; bright5 = "c6a0f6";
-          # Cyan / Sky
-          regular6 = "91d7e3"; bright6 = "91d7e3";
-          # White
-          regular7 = "b8c0e0"; bright7 = "a5adcb";
-        };
-
-      };
-    };
+    # foot: configured via modules/programs/foot/default.nix wrapper derivation.
+    # Installed in home.packages in the host's home.nix.
 
     # ════════════════════════════════════════════════════════════════════════
     # FISH — shell
@@ -867,13 +447,13 @@
       menu:
         - key: Return
           desc: "terminal"
-          cmd: "${pkgs.kitty}/bin/kitty"
+          cmd: "${self.packages.${pkgs.system}.foot}/bin/foot"
         - key: d
           desc: "app launcher"
-          cmd: "${pkgs.rofi}/bin/rofi -show drun"
+          cmd: "${self.packages.${pkgs.system}.rofi}/bin/rofi -show drun"
         - key: e
           desc: "window switcher"
-          cmd: "${pkgs.rofi}/bin/rofi -show window"
+          cmd: "${self.packages.${pkgs.system}.rofi}/bin/rofi -show window"
         - key: w
           desc: "windows →"
           submenu:

@@ -7,8 +7,13 @@
   myHome.firefox.enable         = true;
   myHome.tablet.enable          = true;
   myHome.mpv.enable             = true;
-  # zathura: now a nix-wrapper-modules derivation (Phase 1.4 spike)
-  home.packages = [ self.packages.${pkgs.system}.zathura ];
+  # Wrapped program derivations (nix-wrapper-modules — config baked in)
+  home.packages = with self.packages.${pkgs.system}; [
+    zathura
+    foot
+    rofi
+    waybar
+  ];
   xdg.mimeApps.defaultApplications."application/pdf" = "org.pwmt.zathura.desktop";
   myHome.imv.enable             = true;
   myHome.mpd.enable             = true;

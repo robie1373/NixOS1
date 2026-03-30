@@ -1,4 +1,4 @@
-{ config, ... }: {
+{ self, pkgs, ... }: {
 # This value determines the Home Manager release that your configuration is
   # compatible with. This helps avoid breakage when a new Home Manager release
   # introduces backwards incompatible changes.
@@ -9,5 +9,12 @@
   home.stateVersion = "25.05"; # Please read the comment before changing.
 
   myHome.desktopHyprland.enable = true;
-  myHome.firefox.enable = true;
+  myHome.firefox.enable         = true;
+
+  # Wrapped program derivations (nix-wrapper-modules — config baked in)
+  home.packages = with self.packages.${pkgs.system}; [
+    foot
+    rofi
+    waybar
+  ];
 }
