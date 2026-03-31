@@ -16,13 +16,11 @@
           "Groups/0/Items/1" = { "Name" = "hangul";      "Layout" = ""; };
           "GroupOrder"       = { "0" = "Default"; };
         };
-        # Right Alt (Alt_R) toggles EN ↔ Hangul.
-        # This is the standard key on physical Korean keyboards.
-        # Caps_Lock as trigger does not work on Wayland — the compositor consumes it
-        # as a modifier before it reaches fcitx5. Alt_R is a regular keypress and
-        # survives the Wayland input stack reliably.
+        # No TriggerKeys — toggle is handled by Hyprland bind calling fcitx5-remote -t.
+        # fcitx5 cannot intercept modifier keys (Alt_R) on Wayland via the IM protocol;
+        # the compositor must do it at the keyboard event level instead.
         globalOptions = {
-          "Hotkey" = { "TriggerKeys" = "Alt_R"; };
+          "Hotkey" = { "TriggerKeys" = ""; };
         };
       };
     };

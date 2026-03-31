@@ -29,6 +29,10 @@
 
         # ── Keybinds ──────────────────────────────────────────────────────
         bind = [
+          # Korean IM toggle — Alt_R is a modifier key; fcitx5 never sees it via Wayland IM
+          # protocol. Intercept at compositor level instead and call fcitx5-remote directly.
+          ", Alt_R, exec, ${pkgs.fcitx5}/bin/fcitx5-remote -t"
+
           # Apps
           "$mod, Return, exec, ${self.packages.${pkgs.stdenv.hostPlatform.system}.foot}/bin/foot"
           "$mod, D, exec, ${self.packages.${pkgs.stdenv.hostPlatform.system}.rofi}/bin/rofi -show drun"
