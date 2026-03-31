@@ -16,13 +16,16 @@
           "Groups/0/Items/1" = { "Name" = "hangul";      "Layout" = ""; };
           "GroupOrder"       = { "0" = "Default"; };
         };
-        # Right Alt toggles EN ↔ Hangul (mirrors physical Korean keyboard convention)
+        # Caps Lock emits the Hangul keysym after the xkb remap below
         globalOptions = {
-          "Hotkey" = { "TriggerKeys" = "Alt_R"; };
+          "Hotkey" = { "TriggerKeys" = "Hangul"; };
         };
       };
     };
   };
+
+  # Remap Caps Lock to the Hangul keysym — mirrors physical Korean keyboard layout
+  services.xserver.xkb.options = "korean:hangul_capslock";
 
   # Required for GTK, Qt, and XWayland apps to route input through fcitx5
   environment.sessionVariables = {
