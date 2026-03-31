@@ -1,6 +1,6 @@
 # Bearing Delegation — nixos-config
 _The Bearing communicates with this project through this file._
-_Last updated: 2026-03-24_
+_Last updated: 2026-03-31_
 
 ---
 
@@ -8,8 +8,10 @@ _Last updated: 2026-03-24_
 _Tasks delegated by The Bearing, not yet started._
 
 > **Next up — do these first, in order:**
-> 1. Multi-host module sharing design doc
+> 1. diagnose and fix the nixos mcp error.
 > 2. Bearing refactor
+
+- [ ] **[pri 1] Add Korean language support.** Add Korean input method support to the NixOS config (likely fcitx5 or ibus with Korean IME). Goal: enable Korean character input system-wide, in preparation for Hangul keyboard stickers and switching from romanized input. Delegated 2026-03-31.
 
 - [x] **[NEXT — pri 1] Cold-start efficiency audit.** — 2026-03-29
   - Created `docs/runbooks/add-module.md` — system and home module checklist, gotchas (unfree, foot vs kitty, parts/nixos.nix wiring), skeletons
@@ -20,6 +22,8 @@ _Tasks delegated by The Bearing, not yet started._
 
 - [x] **[NEXT — pri 2] Architecture question: multi-host module sharing.** — 2026-03-29
   - Closed. The line of reasoning pursued was not what was intended. Work product archived to `docs/archive/multi-host-sharing.md` and is of no value. No conclusions to carry forward.
+- [ ] **Wayland session management — assess config impact.** The xdg-session-management protocol was merged March 23, 2026, after a 6-year wait. It enables system-wide window state/position restore across crashes and reboots — similar to browser session restoration but compositor-level. KWin already implemented it; broader adoption expected. Article: https://itsfoss.com/news/wayland-session-management/ — read it for full context. Question to answer: does this affect the current compositor setup (niri/Hyprland)? Is there config to enable, a module option to add, or is it purely a compositor-side change with no NixOS action needed yet? Write up a brief assessment and drop a note back here.
+
 - [ ] **Refactor bearing.nix into a thin import wrapper.** Repo confirmed created: `git@github.com:robie1373/the-bearing.git`. bearing.nix should only: add it as a flake input, enable the module, and set user config (ntfy topic, schedule, workDir, terminal). All scripts, templates, and module logic move to the external repo. See architecture notes below.
 
 ## In Progress
@@ -79,6 +83,8 @@ _Tasks delegated by The Bearing, not yet started._
   - `bearing` dunst rule: `appname = "The Bearing"`, `script = ${bearingOpen}` (store path)
   - `bearing-notify` simplified to non-blocking `dunstify` — no `-A` flag, no hanging service
   - Both fixes live in `modules/home/bearing.nix` alongside the scripts
+
+---
 
 ## Notes from The Bearing
 

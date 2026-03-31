@@ -147,3 +147,66 @@ nix flake update                # update all inputs
   };
 }
 ```
+
+---
+
+## Wayland Input Methods (fcitx5)
+
+Hard-won lessons from the Korean/Hangul fcitx5 setup on Hyprland.
+
+### 1. `i18n.inputMethod` does NOT autostart on Hyprland
+
+`i18n.inputMethod` creates an XDG autostart `.desktop` file. Hyprland does not
+process XDG autostart entries. Without a systemd user service, the daemon never starts.
+
+**Required addition in the NixOS module alongside `i18n.inputMethod`:**
+
+```nix
+systemd.user.services.fcitx5 = {
+  description = "Fcitx5 input method daemon";
+  partOf      = [ "graphical-session.target" ];
+  wantedBy    = [ "graphical-session.target" ];
+  after       = [ "graphical-session.target" ];
+  serviceConfig = {
+    Type       = "simple";          # foreground — do NOT use -d (daemon flag)
+    ExecStart  = "${config.i18n.inputMethod.package}/bin/fcitx5 --replace";
+    Restart    = "on-failure";
+    RestartSec = 1;
+  };
+};
+```
+
+Use `config.i18n.inputMethod.package` — not `pkgs.fcitx5` — to get the
+addon-wrapped binary built from your addon list. Do NOT pass `-d`; `Type=simple`
+requires the process to stay in the foreground.
+
+### 2. Modifier keys cannot be IM trigger keys on Wayland
+
+fcitx5's `TriggerKeys` mechanism works by intercepting key events via the Wayland
+input method protocol. This protocol only delivers events when a text input context
+is focused, and **modifier-only keypresses (Alt_R, Caps_Lock, Shift, etc.) are
+tracked as keyboard state — they are never forwarded to the IM**.
+
+Setting `TriggerKeys = "Alt_R"` or `TriggerKeys = "Caps_Lock"` in fcitx5 config
+will silently do nothing on Wayland.
+
+**Fix: intercept the key at the Hyprland compositor level instead:**
+
+```nix
+# In wayland.windowManager.hyprland.settings.bind:
+", Alt_R, exec, ${pkgs.fcitx5}/bin/fcitx5-remote -t"
+```
+
+Hyprland consumes the keypress before any app sees it and calls `fcitx5-remote -t`
+to toggle the IM state. Clear `TriggerKeys` in fcitx5 config (it's unused).
+
+### 3. `korean:hangul_capslock` is not a valid xkb option
+
+It does not exist in xkeyboard-config. Using it silently does nothing.
+
+### 4. Do not set `GTK_IM_MODULE` on Wayland
+
+fcitx5 on Wayland uses the native text-input-v3 protocol. Setting `GTK_IM_MODULE=fcitx`
+conflicts with this and causes fcitx5's own Wayland Diagnose to warn. GTK4 and
+Wayland-native apps use the Wayland IM protocol directly. Only `QT_IM_MODULE` and
+`XMODIFIERS` are needed for Qt5 and XWayland apps respectively.
