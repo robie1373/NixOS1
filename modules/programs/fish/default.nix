@@ -64,6 +64,7 @@
         # pkgs.fish still provides completions, functions, man pages, and $__fish_data_dir.
         paths = [ fishWrapper pkgs.fish ];
         passthru.shellPath = "/bin/fish";
+        meta.mainProgram  = "fish";
       };
   };
 }

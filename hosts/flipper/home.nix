@@ -8,7 +8,7 @@
   myHome.tablet.enable          = true;
   myHome.mpv.enable             = true;
   # Wrapped program derivations (nix-wrapper-modules — config baked in)
-  home.packages = with self.packages.${pkgs.system}; [
+  home.packages = with self.packages.${pkgs.stdenv.hostPlatform.system}; [
     zathura
     foot
     rofi

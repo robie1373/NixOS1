@@ -19,7 +19,7 @@
         # Programs launched once on startup
         # Use full store paths — PATH is not populated when Hyprland starts via greetd
         exec-once = [
-          "${self.packages.${pkgs.system}.waybar}/bin/waybar"
+          "${self.packages.${pkgs.stdenv.hostPlatform.system}.waybar}/bin/waybar"
           "${pkgs.swaybg}/bin/swaybg -i /home/robie/nixos-config/media/redwoods.png -m fill"
           # dunst and hypridle are managed as systemd user services — no exec-once needed
         ];
@@ -30,9 +30,9 @@
         # ── Keybinds ──────────────────────────────────────────────────────
         bind = [
           # Apps
-          "$mod, Return, exec, ${self.packages.${pkgs.system}.foot}/bin/foot"
-          "$mod, D, exec, ${self.packages.${pkgs.system}.rofi}/bin/rofi -show drun"
-          "$mod, E, exec, ${self.packages.${pkgs.system}.rofi}/bin/rofi -show window"
+          "$mod, Return, exec, ${self.packages.${pkgs.stdenv.hostPlatform.system}.foot}/bin/foot"
+          "$mod, D, exec, ${self.packages.${pkgs.stdenv.hostPlatform.system}.rofi}/bin/rofi -show drun"
+          "$mod, E, exec, ${self.packages.${pkgs.stdenv.hostPlatform.system}.rofi}/bin/rofi -show window"
 
           # Window management
           "$mod, U, killactive,"
@@ -74,7 +74,7 @@
           "$mod, slash, exec, ${pkgs.wlr-which-key}/bin/wlr-which-key"
 
           # The Bearing — open a bearing session in a new terminal
-          "$mod, B, exec, ${self.packages.${pkgs.system}.foot}/bin/foot -- bash -c 'cd ~/work && claude bearing; exec bash'"
+          "$mod, B, exec, ${self.packages.${pkgs.stdenv.hostPlatform.system}.foot}/bin/foot -- bash -c 'cd ~/work && claude bearing; exec bash'"
         ];
 
         # Touchpad gestures
@@ -418,13 +418,13 @@
       menu:
         - key: Return
           desc: "terminal"
-          cmd: "${self.packages.${pkgs.system}.foot}/bin/foot"
+          cmd: "${self.packages.${pkgs.stdenv.hostPlatform.system}.foot}/bin/foot"
         - key: d
           desc: "app launcher"
-          cmd: "${self.packages.${pkgs.system}.rofi}/bin/rofi -show drun"
+          cmd: "${self.packages.${pkgs.stdenv.hostPlatform.system}.rofi}/bin/rofi -show drun"
         - key: e
           desc: "window switcher"
-          cmd: "${self.packages.${pkgs.system}.rofi}/bin/rofi -show window"
+          cmd: "${self.packages.${pkgs.stdenv.hostPlatform.system}.rofi}/bin/rofi -show window"
         - key: w
           desc: "windows →"
           submenu:

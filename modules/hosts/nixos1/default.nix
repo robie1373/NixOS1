@@ -17,7 +17,7 @@
         home-manager.backupFileExtension   = "backup";
         home-manager.extraSpecialArgs      = { inherit self; };
         home-manager.users.robie.imports   = [
-          inputs.nix-index-database.hmModules.nix-index
+          inputs.nix-index-database.homeModules.nix-index
           ../../../hosts/nixos1/home.nix
           ../../_home/common.nix
           ../../_home/1password.nix
