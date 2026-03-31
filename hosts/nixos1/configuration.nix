@@ -24,8 +24,7 @@
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  users.users.robie.shell = self.packages.${pkgs.system}.fish;
-  environment.shells      = [ self.packages.${pkgs.system}.fish ];
+  programs.fish.package = self.packages.${pkgs.stdenv.hostPlatform.system}.fish;
 
   system.stateVersion = "25.11"; # Did you read the comment?
 

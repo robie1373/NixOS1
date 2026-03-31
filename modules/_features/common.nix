@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 {
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
@@ -41,9 +41,10 @@
     description   = "Robie";
     extraGroups   = [ "networkmanager" "wheel" "video" "input" ];
     initialPassword = "changeme";
+    # Track whatever fish is configured as the system fish.  On hosts that set
+    # programs.fish.package = wrapped fish, this resolves to that wrapper.
+    shell = config.programs.fish.package;
   };
-  # Login shell set per-host (hosts/*/configuration.nix) to the wrapped fish
-  # derivation so the baked-in config is active in every terminal.
 
   programs.fish.enable = true;
   programs.git.enable  = true;

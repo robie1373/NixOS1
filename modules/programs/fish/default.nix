@@ -55,13 +55,15 @@
         '';
       in
       # NixOS environment.shells and users.users.*.shell require packages to have
-      # a shellPath attribute.  symlinkJoin doesn't inherit it from pkgs.fish,
-      # so we add it with //.
-      (pkgs.symlinkJoin {
+      # a shellPath attribute.  Use passthru (not //) so the result stays a
+      # real derivation — the // operator produces a plain attrset that breaks
+      # Nix string interpolation in the NixOS shell/passwd activation scripts.
+      pkgs.symlinkJoin {
         name = "fish";
         # fishWrapper listed first — its bin/fish shadows pkgs.fish's bin/fish.
         # pkgs.fish still provides completions, functions, man pages, and $__fish_data_dir.
         paths = [ fishWrapper pkgs.fish ];
-      }) // { shellPath = "/bin/fish"; };
+        passthru.shellPath = "/bin/fish";
+      };
   };
 }

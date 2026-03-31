@@ -104,11 +104,11 @@
 
   # Set to the NixOS release you first installed this system with.
   # Do not change this after the first install.
-  # Use the wrapped fish derivation as the login shell so baked-in config is
-  # active for every terminal session. Also register it in /etc/shells so
-  # login succeeds (programs.fish.enable only registers pkgs.fish).
-  users.users.robie.shell = self.packages.${pkgs.system}.fish;
-  environment.shells      = [ self.packages.${pkgs.system}.fish ];
+  # Replace the fish installed by programs.fish.enable with the wrapped fish.
+  # /run/current-system/sw/bin/fish then points to the wrapper, so the login
+  # shell (/etc/passwd) and /etc/shells both work without any extra changes —
+  # programs.fish.enable handles all of that using the package we specify here.
+  programs.fish.package = self.packages.${pkgs.stdenv.hostPlatform.system}.fish;
 
   system.stateVersion = "25.11";
 }
