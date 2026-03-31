@@ -125,6 +125,36 @@ wrapper = pkgs.writeShellScriptBin "fish" ''
 Fish data files (completions, functions, `$__fish_data_dir`) are resolved at compile time
 to the real fish store path, so the symlinkJoin wrapper has full access to all fish built-ins.
 
+### Fish as login shell: `shellPath` and per-host wiring
+
+`symlinkJoin` does not inherit `shellPath` from the wrapped package. NixOS requires
+`shellPath` to be set on any package used as a login shell (via `users.users.*.shell`
+or listed in `environment.shells`). Without it, evaluation fails with a type error.
+
+**Fix:** append `shellPath` with `//` after the `symlinkJoin` call:
+
+```nix
+(pkgs.symlinkJoin {
+  name = "fish";
+  paths = [ fishWrapper pkgs.fish ];
+}) // { shellPath = "/bin/fish"; };
+```
+
+**Do not set the login shell in a shared feature module** (e.g. `_features/common.nix`).
+Hosts that don't use the wrapped fish (e.g. a minimal VM) would break. Set it per-host:
+
+```nix
+# hosts/<name>/configuration.nix
+{ self, pkgs, ... }:
+{
+  users.users.robie.shell = self.packages.${pkgs.system}.fish;
+  environment.shells      = [ self.packages.${pkgs.system}.fish ];
+}
+```
+
+`environment.shells` must include the wrapped path — `programs.fish.enable` only registers
+`pkgs.fish`, not the wrapper. Without the entry, login authentication may reject the shell.
+
 ### Aliases in Fish config
 
 Fish's `alias` command creates a wrapper function that passes `$argv`. Use it for simple
@@ -213,3 +243,6 @@ readlink -f $(which foot)
 | Rofi: "Unhandled value type set" | `pkgs.writeText` returns a derivation (attrset); wrapper calls `toRasi` on it | Coerce: `"${theme}"` |
 | `waybar: command not found` in PATH | `useUserPackages = true` — binary is in `/etc/profiles/per-user/…/bin/` | Expected; use full path for exec-once |
 | Fish aliases missing after removing programs.fish | `home.shellAliases` applies via `programs.fish.shellAliases` — removing the module drops them | Bake all aliases into the wrapper's config.fish |
+| `symlinkJoin` wrapper rejected as login shell | `shellPath` attribute missing — NixOS `types.shellPackage` requires it | Add `// { shellPath = "/bin/fish"; }` after the `symlinkJoin` call |
+| Wrapped fish not launching in terminal | `users.users.robie.shell` still pointed to `pkgs.fish`, not the wrapper | Set shell to `self.packages.${pkgs.system}.fish` per-host, not in shared feature module |
+| Login shell not in `/etc/shells` | `programs.fish.enable` only registers `pkgs.fish`; wrapper path is absent | Add `environment.shells = [ self.packages.${pkgs.system}.fish ]` in host config |
