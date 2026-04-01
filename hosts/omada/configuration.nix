@@ -1,0 +1,53 @@
+# hosts/omada/configuration.nix
+#
+# TP-Link Omada SDN controller — manages EAP773 APs and SG3210XHP-M2 switch.
+# VMID: 110  |  IP: 192.168.20.50/24  |  Node: pve  |  VLAN: 20
+#
+# Web UI: https://192.168.20.50:8843 (self-signed cert; accept the browser warning)
+#         Once Tailscale is up: https://<tailscale-ip>:8843
+#
+# After provisioning:
+#   1. Tailscale joins automatically on first boot (tailscale-autoconnect.nix).
+#   2. Access web UI at https://192.168.20.50:8843 — complete setup wizard.
+#   3. In Site Settings → Controller → inform URL: http://192.168.20.50:8043
+#      (APs use this to find the controller on the LAN)
+
+{ inputs, config, lib, pkgs, ... }:
+
+{
+  imports = [
+    ./hardware-configuration.nix
+    ./disko.nix
+    inputs.disko.nixosModules.disko
+    ../../modules/_system/server-common.nix
+    ../../modules/_system/omada-controller.nix
+    ../../modules/_system/tailscale-autoconnect.nix
+  ];
+
+  # ── Identity ──────────────────────────────────────────────────────────────
+  networking.hostName = "omada";
+
+  # ── Network ───────────────────────────────────────────────────────────────
+  # Static IP on VLAN 20 (lab infrastructure subnet).
+  # This IP must not change — APs are configured to reach the controller here.
+  networking.interfaces.ens18.ipv4.addresses = [{
+    address = "192.168.20.50";
+    prefixLength = 24;
+  }];
+  networking.defaultGateway = "192.168.20.254";  # OPNsense lab gateway
+
+  # DNS: Technitium primary/secondary (current). Update when Blocky is deployed.
+  networking.nameservers = [ "192.168.7.53" "192.168.7.54" ];
+
+  # ── SSH authorised keys ───────────────────────────────────────────────────
+  # ansible2 key is set in server-common. Personal key added for interactive use.
+  users.users.root.openssh.authorizedKeys.keys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKD+F2AoDhUcKLXji5jOmPI/XduaADEs2cxAF1w/HSnr" # ansible2
+  ];
+
+  # ── Omada controller ──────────────────────────────────────────────────────
+  mySystem.omada-controller.enable = true;
+
+  # ── State version ─────────────────────────────────────────────────────────
+  system.stateVersion = "25.05";
+}

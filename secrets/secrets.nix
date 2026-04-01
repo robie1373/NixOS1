@@ -21,9 +21,21 @@
 let
   # Host SSH public keys — age recipients
   ntfy = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFsO2AFvp2lJUJAyQ3PXWbU1/nrDEcN/UuqzfMXoC+aQ";
+  # omada key — add after nixos-anywhere provisioning:
+  #   ssh-keyscan -t ed25519 192.168.20.50 (via ProxyJump) → paste here, then agenix -r
+  # omada = "ssh-ed25519 ...";
+
+  # All servers that use tailscale-autoconnect.nix must be listed here.
+  # Re-key after adding each new server: nix run github:ryantm/agenix -- -r
+  tailscaleServers = [ ntfy /* omada */ ];
 in
 {
   # ntfy admin password — local user database (pre-Kanidm migration)
   # After Kanidm is deployed, migrate ntfy auth to LDAP and remove this secret.
   "ntfy-admin-password.age".publicKeys = [ ntfy ];
+
+  # Tailscale reusable auth key — shared across all lab servers.
+  # Source: 1Password devops/"Tailscale Auth Key" — must be a reusable key.
+  # To create/re-encrypt: nix run github:ryantm/agenix -- -e secrets/tailscale-auth-key.age
+  "tailscale-auth-key.age".publicKeys = tailscaleServers;
 }
