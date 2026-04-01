@@ -21,13 +21,11 @@
 let
   # Host SSH public keys — age recipients
   ntfy = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFsO2AFvp2lJUJAyQ3PXWbU1/nrDEcN/UuqzfMXoC+aQ";
-  # omada key — add after nixos-anywhere provisioning:
-  #   ssh-keyscan -t ed25519 192.168.20.50 (via ProxyJump) → paste here, then agenix -r
-  # omada = "ssh-ed25519 ...";
+  omada = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAptqMehU2xN/Oc/s26C9GC3TggyoxRuhisDkFrtxYo";
 
   # All servers that use tailscale-autoconnect.nix must be listed here.
   # Re-key after adding each new server: nix run github:ryantm/agenix -- -r
-  tailscaleServers = [ ntfy /* omada */ ];
+  tailscaleServers = [ ntfy omada ];
 in
 {
   # ntfy admin password — local user database (pre-Kanidm migration)
