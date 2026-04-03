@@ -36,6 +36,19 @@
   }];
   networking.defaultGateway = "192.168.20.254";  # OPNsense lab gateway
 
+  # Override /etc/hosts so the LAN IP is the ONLY resolution for "omada".
+  # Problem: NixOS auto-generates "127.0.0.2 omada" (from networking.hostName)
+  # BEFORE any networking.hosts entries, so Java resolves "omada" → 127.0.0.2
+  # and advertises that loopback address in adoption inform URLs — unreachable
+  # by switches and APs on the network.
+  # Fix: mkForce the entire hosts file, putting 192.168.20.50 first and
+  # omitting the 127.0.0.2 entry (not needed for controller operation).
+  environment.etc."hosts".text = lib.mkForce ''
+    127.0.0.1 localhost
+    ::1 localhost
+    192.168.20.50 omada
+  '';
+
   # DNS: Technitium primary/secondary (current). Update when Blocky is deployed.
   networking.nameservers = [ "192.168.7.53" "192.168.7.54" ];
 
