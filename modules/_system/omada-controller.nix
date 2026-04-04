@@ -31,7 +31,7 @@ in
     # Omada deployments. State dir: /var/lib/omada-controller/
     virtualisation.oci-containers.backend = "docker";
     virtualisation.oci-containers.containers.omada-controller = {
-      image = "mbentley/omada-controller:latest";
+      image = "mbentley/omada-controller:6.2.0.17";
       volumes = [
         "/var/lib/omada-controller/data:/opt/tplink/EAPController/data"
         "/var/lib/omada-controller/logs:/opt/tplink/EAPController/logs"
