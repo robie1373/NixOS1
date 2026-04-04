@@ -58,8 +58,9 @@ in
     #   29814     — manager v2 (switches with firmware 3.x use this for adopt callback)
     #   29815     — transfer v2
     #   29816     — rtty
+    #   29817     — device monitor (v6+)
     #   27001/udp — app discovery
-    networking.firewall.allowedTCPPorts = [ 8043 8843 29811 29812 29813 29814 29815 29816 ];
+    networking.firewall.allowedTCPPorts = [ 8043 8843 29811 29812 29813 29814 29815 29816 29817 ];
     networking.firewall.allowedUDPPorts = [ 29810 27001 ];
 
   };
