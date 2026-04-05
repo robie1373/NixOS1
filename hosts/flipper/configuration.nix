@@ -75,6 +75,11 @@
     bambu-studio
   ];
 
+  # Add local scripts and apps to the path
+  environment.sessionVariables.PATH = [ 
+    "/home/robie/languages/study" 
+  ];
+
   # Enable CUPS to print documents.
   services.printing.enable = false;
 
