@@ -23,10 +23,7 @@ let
   ntfy   = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFsO2AFvp2lJUJAyQ3PXWbU1/nrDEcN/UuqzfMXoC+aQ";
   omada  = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAptqMehU2xN/Oc/s26C9GC3TggyoxRuhisDkFrtxYo";
 
-  # langlab: PLACEHOLDER — replace with real key from hosts/langlab/ssh_host_ed25519_key.pub
-  # after running Phase 3 of new-nixos-service.md, then re-key:
-  #   nix run github:ryantm/agenix -- -r
-  langlab = "REPLACE_WITH_REAL_KEY_FROM_hosts/langlab/ssh_host_ed25519_key.pub";
+  langlab = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDb0aYMGmaB70EJZ32jqi9+tKncViDYp9CEYUAuoa2Td";
 
   # All servers that use tailscale-autoconnect.nix must be listed here.
   # Re-key after adding each new server: nix run github:ryantm/agenix -- -r

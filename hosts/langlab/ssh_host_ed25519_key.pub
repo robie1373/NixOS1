@@ -1,2 +1,1 @@
-PLACEHOLDER — replace with output of: ssh-keygen -t ed25519 -f /tmp/langlab_host_key -N ""
-Then store private key in 1Password devops/"langlab host SSH key" and update secrets/secrets.nix.
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDb0aYMGmaB70EJZ32jqi9+tKncViDYp9CEYUAuoa2Td robie@flipper
