@@ -20,12 +20,17 @@
 
 let
   # Host SSH public keys — age recipients
-  ntfy = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFsO2AFvp2lJUJAyQ3PXWbU1/nrDEcN/UuqzfMXoC+aQ";
-  omada = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAptqMehU2xN/Oc/s26C9GC3TggyoxRuhisDkFrtxYo";
+  ntfy   = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFsO2AFvp2lJUJAyQ3PXWbU1/nrDEcN/UuqzfMXoC+aQ";
+  omada  = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAptqMehU2xN/Oc/s26C9GC3TggyoxRuhisDkFrtxYo";
+
+  # langlab: PLACEHOLDER — replace with real key from hosts/langlab/ssh_host_ed25519_key.pub
+  # after running Phase 3 of new-nixos-service.md, then re-key:
+  #   nix run github:ryantm/agenix -- -r
+  langlab = "REPLACE_WITH_REAL_KEY_FROM_hosts/langlab/ssh_host_ed25519_key.pub";
 
   # All servers that use tailscale-autoconnect.nix must be listed here.
   # Re-key after adding each new server: nix run github:ryantm/agenix -- -r
-  tailscaleServers = [ ntfy omada ];
+  tailscaleServers = [ ntfy omada langlab ];
 in
 {
   # ntfy admin password — local user database (pre-Kanidm migration)
@@ -36,4 +41,13 @@ in
   # Source: 1Password devops/"Tailscale Auth Key" — must be a reusable key.
   # To create/re-encrypt: nix run github:ryantm/agenix -- -e secrets/tailscale-auth-key.age
   "tailscale-auth-key.age".publicKeys = tailscaleServers;
+
+  # LangLab API keys — systemd EnvironmentFile consumed by the langlab service.
+  # Contents (KEY=value, one per line):
+  #   GEMINI_API_KEY=<key>
+  #   CLAUDE_API_KEY=<key>
+  # Source: 1Password devops/"LangLab env"
+  # Encrypt: op read 'op://devops/LangLab env/notesPlain' | \
+  #   nix run nixpkgs#age -- -r "<langlab-pubkey>" -o secrets/langlab-env.age
+  "langlab-env.age".publicKeys = [ langlab ];
 }

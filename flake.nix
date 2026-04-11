@@ -42,6 +42,13 @@
     # nix-wrapper-modules: wraps programs as standalone derivations with embedded config.
     # Used in Phase 1 migration to replace home-manager program modules.
     nix-wrapper-modules.url = "github:BirdeeHub/nix-wrapper-modules";
+
+    # LangLab source — pinned here so the server VM always runs a known version.
+    # Update with: nix flake update langlab
+    langlab = {
+      url   = "github:robie1373/langlab";
+      flake = false;  # plain source tree, not a flake
+    };
   };
 
   outputs = inputs:
