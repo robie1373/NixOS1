@@ -14,6 +14,7 @@
     rofi
     waybar
     fish
+    okular
   ];
   xdg.mimeApps.defaultApplications."application/pdf" = "org.pwmt.zathura.desktop";
   myHome.imv.enable             = true;

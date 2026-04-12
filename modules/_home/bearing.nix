@@ -99,15 +99,33 @@ let
   '';
 
   # bearing-briefing: runs claude non-interactively to pre-gather morning context.
-  # Reads prompt from ~/work/templates/briefing-gather.md via stdin pipe.
+  # Substitutes {{RECENT_TOPICS}} in the template with section headers from the last
+  # 3 briefing files so the agent avoids picking the same topics two days running.
   # Claude writes output to ~/work/briefing/YYYY-MM-DD.md per template instructions.
   # Requires templates/briefing-gather.md to exist in workDir.
   bearingBriefing = pkgs.writeShellScriptBin "bearing-briefing" ''
     mkdir -p ${cfg.workDir}/briefing
     cd ${cfg.workDir}
-    cat ${cfg.workDir}/templates/briefing-gather.md \
-      | ${pkgs.claude-code}/bin/claude --print \
-          --allowedTools "WebSearch,WebFetch,Write"
+    ${pkgs.python3}/bin/python3 -c "
+import os, sys
+briefing_dir = '${cfg.workDir}/briefing'
+files = sorted(
+    f for f in os.listdir(briefing_dir)
+    if f.endswith('.md') and 'activity' not in f
+)[-3:]
+topics = []
+for fn in files:
+    with open(os.path.join(briefing_dir, fn)) as f:
+        for line in f:
+            if line.startswith('## '):
+                t = line.strip().lstrip('# ').strip()
+                if t and t not in topics:
+                    topics.append(t)
+recent = '\n'.join('- ' + t for t in topics) or '(none yet — all topics are fair game)'
+template = open('${cfg.workDir}/templates/briefing-gather.md').read()
+sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
+" | ${pkgs.claude-code}/bin/claude --print \
+        --allowedTools "WebSearch,WebFetch,Write"
   '';
 
   # bearing-activity: runs claude non-interactively to summarise yesterday's git activity.
