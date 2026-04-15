@@ -534,11 +534,11 @@
     "langlab": {
       "flake": false,
       "locked": {
-        "lastModified": 1776211974,
-        "narHash": "sha256-aBX34wme/9HMZYnNcKEgCD5VMKseyKg777eZQgkrUaA=",
+        "lastModified": 1776214059,
+        "narHash": "sha256-KcRZ/pRrX9HTBGWzHTc3Rt80xFQ1mXB8rfpk2J+UvH8=",
         "owner": "robie1373",
         "repo": "langlab",
-        "rev": "5362f91b57e655e45c963e2fd0f88d8cfcf4d0ff",
+        "rev": "4bfefed31589f1b79ec941ae2ab0b378680cd33d",
         "type": "github"
       },
       "original": {
