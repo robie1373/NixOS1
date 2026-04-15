@@ -120,6 +120,7 @@ in
         locations."/" = {
           proxyPass       = "http://127.0.0.1:${toString cfg.listenPort}";
           proxyWebsockets = true;   # tutor view uses fetch streaming
+          extraConfig     = "client_max_body_size 200m;";  # allow VTT+MP3 and apkg uploads
         };
       };
     };
