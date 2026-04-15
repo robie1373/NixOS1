@@ -32,7 +32,9 @@
     prefixLength = 24;
   }];
   networking.defaultGateway = "192.168.20.254";
-  networking.nameservers    = [ "192.168.7.53" "192.168.7.54" ];
+  # Using public DNS until Technitium is migrated to VLAN 20.
+  # When Technitium reaches VLAN 20, replace with internal resolvers.
+  networking.nameservers    = [ "1.1.1.1" "1.0.0.1" ];
 
   # ── SSH authorised keys ───────────────────────────────────────────────────
   users.users.root.openssh.authorizedKeys.keys = [
