@@ -22,6 +22,7 @@
     ../../modules/_system/server-common.nix
     ../../modules/_system/omada-controller.nix
     ../../modules/_system/tailscale-autoconnect.nix
+    ../../modules/_features/tailscale-watchdog.nix
   ];
 
   # ── Identity ──────────────────────────────────────────────────────────────
