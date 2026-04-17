@@ -102,10 +102,13 @@
 
   # ── Dual-GPU KWin fix ────────────────────────────────────────────────────────
   # With two NVIDIA GPUs, KWin Wayland gets confused about which DRM device to
-  # use for the display, causing a freeze at login. Pin it to the 4070 (card0).
-  # The 2060 Super (card1) is still available to CUDA/Ollama — this only affects
-  # the display compositor. Verify card paths with: ls -la /dev/dri/
-  environment.sessionVariables.KWIN_DRM_DEVICES = "/dev/dri/card0";
+  # use for the display, causing a freeze/blank screen at login.
+  # Card numbering (verified via /sys/class/drm/card*/device/device):
+  #   card0 = 0x1f06 = RTX 2060 Super
+  #   card1 = 0x2786 = RTX 4070  ← monitor is plugged in here
+  # Must use environment.variables (not sessionVariables) so SDDM picks it up
+  # before the compositor starts. The 2060 Super remains available to CUDA/Ollama.
+  environment.variables.KWIN_DRM_DEVICES = "/dev/dri/card1";
 
   # ── Unfree allowlist ─────────────────────────────────────────────────────────
   # mkForce overrides common.nix's predicate with a superset that adds NVIDIA,
