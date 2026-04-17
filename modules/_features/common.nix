@@ -65,6 +65,12 @@
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
+  # nix-ld: stub dynamic linker at /lib/ld-linux-x86-64.so.2 that allows
+  # generic Linux ELF binaries (uvx-downloaded Python, VS Code extensions, etc.)
+  # to execute on NixOS without patching. The uv Python distributions are
+  # standalone/bundled, so no extra libraries are needed.
+  programs.nix-ld.enable = true;
+
   programs.nh = {
     enable = true;
     flake  = "/home/robie/nixos-config";
