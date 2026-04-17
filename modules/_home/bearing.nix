@@ -141,6 +141,134 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
           --allowedTools "Bash,Write"
   '';
 
+  # bearing-status: offline status card — no AI, no network.
+  # Reads OBLIGATIONS.md, DELEGATIONS.md, and study-robie.log and prints
+  # a compact summary to stdout.
+  bearingStatus = pkgs.writeShellScriptBin "bearing-status" ''
+    TODAY=$(date +%Y-%m-%d)
+    TOMORROW=$(date -d "tomorrow" +%Y-%m-%d)
+    WORK="${cfg.workDir}"
+    LANG_LOG="$HOME/languages/study-robie.log"
+
+    printf "══════════════════════════════════════\n"
+    printf "  %s\n" "$(date '+%A, %B %-d %Y')"
+    printf "══════════════════════════════════════\n"
+
+    # ── Obligations (today/tomorrow from ## Upcoming) ─────────────────────
+    printf "\n▸ OBLIGATIONS\n"
+    OBL=$(awk -F'|' -v today="$TODAY" -v tom="$TOMORROW" '
+      /^## Upcoming/  { sect=1; next }
+      /^## /          { sect=0 }
+      sect && /^\| *[0-9]{4}-/ {
+        gsub(/^ +| +$/, "", $2); gsub(/^ +| +$/, "", $3); gsub(/^ +| +$/, "", $4)
+        if ($2==today || $2==tom)
+          printf "  [%s %s] %s\n", ($2==today?"today":"tomorrow"), $3, $4
+      }
+    ' "$WORK/OBLIGATIONS.md" 2>/dev/null)
+    [ -n "$OBL" ] && printf "%s\n" "$OBL" || printf "  (none today or tomorrow)\n"
+
+    # ── Todos (from ## Todos — any row with a due date) ───────────────────
+    printf "\n▸ TODOS\n"
+    TODOS=$(awk -F'|' '
+      /^## Todos/  { sect=1; next }
+      /^## /       { sect=0 }
+      sect && /^\| *[0-9]{4}-/ {
+        gsub(/^ +| +$/, "", $2); gsub(/^ +| +$/, "", $3)
+        printf "  [due %s] %s\n", $2, $3
+      }
+    ' "$WORK/OBLIGATIONS.md" 2>/dev/null)
+    [ -n "$TODOS" ] && printf "%s\n" "$TODOS" || printf "  (none)\n"
+
+    # ── Recurring (from ## Recurring — items overdue by frequency) ────────
+    printf "\n▸ RECURRING\n"
+    RECUR=$(awk -F'|' '
+      /^## Recurring/ { sect=1; next }
+      /^## /          { sect=0 }
+      sect && /^\| *[A-Za-z]/ && !/Frequency/ && !/^[[:space:]]*\|[-|]/ {
+        gsub(/^ +| +$/, "", $2); gsub(/^ +| +$/, "", $3); gsub(/^ +| +$/, "", $4)
+        freq=$2; item=$3; last=$4
+        days=7
+        if (freq ~ /[Dd]aily/)    days=1
+        if (freq ~ /[Ww]eekly/)   days=7
+        if (freq ~ /[Bb]iweekly/) days=14
+        if (freq ~ /[Mm]onthly/)  days=30
+        printf "%d|%s|%s\n", days, last, item
+      }
+    ' "$WORK/OBLIGATIONS.md" 2>/dev/null | while IFS='|' read -r days last item; do
+      [ -z "$last" ] && { printf "  [due — never done] %s\n" "$item"; continue; }
+      last_epoch=$(date -d "$last" +%s 2>/dev/null) || continue
+      days_ago=$(( ($(date +%s) - last_epoch) / 86400 ))
+      [ "$days_ago" -ge "$days" ] && printf "  [due — %d days ago] %s\n" "$days_ago" "$item"
+    done)
+    [ -n "$RECUR" ] && printf "%s\n" "$RECUR" || printf "  (all up to date)\n"
+
+    # ── Korean ────────────────────────────────────────────────────────────
+    printf "\n▸ KOREAN\n"
+    if [ -f "$LANG_LOG" ]; then
+      KOREAN_DATES=$(grep $'\tkorean\t' "$LANG_LOG" \
+        | awk -F'\t' '{split($1,a,"T"); print a[1]}' | sort -u)
+      TOTAL_DAYS=$(printf "%s\n" "$KOREAN_DATES" | grep -c '.')
+      LAST_DATE=$(printf "%s\n" "$KOREAN_DATES" | tail -1)
+
+      # Streak: count consecutive days ending at most recent studied day
+      # (today if done today, yesterday if not yet done today — preserves
+      # the "at-risk" streak so it shows before you do the day's lesson)
+      STREAK=0
+      if [ -n "$LAST_DATE" ]; then
+        TODAY_EPOCH=$(date +%s)
+        LAST_EPOCH=$(date -d "$LAST_DATE" +%s)
+        DAYS_SINCE=$(( (TODAY_EPOCH - LAST_EPOCH) / 86400 ))
+        if [ "$DAYS_SINCE" -le 1 ]; then
+          CHECK=$(date -d "$LAST_DATE" +%s)
+          while true; do
+            CHECK_DATE=$(date -d "@''${CHECK}" +%Y-%m-%d)
+            if printf "%s\n" "$KOREAN_DATES" | grep -qx "$CHECK_DATE"; then
+              STREAK=$((STREAK + 1))
+              CHECK=$((CHECK - 86400))
+            else
+              break
+            fi
+          done
+        fi
+      fi
+      printf "  Last: %s  |  Streak: %s days  |  Total: %s unique days\n" \
+        "$LAST_DATE" "$STREAK" "$TOTAL_DAYS"
+    else
+      printf "  (no study log found)\n"
+    fi
+
+    # ── Next up (DELEGATIONS.md Outbox — priority "next" or "pri 1") ──────
+    printf "\n▸ NEXT UP\n"
+    NEXT=$(awk -F'|' '
+      /^## Outbox/  { sect=1; next }
+      /^## /        { sect=0 }
+      sect && NF >= 5 && !/Project/ && !/^[[:space:]]*\|[-|]/ {
+        gsub(/^ +| +$/, "", $2); gsub(/^ +| +$/, "", $3); gsub(/^ +| +$/, "", $5)
+        if ($5 ~ /next/ || $5 ~ /pri 1/)
+          printf "  [%s] %s\n", $2, $3
+      }
+    ' "$WORK/DELEGATIONS.md" 2>/dev/null)
+    [ -n "$NEXT" ] && printf "%s\n" "$NEXT" || printf "  (nothing flagged)\n"
+    printf "\n"
+  '';
+
+  # bearing-log: open (or create) today's log file in $EDITOR.
+  # Creates ~/work/log/YYYY-MM-DD.md with the standard template if it doesn't exist.
+  bearingLog = pkgs.writeShellScriptBin "bearing-log" ''
+    TODAY=$(date +%Y-%m-%d)
+    LOG_DIR="${cfg.workDir}/log"
+    LOG_FILE="$LOG_DIR/$TODAY.md"
+
+    mkdir -p "$LOG_DIR"
+
+    if [ ! -f "$LOG_FILE" ]; then
+      printf "# %s\n\n## Morning\n- State:\n- Plan:\n- Todos checked:\n\n## Activities\n-\n\n## Evening gap\n-\n\n## Notes\n-\n" \
+        "$TODAY" > "$LOG_FILE"
+    fi
+
+    exec ''${EDITOR:-nano} "$LOG_FILE"
+  '';
+
 in {
   options.myHome.bearing = {
     enable = lib.mkEnableOption "The Bearing life-tracking assistant";
@@ -192,7 +320,7 @@ in {
   config = lib.mkIf cfg.enable {
 
     # ── Scripts on PATH ────────────────────────────────────────────────────
-    home.packages = [ bearingCmd bearingNotify bearingCheckin bearingBriefing bearingActivity ];
+    home.packages = [ bearingCmd bearingNotify bearingCheckin bearingBriefing bearingActivity bearingStatus bearingLog ];
 
     # ── Systemd timer + service units ──────────────────────────────────────
 
