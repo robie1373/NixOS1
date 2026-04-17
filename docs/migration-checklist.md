@@ -200,6 +200,8 @@ Small home modules that are currently HM-only but aren't program wrappers.
 
 ### 1.10 — Drop ifuse
 
+Note from Robie: when we get to this step, take a moment to remind me why I decided this. Or at least why it seems like the right thing to do.
+
 - [ ] Remove `systemd.user.services.ifuse-mount` and `ifuse-unmount` from home config
 - [ ] Remove udev rules for iPhone auto-mount from `hosts/flipper/configuration.nix`
 - [ ] Remove `custom/iphone` waybar module (or leave it, it's low cost)
@@ -229,6 +231,8 @@ Only after all modules are migrated and the config builds and boots cleanly.
 - [ ] Review whether this phase should be combined with an adjacent phase or split for cleaner separation of concerns and more effective testing
 
 **Goal:** Remove the last home-manager dependency (1Password). Then remove HM from the flake entirely.
+
+Note from Robie: Flipper is effectively a single user machine. running in multiuser mode is good for security, but in practice, there will never be a second account on this machine. As a result, there may be situations where a system service running with user permissions is acceptable. This may make the following easier.
 
 - [ ] **Research:** How does vimjoyer (or the community) handle 1Password GUI + CLI without HM?
   - Specifically: `systemd.user.services` for the GUI daemon
