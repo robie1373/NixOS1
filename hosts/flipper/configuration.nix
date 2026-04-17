@@ -106,12 +106,16 @@
     ifuse 		# for mounting iphone
     libimobiledevice  	# for mounting iphone
     bambu-studio
+    ollama		# CLI client — server runs on fivenix (see OLLAMA_HOST below)
   ];
 
   # Add local scripts and apps to the path
-  environment.sessionVariables.PATH = [ 
-    "/home/robie/languages/study" 
+  environment.sessionVariables.PATH = [
+    "/home/robie/languages/study"
   ];
+
+  # Point ollama CLI at fivenix's GPU server so `ollama run` works without flags.
+  environment.sessionVariables.OLLAMA_HOST = "http://192.168.7.137:11434";
 
   # Enable CUPS to print documents.
   services.printing.enable = false;

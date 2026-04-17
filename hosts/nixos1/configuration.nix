@@ -15,7 +15,10 @@
   environment.systemPackages = with pkgs; [
     wget
     tree
+    ollama		# CLI client — server runs on fivenix (see OLLAMA_HOST below)
   ];
+
+  environment.sessionVariables.OLLAMA_HOST = "http://192.168.7.137:11434";
 
 
   # This value determines the NixOS release from which the default
