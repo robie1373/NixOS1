@@ -21,6 +21,7 @@
   systemd.services.tailscale-watchdog = {
     description = "Tailscale watchdog — reconnect if BackendState is not Running";
     after       = [ "tailscaled.service" "network-online.target" ];
+    wants       = [ "network-online.target" ];
     serviceConfig = {
       Type      = "oneshot";
       ExecStart = pkgs.writeShellScript "tailscale-watchdog" ''
