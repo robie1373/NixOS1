@@ -43,12 +43,12 @@
 
     # Performance tuning:
     # KEEP_ALIVE=-1   — never evict a model from VRAM; always warm on first request.
-    # NUM_PARALLEL=2  — two concurrent context windows fit in 12 GB with mid-size models.
+    # NUM_PARALLEL=4  — 20 GB combined VRAM (4070 12 GB + 2060 Super 8 GB).
     # FLASH_ATTENTION — uses flash-attention kernel; faster and lower memory bandwidth.
     #                   Supported on Ampere / Ada Lovelace. Disable if you see errors.
     environmentVariables = {
       OLLAMA_KEEP_ALIVE    = "-1";
-      OLLAMA_NUM_PARALLEL  = "2";
+      OLLAMA_NUM_PARALLEL  = "4";
       OLLAMA_FLASH_ATTENTION = "1";
     };
   };
