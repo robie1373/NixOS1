@@ -23,6 +23,7 @@
     ../../modules/_system/omada-controller.nix
     ../../modules/_system/tailscale-autoconnect.nix
     ../../modules/_features/tailscale-watchdog.nix
+    ../../modules/_features/restic.nix
   ];
 
   # ── Identity ──────────────────────────────────────────────────────────────
@@ -61,6 +62,16 @@
 
   # ── Omada controller ──────────────────────────────────────────────────────
   mySystem.omada-controller.enable = true;
+
+  # ── Restic backups ────────────────────────────────────────────────────────
+  # Back up only the MongoDB data directory. logs/ and work/ are transient.
+  # Note: Omada controller runs MongoDB live during backup — restore may require
+  # stopping the container and doing a clean restore. See backup runbook.
+  mySystem.restic = {
+    enable  = true;
+    nasPath = "tank/backups/services/omada";
+    paths   = [ "/var/lib/omada-controller/data" ];
+  };
 
   # ── State version ─────────────────────────────────────────────────────────
   system.stateVersion = "25.05";

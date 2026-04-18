@@ -12,33 +12,59 @@ Robie's NixOS fleet configuration. Goals: DRY, modular, flexible. Uses flake-par
 
 ## Model use — subagent delegation
 
-This session runs on Sonnet (supervisor). Discrete mechanical subtasks should be delegated to Haiku subagents via the Agent tool to preserve Sonnet context and cost.
+This session runs on Sonnet (supervisor). **Prefer Ollama for discrete mechanical text tasks — it is local, free, and costs zero Anthropic tokens.** Use Haiku only when Claude tools are needed. Use Sonnet for judgment and architecture.
 
-**Good Haiku candidates in this project:**
+**Ollama** runs on `five` at `192.168.7.137:11434`, model `qwen2.5:32b`. The `ollama` CLI is installed on flipper. Invoke via Bash tool:
 
-- Searching nixpkgs/NixOS option documentation for correct current syntax (e.g. "what is the current non-deprecated option for X?")
-- Reading multiple files to summarise current state — e.g. scanning all `modules/home/*.nix` to list which `myHome` options exist, or reading `parts/nixos.nix` to list all host module imports
-- Checking `docs/` files for relevant existing documentation before planning new work
-- Summarising BEARING.md pending tasks or extracting specific notes
-- Writing or updating docs files in `docs/` once the content is decided
-- Grepping for option names, attribute paths, or patterns across the repo (e.g. finding all places a deprecated alias is used)
-- Diffing or comparing two config files to report differences
-- Drafting routine BEARING.md updates (moving completed items, writing outcome notes)
+```bash
+# Short prompt
+OLLAMA_HOST=http://192.168.7.137:11434 ollama run qwen2.5:32b "YOUR PROMPT HERE"
+
+# Long prompt or embedded file content — use heredoc
+OLLAMA_HOST=http://192.168.7.137:11434 ollama run qwen2.5:32b <<'EOF'
+YOUR PROMPT HERE
+EOF
+```
+
+**Ollama output contains terminal escape sequences — always strip them.** Pipe through sed before using the output:
+
+```bash
+# Capture clean output into a variable
+RESULT=$(OLLAMA_HOST=http://192.168.7.137:11434 ollama run qwen2.5:32b "PROMPT" \
+  | sed 's/\x1b\[[0-9;?]*[a-zA-Z]//g; s/\r//g')
+
+# Write directly to a file (no Sonnet in the middle)
+OLLAMA_HOST=http://192.168.7.137:11434 ollama run qwen2.5:32b <<'EOF' \
+  | sed 's/\x1b\[[0-9;?]*[a-zA-Z]//g; s/\r//g' > /path/to/output.md
+YOUR PROMPT HERE
+EOF
+```
+
+**Ollama writes the output. Sonnet does not re-read or rewrite it.**
+
+**Use Ollama for** (text-in / text-out — no tools needed):
+- Summarising file contents after you've read them (module lists, option summaries, doc extracts)
+- Comparing or diffing two config files when both are already read
+- Drafting docs updates, BEARING.md outcomes, and boilerplate once the content is decided
+- Extracting specific data from already-read BEARING.md or docs/ content
+
+**Use Haiku for** (tasks needing Claude tools to gather data):
+- Multi-file discovery where you don't know which files to read (needs Glob/Grep/Read)
+- Searching nixpkgs/NixOS option docs on the web (needs WebSearch)
+
+```python
+# Haiku example — still valid for tool-dependent tasks
+Agent(prompt="Glob modules/home/*.nix and list every myHome option defined", model="haiku")
+```
 
 **Keep on Sonnet:**
 
-- Any Nix reasoning that crosses module boundaries — e.g. working out why a home-manager activation error occurs, or how `useGlobalPkgs` interacts with `allowUnfreePredicate`
-- Architecture decisions: adding a host, restructuring `parts/nixos.nix`, deciding module namespace layout
+- Any Nix reasoning that crosses module boundaries
+- Architecture decisions: adding a host, restructuring `parts/nixos.nix`, module namespace layout
 - Debugging build failures — attribute errors, infinite recursion, type mismatches
 - Anything touching LUKS/TPM2/FIDO2, disko, or hardware-specific config where a wrong change bricks the machine
 - Security-relevant changes (polkit rules, SSH config, 1Password integration)
-- Planning new features: reading, reasoning about options, writing the plan in docs/ before implementing
-
-**Invocation example:**
-
-```python
-Agent(prompt="Read modules/home/ and list every myHome option defined", model="haiku")
-```
+- Planning new features before implementing
 
 ---
 

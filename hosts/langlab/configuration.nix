@@ -22,6 +22,7 @@
     ../../modules/_system/langlab.nix
     ../../modules/_system/tailscale-autoconnect.nix
     ../../modules/_features/tailscale-watchdog.nix
+    ../../modules/_features/restic.nix
   ];
 
   # ── Identity ─────────────────────────────────────────────────────────────
@@ -46,6 +47,14 @@
   mySystem.langlab = {
     enable   = true;
     hostname = "langlab.vimba-stairs.ts.net";
+  };
+
+  # ── Restic backups ────────────────────────────────────────────────────────
+  # study.db (SQLite) and languages/ audio files. Both are under /var/lib/langlab.
+  mySystem.restic = {
+    enable  = true;
+    nasPath = "tank/backups/services/langlab";
+    paths   = [ "/var/lib/langlab" ];
   };
 
   # ── State version ─────────────────────────────────────────────────────────

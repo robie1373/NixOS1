@@ -22,6 +22,7 @@
     ../../modules/_system/ntfy.nix
     ../../modules/_system/tailscale-autoconnect.nix
     ../../modules/_features/tailscale-watchdog.nix
+    ../../modules/_features/restic.nix
   ];
 
   # ── Identity ─────────────────────────────────────────────────────────────
@@ -50,6 +51,13 @@
   mySystem.ntfy = {
     enable = true;
     hostname = "ntfy.vimba-stairs.ts.net";
+  };
+
+  # ── Restic backups ────────────────────────────────────────────────────────
+  mySystem.restic = {
+    enable  = true;
+    nasPath = "tank/backups/services/ntfy";
+    paths   = [ "/var/lib/ntfy-sh" ];
   };
 
   # ── State version ─────────────────────────────────────────────────────────

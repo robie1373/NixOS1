@@ -51,12 +51,18 @@ in
   # as svc_backup on the NAS. One per host. Private key encrypted here; public key
   # must be added to svc_backup's authorized_keys on the NAS.
   # Source: 1Password devops/"restic-backup-<hostname>"
-  "restic-backup-flipper.age".publicKeys = [ flipper ];
+  "restic-backup-flipper.age".publicKeys  = [ flipper ];
   "restic-backup-fivenix.age".publicKeys  = [ fivenix ];
+  "restic-backup-ntfy.age".publicKeys     = [ ntfy ];
+  "restic-backup-omada.age".publicKeys    = [ omada ];
+  "restic-backup-langlab.age".publicKeys  = [ langlab ];
 
   # Restic repo passwords — one per host, used to encrypt backup data at rest.
   # Source: 1Password devops/"restic-repo-password-<hostname>"
   # Keep a copy in 1Password — needed at restore time when the host may be unavailable.
-  "restic-repo-password-flipper.age".publicKeys = [ flipper ];
+  "restic-repo-password-flipper.age".publicKeys  = [ flipper ];
   "restic-repo-password-fivenix.age".publicKeys  = [ fivenix ];
+  "restic-repo-password-ntfy.age".publicKeys     = [ ntfy ];
+  "restic-repo-password-omada.age".publicKeys    = [ omada ];
+  "restic-repo-password-langlab.age".publicKeys  = [ langlab ];
 }
