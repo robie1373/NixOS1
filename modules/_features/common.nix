@@ -68,6 +68,11 @@
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
+  # Allow robie to copy store paths from other trusted machines (e.g. nixos-rebuild
+  # --target-host from flipper to fivenix). Without this, nix-daemon rejects unsigned
+  # closures pushed by non-root users, breaking remote deployment.
+  nix.settings.trusted-users = [ "root" "robie" ];
+
   # nix-ld: stub dynamic linker at /lib/ld-linux-x86-64.so.2 that allows
   # generic Linux ELF binaries (uvx-downloaded Python, VS Code extensions, etc.)
   # to execute on NixOS without patching. The uv Python distributions are
