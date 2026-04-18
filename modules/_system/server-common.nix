@@ -23,6 +23,11 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
+  # Automatically grow the root partition and filesystem to fill available disk
+  # space on boot. Allows Proxmox disk resizes (qm resize) to take effect on
+  # next redeploy without any in-VM intervention.
+  boot.growPartition = true;
+
   # ── Networking foundation ────────────────────────────────────────────────────
   # Disable DHCP globally — servers use static IPs configured per-host.
   # Each host config defines networking.interfaces.<name>.ipv4.addresses and

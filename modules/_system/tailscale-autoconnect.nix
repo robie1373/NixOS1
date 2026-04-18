@@ -22,6 +22,7 @@
     extraUpFlags = [
       "--ssh"
       "--advertise-tags=tag:terraformhost"
+      "--hostname=${config.networking.hostName}"
     ];
   };
 
