@@ -127,13 +127,17 @@ in
       # quote extraOptions values in the generated shell script, so space-separated
       # sftp.args would be shell-split and passed incorrectly. sftp.command takes
       # a single token (the script store path) and restic appends the host itself.
+      # sftp.command replaces the entire SSH invocation — restic does NOT append
+      # the host when this option is set. The script must establish a complete
+      # SFTP subsystem session to the NAS on its own.
       extraOptions = [
         "sftp.command=${pkgs.writeShellScript "restic-ssh-${hostname}" ''
           exec ${pkgs.openssh}/bin/ssh \
+            -s sftp \
             -i ${config.age.secrets."restic-backup-${hostname}".path} \
             -o BatchMode=yes \
             -o StrictHostKeyChecking=accept-new \
-            "$@"
+            ${cfg.nasUser}@${cfg.nasHost}
         ''}"
       ];
     };
