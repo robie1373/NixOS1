@@ -78,6 +78,21 @@
   # ── Nix settings ────────────────────────────────────────────────────────────
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
+  # Pin nix registry to a GitHub reference rather than a store path.
+  # NixOS default behaviour registers flake inputs as store-path references,
+  # which drags the entire nixpkgs source tree (~500 MB) into every system
+  # closure — fatal on small service VMs with limited /nix/store space.
+  # Using a github: reference records only the locked rev; no source in closure.
+  nix.registry.nixpkgs = {
+    from = { id = "nixpkgs"; type = "indirect"; };
+    to = {
+      type  = "github";
+      owner = "NixOS";
+      repo  = "nixpkgs";
+      rev   = inputs.nixpkgs.rev;
+    };
+  };
+
   # ── Configuration revision ───────────────────────────────────────────────────
   # Embeds the nixos-config git revision into the running system closure.
   # Director reads this via `nixos-version --json` to detect drift:
