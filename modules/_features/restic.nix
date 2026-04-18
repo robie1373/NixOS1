@@ -133,11 +133,12 @@ in
       extraOptions = [
         "sftp.command=${pkgs.writeShellScript "restic-ssh-${hostname}" ''
           exec ${pkgs.openssh}/bin/ssh \
-            -s sftp \
+            -s \
             -i ${config.age.secrets."restic-backup-${hostname}".path} \
             -o BatchMode=yes \
             -o StrictHostKeyChecking=accept-new \
-            ${cfg.nasUser}@${cfg.nasHost}
+            ${cfg.nasUser}@${cfg.nasHost} \
+            sftp
         ''}"
       ];
     };
