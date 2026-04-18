@@ -20,10 +20,11 @@
 
 let
   # Host SSH public keys — age recipients
-  ntfy   = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFsO2AFvp2lJUJAyQ3PXWbU1/nrDEcN/UuqzfMXoC+aQ";
-  omada  = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAptqMehU2xN/Oc/s26C9GC3TggyoxRuhisDkFrtxYo";
-
+  ntfy    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFsO2AFvp2lJUJAyQ3PXWbU1/nrDEcN/UuqzfMXoC+aQ";
+  omada   = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAptqMehU2xN/Oc/s26C9GC3TggyoxRuhisDkFrtxYo";
   langlab = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDb0aYMGmaB70EJZ32jqi9+tKncViDYp9CEYUAuoa2Td";
+  flipper = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL8IYPm1NhuaOhtarrtZTCDXtETLqA7IHSBvQCKaAAjO";
+  fivenix = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPjxC4iKXkoDqa8RQVoxelZfnCZM9HtRQbV0yoJbMImM";
 
   # All servers that use tailscale-autoconnect.nix must be listed here.
   # Re-key after adding each new server: nix run github:ryantm/agenix -- -r
@@ -44,7 +45,18 @@ in
   #   GEMINI_API_KEY=<key>
   #   CLAUDE_API_KEY=<key>
   # Source: 1Password devops/"LangLab env"
-  # Encrypt: op read 'op://devops/LangLab env/notesPlain' | \
-  #   nix run nixpkgs#age -- -r "<langlab-pubkey>" -o secrets/langlab-env.age
   "langlab-env.age".publicKeys = [ langlab ];
+
+  # Restic backup SSH keys — ed25519 keypairs used by restic SFTP to authenticate
+  # as svc_backup on the NAS. One per host. Private key encrypted here; public key
+  # must be added to svc_backup's authorized_keys on the NAS.
+  # Source: 1Password devops/"restic-backup-<hostname>"
+  "restic-backup-flipper.age".publicKeys = [ flipper ];
+  "restic-backup-fivenix.age".publicKeys  = [ fivenix ];
+
+  # Restic repo passwords — one per host, used to encrypt backup data at rest.
+  # Source: 1Password devops/"restic-repo-password-<hostname>"
+  # Keep a copy in 1Password — needed at restore time when the host may be unavailable.
+  "restic-repo-password-flipper.age".publicKeys = [ flipper ];
+  "restic-repo-password-fivenix.age".publicKeys  = [ fivenix ];
 }

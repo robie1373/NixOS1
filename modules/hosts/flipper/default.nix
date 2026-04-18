@@ -16,6 +16,7 @@
       ../../../hosts/flipper/disko.nix
       ../../_features/gaming.nix
       ../../_features/korean.nix
+      ../../_features/restic.nix
       inputs.home-manager.nixosModules.home-manager
       {
         home-manager.useGlobalPkgs         = true;

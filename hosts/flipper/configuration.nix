@@ -152,5 +152,15 @@
   # programs.fish.enable handles all of that using the package we specify here.
   programs.fish.package = self.packages.${pkgs.stdenv.hostPlatform.system}.fish;
 
+  # ── Restic backups ───────────────────────────────────────────────────────────
+  mySystem.restic = {
+    enable  = true;
+    nasPath = "tank/backups/laptops/linux/flipper";
+    paths   = [ "/home/robie" ];
+    exclude = [
+      "/home/robie/tmp-nas"   # staging area for NAS migration — large, not worth backing up
+    ];
+  };
+
   system.stateVersion = "25.11";
 }

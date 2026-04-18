@@ -161,5 +161,21 @@
   # without sudo. Common group for GPU compute without full video group access.
   users.users.robie.extraGroups = [ "render" ];
 
+  # ── Restic backups ───────────────────────────────────────────────────────────
+  mySystem.restic = {
+    enable  = true;
+    nasPath = "tank/backups/laptops/linux/fivenix";
+    paths   = [ "/home/robie" ];
+    exclude = [
+      # Ollama model weights — re-pullable, can be 10s of GB
+      "/home/robie/.ollama"
+      # Whisper / HuggingFace model caches
+      "/home/robie/.cache/whisper"
+      "/home/robie/.cache/huggingface"
+      # Steam game files — saves/config in userdata/ are kept, just not the games
+      "/home/robie/.local/share/Steam/steamapps"
+    ];
+  };
+
   system.stateVersion = "25.11";
 }
