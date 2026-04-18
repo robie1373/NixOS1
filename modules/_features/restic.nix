@@ -20,7 +20,7 @@
 #      authorized_keys on the NAS (TrueNAS UI → Credentials → Users → svc_backup)
 #   7. Enable this module and set mySystem.restic options in host configuration.nix
 
-{ self, config, lib, ... }:
+{ self, config, lib, pkgs, ... }:
 
 let
   cfg      = config.mySystem.restic;
@@ -122,11 +122,19 @@ in
         "--keep-monthly 12"
       ];
 
-      # Pass the backup-specific SSH key to restic's SFTP transport.
-      # BatchMode=yes prevents any interactive prompts. StrictHostKeyChecking=accept-new
-      # accepts the NAS host key on first connection and rejects changes thereafter.
+      # Use a wrapper script as the SFTP command so the SSH key path is baked in
+      # without any spaces in the option value. The NixOS restic module does not
+      # quote extraOptions values in the generated shell script, so space-separated
+      # sftp.args would be shell-split and passed incorrectly. sftp.command takes
+      # a single token (the script store path) and restic appends the host itself.
       extraOptions = [
-        "sftp.args=-i ${config.age.secrets."restic-backup-${hostname}".path} -o BatchMode=yes -o StrictHostKeyChecking=accept-new"
+        "sftp.command=${pkgs.writeShellScript "restic-ssh-${hostname}" ''
+          exec ${pkgs.openssh}/bin/ssh \
+            -i ${config.age.secrets."restic-backup-${hostname}".path} \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=accept-new \
+            "$@"
+        ''}"
       ];
     };
   };
