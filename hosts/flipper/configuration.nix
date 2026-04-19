@@ -159,6 +159,7 @@
     paths   = [ "/home/robie" ];
     exclude = [
       "/home/robie/tmp-nas"   # staging area for NAS migration — large, not worth backing up
+      "/home/robie/nas"       # NFS automount — NAS data, not a local backup target
     ];
   };
 

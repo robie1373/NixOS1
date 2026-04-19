@@ -12,6 +12,7 @@
       ../../_features/tailscale-watchdog.nix
       ../../_features/1password.nix
       ../../_features/audio.nix
+      ../../_features/nfs-data.nix
       ../../_features/gaming.nix
       ../../_features/korean.nix
       ../../_features/restic.nix

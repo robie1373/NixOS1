@@ -11,6 +11,7 @@
       ../../_features/audio.nix
       ../../_features/desktop-hyprland.nix
       ../../_features/nas.nix
+      ../../_features/nfs-data.nix
       ../../_features/speaker-fix.nix
       inputs.disko.nixosModules.disko
       ../../../hosts/flipper/disko.nix

@@ -167,6 +167,7 @@
     nasPath = "tank/backups/laptops/linux/fivenix";
     paths   = [ "/home/robie" ];
     exclude = [
+      "/home/robie/nas"       # NFS automount — NAS data, not a local backup target
       # Ollama model weights — re-pullable, can be 10s of GB
       "/home/robie/.ollama"
       # Whisper / HuggingFace model caches
