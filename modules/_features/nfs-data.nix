@@ -19,7 +19,7 @@
   ];
 
   fileSystems."/home/robie/nas" = {
-    device = "192.168.20.12:/data";
+    device = "192.168.20.12:/mnt/tank/data";
     fsType = "nfs";
     options = [
       "x-systemd.automount"       # mount on first access, not at boot
