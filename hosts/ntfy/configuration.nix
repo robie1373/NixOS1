@@ -38,8 +38,11 @@
   }];
   networking.defaultGateway = "192.168.20.254";  # OPNsense lab gateway
 
-  # DNS: Technitium primary/secondary (current). Update when Blocky is deployed.
-  networking.nameservers = [ "192.168.7.53" "192.168.7.54" ];
+  # DNS: OPNsense gateway primary, public fallback. Technitium is on VLAN 10
+  # and unreachable from VLAN 20 until inter-VLAN routing is fixed. Using
+  # 192.168.20.254 (OPNsense) as primary — it resolves external names and is
+  # always reachable on VLAN 20. Update when Technitium moves to VLAN 20.
+  networking.nameservers = [ "192.168.20.254" "1.1.1.1" ];
 
   # ── SSH authorised keys ───────────────────────────────────────────────────
   # ansible2 key is set in server-common. Add personal key here for interactive use.
