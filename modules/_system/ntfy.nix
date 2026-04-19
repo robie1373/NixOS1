@@ -102,13 +102,15 @@ in
 
     systemd.services.tailscale-cert = {
       description = "Provision Tailscale TLS cert for nginx";
-      after = [ "tailscaled.service" "network-online.target" ];
-      wants = [ "network-online.target" ];
-      before = [ "nginx.service" ];
+      after    = [ "tailscaled.service" "network-online.target" "tailscaled-autoconnect.service" ];
+      wants    = [ "network-online.target" ];
+      before   = [ "nginx.service" ];
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
-        Type = "oneshot";
+        Type            = "oneshot";
         RemainAfterExit = true;
+        Restart         = "on-failure";
+        RestartSec      = "30";  # tailscale cert fails with "no netmap" if TS isn't fully up yet
         ExecStart = pkgs.writeShellScript "tailscale-cert" ''
           set -euo pipefail
           # Write to a path we own — never touch /var/lib/tailscale/
