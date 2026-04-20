@@ -161,6 +161,20 @@
   # without sudo. Common group for GPU compute without full video group access.
   users.users.robie.extraGroups = [ "render" ];
 
+  # ── Open WebUI ───────────────────────────────────────────────────────────────
+  # Web frontend for Ollama. Accessible from home VLAN (192.168.7.x) on :8080.
+  # WEBUI_AUTH=false: no login required — home network only, not publicly exposed.
+  services.open-webui = {
+    enable       = true;
+    host         = "0.0.0.0";
+    port         = 8080;
+    openFirewall = true;
+    environment  = {
+      OLLAMA_BASE_URL = "http://127.0.0.1:11434";
+      WEBUI_AUTH      = "false";
+    };
+  };
+
   # ── Restic backups ───────────────────────────────────────────────────────────
   mySystem.restic = {
     enable  = true;
