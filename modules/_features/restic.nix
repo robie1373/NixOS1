@@ -142,5 +142,22 @@ in
         ''}"
       ];
     };
+
+    # Wait up to ~90 s for the NAS to be reachable before attempting the
+    # backup. Prevents failures when Persistent=true fires the service at
+    # boot before inter-VLAN routing to ${cfg.nasHost} is established.
+    # ExecCondition exit 1 → service is skipped (not failed); the timer
+    # retries at the next scheduled fire.
+    systemd.services."restic-backups-nas".serviceConfig.ExecCondition =
+      pkgs.writeShellScript "restic-nas-reachable-${hostname}" ''
+        for i in $(${pkgs.coreutils}/bin/seq 1 18); do
+          if ${pkgs.netcat-openbsd}/bin/nc -z -w 3 ${cfg.nasHost} 22 2>/dev/null; then
+            exit 0
+          fi
+          sleep 5
+        done
+        echo "NAS ${cfg.nasHost} unreachable after 90 s — skipping backup" >&2
+        exit 1
+      '';
   };
 }
