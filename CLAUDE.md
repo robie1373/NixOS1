@@ -206,6 +206,17 @@ This project coordinates with The Bearing — Robie's life and project tracker (
 
 **After completing delegated work:** Update `BEARING.md` — move items to Completed with a brief outcome, add findings to Notes to The Bearing. The Bearing monitors `~/work/DELEGATIONS.md` for status updates.
 
+**Reporting back:** When a task is complete, partially complete, or has become irrelevant due to surrounding progress — write it up. Don't rely on The Bearing reading git commits; update Notes to The Bearing explicitly. A one-line summary + link to where the work landed in `docs/` is enough.
+
+## Keeping BEARING.md lean
+
+BEARING.md is a task queue and communication channel — not a design doc or reference library. It is loaded into context on every session. Keep it short.
+
+- **Delegated tasks:** one short paragraph max + a link to the relevant doc in `docs/`. If no doc exists yet, create it as part of the work, then link back.
+- **Completed tasks:** write outcomes to `docs/` (runbook, decision record, design doc), add a one-line summary + link in Notes to The Bearing, then delete the Pending entry.
+- **Design notes and implementation plans:** belong in `docs/` from the start. If you find detailed planning content in BEARING.md, move it to an appropriate `docs/` file and replace it with a link.
+- **Target state:** Pending section contains only active tasks. Each entry is short enough to read in 10 seconds. Everything else is a link.
+
 ---
 
 ## docs/ Directory
