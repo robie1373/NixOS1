@@ -107,6 +107,7 @@
     libimobiledevice  	# for mounting iphone
     bambu-studio
     ollama		# CLI client — server runs on fivenix (see OLLAMA_HOST below)
+    calibre		# eBook manager
   ];
 
   # Add local scripts and apps to the path
@@ -133,6 +134,27 @@
   services.udev.extraRules = ''
     SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="05ac", ACTION=="add", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}="ifuse-mount.service"
     SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device", ATTR{idVendor}=="05ac", ACTION=="remove", TAG+="systemd", ENV{SYSTEMD_USER_WANTS}="ifuse-unmount.service"
+    # GL9750 SD card reader: disable D3cold so the driver can always talk to it
+    # after suspend/resume. Without this the chip wakes in D3cold (all registers
+    # 0xffff) and sdhci-pci's reset never completes. See docs/flipper/README.md.
+    ACTION=="add", SUBSYSTEM=="pci", ENV{PCI_ID}=="17A0:9750", ATTR{d3cold_allowed}="0"
+  '';
+
+  # Safety net: if the GL9750 still ends up in D3cold after resume (e.g. first
+  # boot before the udev rule fires, or a firmware-driven transition), rebind
+  # the sdhci-pci driver to force a clean reprobe. If it fell off the bus
+  # entirely, rescan the parent bridge (00:1c.4 → bus 2c).
+  powerManagement.resumeCommands = ''
+    if [ -d /sys/bus/pci/devices/0000:2c:00.0 ]; then
+      if [ "$(cat /sys/bus/pci/devices/0000:2c:00.0/power_state 2>/dev/null)" = "D3cold" ]; then
+        echo 0 > /sys/bus/pci/devices/0000:2c:00.0/d3cold_allowed
+        echo 0000:2c:00.0 > /sys/bus/pci/drivers/sdhci-pci/unbind 2>/dev/null || true
+        sleep 1
+        echo 0000:2c:00.0 > /sys/bus/pci/drivers/sdhci-pci/bind
+      fi
+    else
+      echo 1 > /sys/bus/pci/devices/0000:00:1c.4/rescan
+    fi
   '';
 
   # Fix internal speakers — see docs/flipper/01-speakers-fix.md

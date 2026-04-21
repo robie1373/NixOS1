@@ -37,11 +37,44 @@ A tracked [TODO list](todo.md) for keeping track of tasks.
 | Battery + USB-C charging | ✅ Working | UCSI, 2 ports |
 | Thunderbolt 4 | ✅ Working | |
 | NVMe (WD SN5000S) | ✅ Working | |
-| SD card reader (GL9750) | ⚠️ Detected | not yet tested |
+| SD card reader (GL9750) | ⚠️ Needs fix | D3cold after suspend — udev + resume hook in config |
 | Screen auto-rotation | ❌ Broken | Intel ISH firmware rejected — no fix yet |
 | IR camera | ⚠️ Unknown | IPU6 pipeline not configured |
 | Fingerprint reader | — | not present on this SKU |
 | Fan curve control | ⚠️ N/A | WMI method missing from BIOS |
+
+---
+
+## SD Card Reader (GL9750)
+
+The SD card reader is a **Genesys Logic GL9750** at PCIe `2c:00.0` (via root port
+`00:1c.4`), driven by `sdhci-pci` + `sdhci_uhs2`.
+
+**Problem:** After suspend/resume the chip wakes in **D3cold** — PCIe power is cut,
+every register reads `0xffffffff`, and sdhci-pci's `Reset 0x1 never completed`. No
+card is ever enumerated.
+
+**Root cause:** The BIOS/ACPI marks D3cold as allowed for this slot
+(`d3cold_allowed=1`), and the PCIe power management doesn't restore it correctly
+on resume.
+
+**Fix (in `hosts/flipper/configuration.nix`):**
+
+1. **udev rule** — sets `d3cold_allowed=0` when the device is added at boot, so
+   it only ever enters D3hot during suspend and wakes in a state the driver can
+   recover from.
+
+2. **`powerManagement.resumeCommands`** — safety net for the first boot (before the
+   udev rule fires) or any firmware-driven D3cold transition. If the device is in
+   D3cold after resume, it disables D3cold and rebinds `sdhci-pci` to force a
+   clean reprobe. If the device fell off the bus entirely, rescans the parent
+   bridge.
+
+**Symptoms if broken:**
+- `udisksctl mount -b /dev/mmcblk0p1` → `Error looking up object`
+- `lsblk` shows no `mmcblk` devices
+- `cat /sys/bus/pci/devices/0000:2c:00.0/power_state` → `D3cold`
+- Journal: `mmc0: Reset 0x1 never completed` with all registers `0xffffffff`
 
 ---
 
