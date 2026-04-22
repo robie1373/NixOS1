@@ -38,14 +38,27 @@ build   # nixos-rebuild build --flake .#flipper
 
 ## 7. Apply and reboot
 
+**Do not use `nixos-rebuild switch` or `nh os switch` here.** When the activation runs,
+systemd stops the old display manager (greetd) to start SDDM. This kills your Wayland
+session — and the terminal running the switch command — mid-activation. The switch dies
+incomplete and the system reboots, landing back on the old generation.
+
+Instead, use `boot` to write the bootloader entry without activating anything live, then
+reboot explicitly:
+
 ```bash
-rebuild  # sudo nixos-rebuild switch --flake .#flipper
-reboot
+nh os boot .#flipper
+# or: sudo nixos-rebuild boot --flake .#flipper
+sudo reboot
 ```
 
 SDDM should greet you instead of tuigreet. First login may be slow as KDE writes its
 initial config files. The `backupFileExtension = "backup"` setting already in the config
 handles any HM ↔ KDE file conflicts.
+
+> **General rule for display manager switches:** always use `boot` + reboot when the
+> switch involves changing `services.displayManager.*`. Running `switch` from within the
+> old desktop session will kill that session before activation completes.
 
 ## 8. Verify
 

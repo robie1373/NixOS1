@@ -112,7 +112,7 @@
 
   # Add local scripts and apps to the path
   environment.sessionVariables.PATH = [
-    "/home/robie/languages/study"
+    "/home/robie/languages/"
   ];
 
   # Point ollama CLI at fivenix's GPU server so `ollama run` works without flags.

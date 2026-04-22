@@ -9,8 +9,8 @@
       ../../_features/tailscale-watchdog.nix
       ../../_features/1password.nix
       ../../_features/audio.nix
-      # ../../_features/desktop-hyprland.nix  # temporarily on KDE — swap back to re-enable
-      ../../_features/desktop-kde.nix
+      ../../_features/desktop-hyprland.nix  # temporarily on KDE — swap back to re-enable
+      #../../_features/desktop-kde.nix
       ../../_features/nas.nix
       ../../_features/nfs-data.nix
       ../../_features/speaker-fix.nix
@@ -34,7 +34,7 @@
           ../../_home/claude.nix
           ../../_home/obsidian.nix
           ../../_home/bearing.nix
-          # ../../_home/desktop-hyprland.nix  # temporarily on KDE
+          ../../_home/desktop-hyprland.nix  
           ../../_home/firefox.nix
           ../../_home/tablet.nix
           ../../_home/mpv.nix
