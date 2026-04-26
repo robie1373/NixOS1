@@ -1,5 +1,13 @@
-{ config, pkgs, lib, ... }:
+{ config, pkgs, lib, inputs, ... }:
 
+let
+  # Unstable nixpkgs instance with unfree allowed — used to pull Ollama 0.20+
+  # while keeping everything else on stable (25.11).
+  unstable = import inputs.nixpkgs {
+    system = pkgs.system;
+    config.allowUnfree = true;
+  };
+in
 {
   imports = [
     ./hardware-configuration.nix
@@ -36,10 +44,14 @@
   # RTX 4070 has 12 GB VRAM. With a second GPU (3070, 8 GB), Ollama auto-
   # distributes layers across both cards — see the dual-GPU note in docs/.
   services.ollama = {
-    enable       = true;
-    acceleration = "cuda";
-    host         = "0.0.0.0";
-    port         = 11434;
+    enable  = true;
+    # nixpkgs-stable (25.11) ships Ollama 0.12.x; qwen3.5 models (nvfp4/mxfp8
+    # quantisation formats) require 0.20+. Pull ollama-cuda from the unstable
+    # input directly. This is the NixOS-idiomatic approach — services.ollama
+    # docs say to set .package rather than .acceleration.
+    package = unstable.ollama-cuda;
+    host    = "0.0.0.0";
+    port    = 11434;
 
     # Performance tuning:
     # KEEP_ALIVE=-1   — never evict a model from VRAM; always warm on first request.
@@ -50,6 +62,7 @@
       OLLAMA_KEEP_ALIVE    = "-1";
       OLLAMA_NUM_PARALLEL  = "4";
       OLLAMA_FLASH_ATTENTION = "1";
+      OLLAMA_NUM_CTX = "65536";
     };
   };
 
