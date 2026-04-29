@@ -10,6 +10,12 @@
         configFish = pkgs.writeText "config.fish" ''
           set fish_greeting ""   # silence the default welcome banner
 
+          # ── User PATH additions ───────────────────────────────────────────
+          fish_add_path ~/.npm-global/bin
+
+          # ── QMD — use Qwen3 multilingual embeddings ───────────────────────
+          set -x QMD_EMBED_MODEL "hf:Qwen/Qwen3-Embedding-0.6B-GGUF/Qwen3-Embedding-0.6B-Q8_0.gguf"
+
           # ── Aliases (from _home/common.nix home.shellAliases) ─────────────
           alias ll 'ls -lh'
           alias la 'ls -ah'

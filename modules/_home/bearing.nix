@@ -39,11 +39,6 @@ let
         BODY="How's it going? Worth a quick recalibration."
         URGENCY="low"
         ;;
-      afternoon)
-        TITLE="Afternoon Bearing"
-        BODY="Last check-in of the day. How did it go?"
-        URGENCY="low"
-        ;;
       korean)
         TITLE="Korean lesson"
         BODY="Past you decided to study every day. Today's lesson is waiting."
@@ -81,8 +76,6 @@ let
           TITLE="Morning Bearing"; MSG="Time to take a bearing."; PRI="default"; TAGS="compass" ;;
         checkin)
           TITLE="Check-in"; MSG="Worth a quick recalibration."; PRI="low"; TAGS="clock" ;;
-        afternoon)
-          TITLE="Afternoon Bearing"; MSG="Last check-in of the day."; PRI="low"; TAGS="sunset" ;;
         korean)
           TITLE="Korean lesson"; MSG="Today's lesson is waiting."; PRI="default"; TAGS="books" ;;
         *)
@@ -139,6 +132,40 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
     cat ${cfg.workDir}/templates/activity-gather.md \
       | ${pkgs.claude-code}/bin/claude --print \
           --allowedTools "Bash,Write"
+  '';
+
+  # bearing-lint: runs claude non-interactively to lint ~/ledger/.
+  # Substitutes {{LINT_FILE}} in the template with today's dated log path.
+  # Claude writes detailed findings to ~/work/lint/YYYY-MM-DD.md and prints
+  # a one-line summary as its final stdout line, which is sent via ntfy.
+  # Capped at 10 minutes via timeout.
+  bearingLint = pkgs.writeShellScriptBin "bearing-lint" ''
+    mkdir -p ${cfg.workDir}/lint
+    TODAY=$(date +%Y-%m-%d)
+    LINT_FILE="${cfg.workDir}/lint/$TODAY.md"
+
+    PROMPT=$(sed "s|{{LINT_FILE}}|$LINT_FILE|g" ${cfg.workDir}/templates/ledger-lint.md)
+    SUMMARY=$(echo "$PROMPT" \
+      | timeout 600 ${pkgs.claude-code}/bin/claude --print \
+          --allowedTools "Bash,Read,Glob,Grep,Write" 2>/dev/null)
+    EXIT=$?
+
+    TOPIC="$(cat ${cfg.workDir}/.ntfy-topic 2>/dev/null)"
+    if [ -n "$TOPIC" ]; then
+      if [ "$EXIT" -eq 124 ]; then
+        MSG="Lint timed out after 10 minutes."; PRI="low"; TAGS="warning"
+      else
+        MSG=$(printf "%s" "$SUMMARY" | grep -v '^[[:space:]]*$' | tail -1)
+        [ -z "$MSG" ] && MSG="Lint complete — see ~/work/lint/$TODAY.md"
+        PRI="low"; TAGS="books"
+      fi
+      ${pkgs.curl}/bin/curl -s \
+        -H "Title: Ledger lint" \
+        -H "Priority: $PRI" \
+        -H "Tags: $TAGS" \
+        -d "$MSG" \
+        "${cfg.ntfy.server}/$TOPIC"
+    fi
   '';
 
   # bearing-status: offline status card — no AI, no network.
@@ -309,10 +336,10 @@ in {
         default = "13:00";
         description = "Time for midday check-in notification";
       };
-      afternoon = lib.mkOption {
+      lint = lib.mkOption {
         type    = lib.types.str;
-        default = "16:30";
-        description = "Time for afternoon check-in notification";
+        default = "16:00";
+        description = "Time for daily Ledger lint run (headless, sends ntfy with findings)";
       };
     };
   };
@@ -320,7 +347,7 @@ in {
   config = lib.mkIf cfg.enable {
 
     # ── Scripts on PATH ────────────────────────────────────────────────────
-    home.packages = [ bearingCmd bearingNotify bearingCheckin bearingBriefing bearingActivity bearingStatus bearingLog ];
+    home.packages = [ bearingCmd bearingNotify bearingCheckin bearingBriefing bearingActivity bearingLint bearingStatus bearingLog ];
 
     # ── Systemd timer + service units ──────────────────────────────────────
 
@@ -402,20 +429,21 @@ in {
       Install.WantedBy = [ "timers.target" ];
     };
 
-    systemd.user.services.bearing-afternoon = {
+    systemd.user.services.bearing-lint = {
       Unit = {
-        Description = "The Bearing — afternoon check-in";
-        After       = [ "graphical-session.target" ];
+        Description = "The Bearing — daily Ledger lint";
+        After       = [ "default.target" ];
       };
       Service = {
-        Type      = "oneshot";
-        ExecStart = "${bearingCheckin}/bin/bearing-checkin afternoon";
+        Type        = "oneshot";
+        ExecStart   = "${bearingLint}/bin/bearing-lint";
+        Environment = [ "SSH_AUTH_SOCK=" ];
       };
     };
-    systemd.user.timers.bearing-afternoon = {
-      Unit.Description = "The Bearing — afternoon check-in timer";
+    systemd.user.timers.bearing-lint = {
+      Unit.Description = "The Bearing — daily Ledger lint timer";
       Timer = {
-        OnCalendar = "Mon-Sun ${cfg.schedule.afternoon}";
+        OnCalendar = "Mon-Sun ${cfg.schedule.lint}";
         Persistent = true;
       };
       Install.WantedBy = [ "timers.target" ];

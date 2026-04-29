@@ -45,6 +45,12 @@ in
         # Tailscale HTTPS hostname — used in notification URLs
         base-url = "https://${cfg.hostname}";
 
+        # Relay push notifications through ntfy.sh → APNs/Firebase.
+        # Without this, iOS/Android only receive messages when the app is open
+        # and polling. With it, ntfy.sh delivers the push wake-up and the app
+        # fetches the message from this server.
+        upstream-base-url = "https://ntfy.sh";
+
         # Listen on localhost only — nginx is the public-facing endpoint
         listen-http = "127.0.0.1:${toString cfg.listenPort}";
 

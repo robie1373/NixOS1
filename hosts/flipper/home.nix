@@ -15,6 +15,7 @@
     waybar
     fish
     okular
+    pkgs.nodejs_22  # QMD runtime
   ];
   xdg.mimeApps.defaultApplications."application/pdf" = "org.pwmt.zathura.desktop";
   myHome.imv.enable             = true;
@@ -30,4 +31,10 @@
   };
 
   services.poweralertd.enable = true;
+
+  # npm global installs (QMD etc.) — writable prefix outside the nix store
+  home.sessionPath = [ "${config.home.homeDirectory}/.npm-global/bin" ];
+
+  # QMD — use Qwen3-Embedding for Korean/multilingual support
+  home.sessionVariables.QMD_EMBED_MODEL = "hf:Qwen/Qwen3-Embedding-0.6B-GGUF/Qwen3-Embedding-0.6B-Q8_0.gguf";
 }
