@@ -30,6 +30,11 @@
     ntfy.server  = "https://ntfy.vimba-stairs.ts.net";
   };
 
+  myHome.teacha = {
+    enable      = true;
+    pollSeconds = 120;
+  };
+
   services.poweralertd.enable = true;
 
   # npm global installs (QMD etc.) — writable prefix outside the nix store
