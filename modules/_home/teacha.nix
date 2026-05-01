@@ -6,10 +6,9 @@ in {
   options.myHome.teacha = {
     enable = lib.mkEnableOption "Teacha ambient spaced repetition daemon";
 
-    binaryPath = lib.mkOption {
-      type    = lib.types.str;
-      default = "${config.home.homeDirectory}/.local/bin/teacha-daemon";
-      description = "Path to the teacha-daemon binary.";
+    package = lib.mkOption {
+      type        = lib.types.package;
+      description = "The teacha-daemon package to install.";
     };
 
     channels = lib.mkOption {
@@ -34,7 +33,7 @@ in {
   config = lib.mkIf cfg.enable {
 
     # notify-send is required for the desktop channel on Linux
-    home.packages = [ pkgs.libnotify ];
+    home.packages = [ pkgs.libnotify cfg.package ];
 
     systemd.user.services.teacha = {
       Unit = {
@@ -44,7 +43,7 @@ in {
       Service = {
         Type      = "simple";
         ExecStart = lib.concatStringsSep " " (
-          [ cfg.binaryPath
+          [ "${cfg.package}/bin/teacha-daemon"
             "--channels" cfg.channels
             "--poll-seconds" (toString cfg.pollSeconds)
           ] ++ lib.optional (cfg.ntfyUrl != null) "--ntfy-url ${cfg.ntfyUrl}"

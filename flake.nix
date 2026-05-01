@@ -54,6 +54,13 @@
       url   = "github:robie1373/langlab";
       flake = false;  # plain source tree, not a flake
     };
+
+    # Teacha: ambient spaced repetition daemon.
+    # Update with: nix flake update teacha
+    teacha = {
+      url = "github:robie1373/teacha";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs:
