@@ -796,11 +796,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1777669229,
-        "narHash": "sha256-gfWzQ8DwKMLEZ0TNEGPzgSkV3SwO/8lrLfWKvYNmAlQ=",
+        "lastModified": 1777670454,
+        "narHash": "sha256-ewzhB7yLS5MBFJuE5KXdYgsVC/GAYbpswmmrhebT0ec=",
         "owner": "robie1373",
         "repo": "teacha",
-        "rev": "1795a69d6ad1111b632fbbd80d00f17d644b8597",
+        "rev": "cc5a76f5813144736c38b736e442a357c0637f5f",
         "type": "github"
       },
       "original": {
