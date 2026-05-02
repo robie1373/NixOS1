@@ -3,6 +3,7 @@
 {
   imports = [
     ./hardware-configuration.nix
+    ../../modules/_features/net-speed.nix
   ];
 
   networking.hostName = "flipper";
