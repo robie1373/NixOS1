@@ -24,14 +24,14 @@ let
       target=""
 
       # ── Colors ──────────────────────────────────────────────────────────────
-      RED='\033[0;31m'
-      GREEN='\033[0;32m'
-      YELLOW='\033[1;33m'
-      BLUE='\033[0;34m'
-      CYAN='\033[0;36m'
-      BOLD='\033[1m'
-      DIM='\033[2m'
-      NC='\033[0m'
+      RED=$'\033[0;31m'
+      GREEN=$'\033[0;32m'
+      YELLOW=$'\033[1;33m'
+      BLUE=$'\033[0;34m'
+      CYAN=$'\033[0;36m'
+      BOLD=$'\033[1m'
+      DIM=$'\033[2m'
+      NC=$'\033[0m'
 
       # ── Usage ────────────────────────────────────────────────────────────────
       usage() {
@@ -147,18 +147,24 @@ let
 
       start_server() {
         # Bootstrap iperf3 on the remote via SSH + nix-shell.
+        # Non-interactive SSH doesn't source /etc/profile, so NIX_PATH isn't set.
+        # bash -l gives a login shell that sources /etc/profile and gets NIX_PATH.
+        # Works regardless of the user's default shell (fish, zsh, etc.).
         # --one-off: server exits automatically after one client — no manual cleanup.
         # SC2029: $port is intentionally expanded locally before SSH receives the command.
         # shellcheck disable=SC2029
         ssh -o BatchMode=yes "$target" \
-          "nix-shell -p iperf3 --run 'iperf3 -s --one-off -p $port'" \
+          "bash -l -c 'nix-shell -p iperf3 --run \"iperf3 -s --one-off -p $port\"'" \
           >/dev/null 2>&1 &
         SERVER_PID=$!
       }
 
       wait_for_server() {
         local attempts=0
-        printf '  Waiting for server on %s:%s...' "$target" "$port"
+        # All output here goes to stderr — run_test is called in a command
+        # substitution, so anything on stdout would be captured into the result
+        # variable and corrupt the iperf3 JSON.
+        printf '  Waiting for server on %s:%s...' "$target" "$port" >&2
         # Poll via SSH until iperf3 is listening. Handles variable nix-shell
         # startup time — fast on warm cache, up to ~30s on cold cache.
         # SC2029: $port intentionally expanded locally.
@@ -172,7 +178,7 @@ let
             return 1
           fi
         done
-        printf ' %bready%b\n' "$GREEN" "$NC"
+        printf ' %bready%b\n' "$GREEN" "$NC" >&2
       }
 
       # ── Single test ──────────────────────────────────────────────────────────
