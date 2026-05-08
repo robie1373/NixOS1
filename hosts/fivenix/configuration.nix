@@ -162,6 +162,15 @@ in
   # Allow Ollama API from Tailscale peers. Add other LAN CIDRs here if needed.
   networking.firewall.allowedTCPPorts = [ 11434 ];
 
+  # ── Bluetooth ────────────────────────────────────────────────────────────────
+  hardware.bluetooth.enable        = true;
+  hardware.bluetooth.powerOnBoot   = true;
+  services.blueman.enable          = true;
+
+  # xpadneo: Xbox One/Series BT driver. The in-kernel hid-xbox is unreliable
+  # over Bluetooth; xpadneo handles rumble, analog triggers, and reconnection.
+  boot.extraModulePackages = [ config.boot.kernelPackages.xpadneo ];
+
   # ── Virpil HOTAS ─────────────────────────────────────────────────────────────
   # Vendor ID 0x3344 covers the full Virpil range (Alpha, Constellation, etc.).
   # GROUP=input matches the group robie is already in via common.nix extraGroups.
