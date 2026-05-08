@@ -39,6 +39,11 @@ in {
         reboot   = [ "systemctl" "reboot" ];
         poweroff = [ "systemctl" "poweroff" ];
       };
+
+      default_session = {
+        command = lib.mkForce "${selfpkgs.niri}/bin/niri-session";
+        user    = lib.mkForce "robie";
+      };
     };
 
     # Provide theme packages to cage's environment so regreet can find them.
