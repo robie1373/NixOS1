@@ -65,37 +65,12 @@
   ];
 
   # ── claude-code version pin ─────────────────────────────────────────────────
-  # nixpkgs occasionally pins a claude-code version that doesn't exist on npm.
-  # The overlay is a no-op when nixpkgs ships a working version — it only
-  # activates for versions in brokenVersions. After a flake update, if claude
-  # breaks again: add the bad version to brokenVersions, update pinVersion and
-  # pinHash to a known-good one.
-  # Accessing prev.claude-code.version inside a NixOS overlay causes infinite
-  # recursion via nixpkgs's by-name-overlay.nix — so the version check must be
-  # unconditional. After a flake update: if claude-code builds fine, remove this
-  # overlay. If it breaks again, update pinVersion and pinHash.
-  # Known broken: 2.1.88
-  nixpkgs.overlays = [
-    (final: prev: {
-      claude-code = prev.claude-code.overrideAttrs (old: rec {
-        version = "2.1.77";
-        src = prev.fetchzip {
-          url = "https://registry.npmjs.org/@anthropic-ai/claude-code/-/claude-code-${version}.tgz";
-          hash = "sha256-3bsFS3EZYbU8htlO7QtA9Qs8xlm0ZPz02bJ3ROZaugY=";
-        };
-        postPatch = ''
-          cp ${./claude-code-2.1.77-package-lock.json} package-lock.json
-          substituteInPlace cli.js \
-            --replace-fail '#!/bin/sh' '#!/usr/bin/env sh'
-        '';
-        npmDeps = prev.fetchNpmDeps {
-          inherit src postPatch;
-          name = "claude-code-${version}-npm-deps";
-          hash = "sha256-spxAd9PEGRQFiGjaNRqGCu23PdmfwmBQyhT+gwTiTMs=";
-        };
-      });
-    })
-  ];
+  # Removed 2026-05-07: nixpkgs now at 2.1.112 which appears to build cleanly.
+  # The 2.1.77 pin was added because 2.1.88 was broken on npm; 2.1.77 itself
+  # later broke (cli.js missing in patchPhase) after a nixpkgs update changed
+  # the package structure. If claude-code breaks again after a flake update,
+  # re-add the overlay using docs/runbooks/pin-broken-package.md.
+  # Known broken: 2.1.88, 2.1.77 (post-26.05 structure change)
 
   environment.systemPackages = with pkgs; [
     wget

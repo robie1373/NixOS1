@@ -33,9 +33,7 @@
 
   environment.systemPackages = with pkgs; [
     mangohud     # in-game performance overlay
-    lutris       # non-Steam game launcher
-    heroic       # Epic/GOG launcher
-    gamepad-tool # configure gamepads
+gamepad-tool # configure gamepads
     protonup-qt  # GUI for managing Proton/ProtonGE versions
   ];
 }

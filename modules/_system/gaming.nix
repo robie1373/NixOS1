@@ -48,10 +48,6 @@
       # Or globally: mangohud %command%
       mangohud
 
-      # Non-Steam game launchers
-      lutris
-      heroic
-
       # Useful utilities
       gamepad-tool      # configure gamepads
       protonup-qt       # GUI for managing Proton/ProtonGE versions
