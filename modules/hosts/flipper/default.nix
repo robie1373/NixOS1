@@ -11,6 +11,7 @@
       ../../_features/audio.nix
       ../../_features/desktop-niri.nix
       ../../_features/desktop-noctalia.nix
+      ../../_features/greeter-regreet.nix
       #../../_features/desktop-kde.nix
       ../../_features/nas.nix
       ../../_features/nfs-data.nix

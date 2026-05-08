@@ -6,45 +6,10 @@
   # NOCTALIA — desktop shell (bar, notifications, lock, wallpaper, launcher)
   # Spawned by niri via spawn-at-startup; not managed by systemd (deprecated).
   # ════════════════════════════════════════════════════════════════════════
-  programs.noctalia-shell = {
-    enable = true;
-
-    colors = {
-      # Catppuccin Macchiato
-      background  = "#24273a";
-      surface     = "#363a4f";
-      overlay     = "#6e738d";
-      text        = "#cad3f5";
-      subtext     = "#b8c0e0";
-      accent      = "#c6a0f6";   # mauve
-      accentAlt   = "#8aadf4";   # blue
-      error       = "#ed8796";   # red
-      warning     = "#eed49f";   # yellow
-      success     = "#a6da95";   # green
-    };
-
-    settings = {
-      wallpaper = {
-        enabled  = true;
-        directory = "/home/robie/nixos-config/media";
-        viewMode = "single";
-        fillMode = "fill";
-      };
-
-      # Notifications disabled — dunst handles them while The Bearing's
-      # click-to-open rule is ported. Re-enable once bearing-notify is
-      # migrated to notify-send and noctalia's action support is evaluated.
-      notifications.enabled = false;
-
-      general = {
-        lockOnSuspend = true;
-      };
-
-      appLauncher = {
-        terminalCommand = "${self.packages.${pkgs.stdenv.hostPlatform.system}.foot}/bin/foot";
-      };
-    };
-  };
+  # Noctalia owns its own config files — no settings/colors managed here.
+  # Nix manages only the package; noctalia writes settings.json and colors.json
+  # itself. Changes survive nh os switch without being overwritten.
+  programs.noctalia-shell.enable = true;
 
   # ════════════════════════════════════════════════════════════════════════
   # GTK THEME
@@ -53,7 +18,8 @@
     enable = true;
 
     theme = {
-      name    = "Catppuccin-Macchiato-Standard-Mauve-Dark";
+      # catppuccin-gtk 1.0.3 uses lowercase+plus naming convention.
+      name    = "catppuccin-macchiato-mauve-standard+rimless";
       package = pkgs.catppuccin-gtk.override {
         accents = [ "mauve" ];
         size    = "standard";
@@ -74,8 +40,11 @@
     };
 
     gtk3.extraConfig.gtk-application-prefer-dark-theme = 1;
-    gtk4.extraConfig.gtk-application-prefer-dark-theme = 1;
+    # gtk4: libadwaita ignores gtk-application-prefer-dark-theme; use dconf instead.
   };
+
+  # Dark mode for libadwaita apps (GTK4). This is the correct mechanism.
+  dconf.settings."org/gnome/desktop/interface".color-scheme = "prefer-dark";
 
   # ════════════════════════════════════════════════════════════════════════
   # QT THEME

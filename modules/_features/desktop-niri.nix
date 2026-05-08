@@ -15,13 +15,9 @@ in {
   programs.dconf.enable = true;
 
   # ── Display manager ─────────────────────────────────────────────────────────
-  services.greetd = {
-    enable = true;
-    settings.default_session = {
-      command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd ${selfpkgs.niri}/bin/niri-session";
-      user    = "greeter";
-    };
-  };
+  # greetd is enabled by programs.regreet in greeter-regreet.nix.
+  # Enabling it here too is idempotent; the PAM entry is what we need.
+  services.greetd.enable = true;
 
   # ── Desktop portal ──────────────────────────────────────────────────────────
   # niri uses xdg-desktop-portal-gnome for screencasting (via the xdp-gnome-screencast
