@@ -1,4 +1,4 @@
-{ pkgs, self, ... }:
+{ lib, pkgs, self, ... }:
 let selfpkgs = self.packages.${pkgs.stdenv.hostPlatform.system};
 in {
   # ReGreet: GTK4 graphical greeter running inside cage.
@@ -15,11 +15,11 @@ in {
       };
 
       GTK = {
-        application_prefer_dark_theme = true;
-        cursor_theme_name = "Catppuccin-Macchiato-Dark-Cursors";
-        font_name         = "JetBrainsMono Nerd Font 12";
-        icon_theme_name   = "Papirus-Dark";
-        theme_name        = "catppuccin-macchiato-mauve-standard+rimless";
+        application_prefer_dark_theme = lib.mkForce true;
+        cursor_theme_name = lib.mkForce "Catppuccin-Macchiato-Dark-Cursors";
+        font_name         = lib.mkForce "JetBrainsMono Nerd Font 12";
+        icon_theme_name   = lib.mkForce "Papirus-Dark";
+        theme_name        = lib.mkForce "catppuccin-macchiato-mauve-standard+rimless";
       };
 
       commands = {

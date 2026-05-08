@@ -7,6 +7,8 @@
 
     programs.firefox = {
       enable = true;
+      # Keep legacy profile path; home.stateVersion is 25.05 so default changed.
+      configPath = ".mozilla/firefox";
 
       profiles.default = {
         settings = {
