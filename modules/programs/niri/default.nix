@@ -35,7 +35,7 @@
           # Noctalia handles bar, notifications, lock, wallpaper, and launcher.
           # Swaybg and waybar are no longer needed as separate spawns.
           spawn-at-startup = [
-            "${selfpkgs.noctalia}/bin/noctalia"
+            "${selfpkgs.noctalia}/bin/noctalia-shell"
           ];
 
           # xwayland-satellite: niri manages the X11 socket and restarts this process
