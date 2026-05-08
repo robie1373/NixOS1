@@ -10,6 +10,7 @@
       ../../_features/1password.nix
       ../../_features/audio.nix
       ../../_features/desktop-niri.nix
+      ../../_features/desktop-noctalia.nix
       #../../_features/desktop-kde.nix
       ../../_features/nas.nix
       ../../_features/nfs-data.nix
@@ -33,7 +34,7 @@
           ../../_home/claude.nix
           ../../_home/obsidian.nix
           ../../_home/bearing.nix
-          ../../_home/desktop-hyprland.nix  
+          ../../_home/desktop-noctalia.nix
           ../../_home/firefox.nix
           ../../_home/tablet.nix
           ../../_home/mpv.nix

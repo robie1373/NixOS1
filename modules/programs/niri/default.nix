@@ -32,13 +32,10 @@
             };
           };
 
-          # Waybar is started directly; swaybg via spawn-sh for flag args.
+          # Noctalia handles bar, notifications, lock, wallpaper, and launcher.
+          # Swaybg and waybar are no longer needed as separate spawns.
           spawn-at-startup = [
-            "${selfpkgs.waybar}/bin/waybar"
-          ];
-
-          spawn-sh-at-startup = [
-            "${pkgs.swaybg}/bin/swaybg -i /home/robie/nixos-config/media/redwoods.png -m fill"
+            "${selfpkgs.noctalia}/bin/noctalia"
           ];
 
           # xwayland-satellite: niri manages the X11 socket and restarts this process

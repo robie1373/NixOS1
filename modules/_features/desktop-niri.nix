@@ -39,9 +39,6 @@ in {
   services.blueman.enable = true;
 
   # ── PAM ─────────────────────────────────────────────────────────────────────
-  # hyprlock is still the screen locker during the Hyprland→niri bridge phase.
-  # This entry stays until Phase 3.6 (Noctalia) replaces hyprlock.
-  security.pam.services.hyprlock = {};
   # Unlock gnome-keyring at greetd login so 1Password CLI + SSH agents survive reboots.
   security.pam.services.greetd.enableGnomeKeyring = true;
 
