@@ -1,4 +1,4 @@
-{ lib, inputs, pkgs, self, ... }:
+{ lib, config, inputs, pkgs, self, ... }:
 {
   imports = [ inputs.noctalia.homeModules.default ];
 
@@ -41,6 +41,8 @@
 
     gtk3.extraConfig.gtk-application-prefer-dark-theme = 1;
     # gtk4: libadwaita ignores gtk-application-prefer-dark-theme; use dconf instead.
+    # Silence HM 26.05 stateVersion warning; keep legacy behavior (gtk4 = gtk3 theme).
+    gtk4.theme = config.gtk.theme;
   };
 
   # Dark mode for libadwaita apps (GTK4). This is the correct mechanism.
