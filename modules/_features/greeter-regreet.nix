@@ -1,5 +1,18 @@
 { lib, pkgs, self, ... }:
-let selfpkgs = self.packages.${pkgs.stdenv.hostPlatform.system};
+let
+  selfpkgs = self.packages.${pkgs.stdenv.hostPlatform.system};
+
+  # nix-wrapper-modules creates a minimal wrapper derivation that does not
+  # propagate the original niri package's share/ directory. Install the
+  # wayland-session .desktop file explicitly so regreet can discover it.
+  niriSession = pkgs.writeTextDir "share/wayland-sessions/niri.desktop" ''
+    [Desktop Entry]
+    Name=Niri
+    Comment=A scrollable-tiling Wayland compositor
+    Exec=${selfpkgs.niri}/bin/niri-session
+    Type=Application
+    DesktopNames=niri
+  '';
 in {
   # ReGreet: GTK4 graphical greeter running inside cage.
   # programs.regreet automatically reconfigures greetd's default_session
@@ -40,8 +53,9 @@ in {
   # into /run/current-system/sw/share/wayland-sessions where regreet/cage finds them.
   environment.pathsToLink = [ "/share/wayland-sessions" ];
 
-  # Theme packages available in cage's environment for regreet to load.
+  # Theme packages + niri session file for regreet to discover.
   environment.systemPackages = [
+    niriSession
     pkgs.papirus-icon-theme
     pkgs.catppuccin-cursors.macchiatoDark
     (pkgs.catppuccin-gtk.override {
