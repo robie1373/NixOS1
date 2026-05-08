@@ -11,6 +11,7 @@ in
 {
   imports = [
     ./hardware-configuration.nix
+    ../../modules/_features/elite-dangerous.nix
   ];
 
   networking.hostName = "fivenix";
