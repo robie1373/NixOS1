@@ -1,16 +1,6 @@
 {
   description = "Dry Dock. Robies DRY fleet configuration";
 
-  # Binary caches for inputs that aren't in the nixpkgs cache.
-  # nixConfig applies immediately during `nix flake update`; the NixOS option
-  # in desktop-noctalia.nix makes it persistent after rebuild.
-  nixConfig = {
-    extra-substituters      = [ "https://noctalia.cachix.org" ];
-    extra-trusted-public-keys = [
-      "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
-    ];
-  };
-
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
 
