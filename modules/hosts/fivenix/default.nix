@@ -16,7 +16,7 @@
       ../../_features/gaming.nix
       ../../_features/korean.nix
       ../../_features/restic.nix
-      inputs.home-manager.nixosModules.home-manager
+      inputs.home-manager-stable.nixosModules.home-manager
       {
         home-manager.useGlobalPkgs       = true;
         home-manager.useUserPackages     = true;

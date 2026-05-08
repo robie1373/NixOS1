@@ -13,6 +13,14 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # home-manager-stable: release-25.11 branch for stable hosts (fivenix).
+    # The unstable home-manager introduced services-modular which requires
+    # lib/services/lib.nix — a file that only exists in nixpkgs-unstable.
+    home-manager-stable = {
+      url = "github:nix-community/home-manager/release-25.11";
+      inputs.nixpkgs.follows = "nixpkgs-stable";
+    };
     flake-parts = {
       url= "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
