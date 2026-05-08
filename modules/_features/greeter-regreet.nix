@@ -36,6 +36,10 @@ in {
     '';
   };
 
+  # Ensure wayland-sessions .desktop files from all system packages are linked
+  # into /run/current-system/sw/share/wayland-sessions where regreet/cage finds them.
+  environment.pathsToLink = [ "/share/wayland-sessions" ];
+
   # Theme packages available in cage's environment for regreet to load.
   environment.systemPackages = [
     pkgs.papirus-icon-theme
