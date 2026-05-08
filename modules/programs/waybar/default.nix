@@ -14,7 +14,7 @@
         position = "top";
         height   = 32;
 
-        modules-left   = [ "hyprland/workspaces" ];
+        modules-left   = [ "niri/workspaces" ];
         modules-center = [ "clock" ];
         modules-right  = [
           "battery" "backlight" "pulseaudio" "network" "cpu"
@@ -22,10 +22,8 @@
           "custom/iphone" "custom/tablet" "tray" "custom/power"
         ];
 
-        "hyprland/workspaces" = {
-          disable-scroll = true;
-          all-outputs    = true;
-          format         = "{name}";
+        "niri/workspaces" = {
+          format = "{name}";
         };
 
         battery = {

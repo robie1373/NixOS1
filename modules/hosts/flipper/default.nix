@@ -9,7 +9,7 @@
       ../../_features/tailscale-watchdog.nix
       ../../_features/1password.nix
       ../../_features/audio.nix
-      ../../_features/desktop-hyprland.nix  # temporarily on KDE — swap back to re-enable
+      ../../_features/desktop-niri.nix
       #../../_features/desktop-kde.nix
       ../../_features/nas.nix
       ../../_features/nfs-data.nix

@@ -235,7 +235,7 @@
       enable = true;
       settings = {
         general = {
-          after_sleep_cmd    = "hyprctl dispatch dpms on";
+          after_sleep_cmd    = "niri msg action power-on-monitors";
           ignore_dbus_inhibit = false;
           # pidof check prevents stacking multiple hyprlock instances
           lock_cmd           = "pidof hyprlock || hyprlock";
@@ -248,8 +248,8 @@
           }
           {
             timeout    = 630;   # 5.5 min — turn off display
-            on-timeout = "hyprctl dispatch dpms off";
-            on-resume  = "hyprctl dispatch dpms on";
+            on-timeout = "niri msg action power-off-monitors";
+            on-resume  = "niri msg action power-on-monitors";
           }
           ] ++ lib.optionals (!(osConfig.services.qemuGuest.enable or false)) [
           {
@@ -434,13 +434,13 @@
           submenu:
             - key: u
               desc: "close"
-              cmd: "hyprctl dispatch killactive"
+              cmd: "niri msg action close-window"
             - key: f
               desc: "fullscreen"
-              cmd: "hyprctl dispatch fullscreen"
+              cmd: "niri msg action fullscreen-window"
             - key: v
               desc: "float toggle"
-              cmd: "hyprctl dispatch togglefloating"
+              cmd: "niri msg action toggle-window-floating"
         - key: m
           desc: "media →"
           submenu:
