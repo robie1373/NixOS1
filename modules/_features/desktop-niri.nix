@@ -10,6 +10,10 @@ in {
   # fish is also enabled in common.nix; both setting it true is idempotent
   programs.fish.enable = true;
 
+  # dconf: required for HM's dconfSettings activation step (GTK settings, etc.)
+  # programs.hyprland.enable pulled this in transitively; with niri we set it explicitly.
+  programs.dconf.enable = true;
+
   # ── Display manager ─────────────────────────────────────────────────────────
   services.greetd = {
     enable = true;
