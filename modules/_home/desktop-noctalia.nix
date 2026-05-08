@@ -31,12 +31,10 @@
         fillMode = "fill";
       };
 
-      notifications = {
-        enabled                 = true;
-        location                = "top-right";
-        normalUrgencyDuration   = 10;
-        criticalUrgencyDuration = 0;   # persist until dismissed
-      };
+      # Notifications disabled — dunst handles them while The Bearing's
+      # click-to-open rule is ported. Re-enable once bearing-notify is
+      # migrated to notify-send and noctalia's action support is evaluated.
+      notifications.enabled = false;
 
       general = {
         lockOnSuspend = true;

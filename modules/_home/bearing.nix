@@ -349,6 +349,11 @@ in {
     # ── Scripts on PATH ────────────────────────────────────────────────────
     home.packages = [ bearingCmd bearingNotify bearingCheckin bearingBriefing bearingActivity bearingLint bearingStatus bearingLog ];
 
+    # dunst: bearing notifications and the click-to-open rule depend on dunst.
+    # Enable it here so the bearing module is self-contained regardless of which
+    # desktop module is active.
+    services.dunst.enable = true;
+
     # ── Systemd timer + service units ──────────────────────────────────────
 
     systemd.user.services.bearing-briefing = {
