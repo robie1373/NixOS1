@@ -2,13 +2,13 @@
 # update-fleet.sh — flake update + rebuild all managed NixOS hosts.
 #
 # Usage:
-#   ./scripts/update-fleet.sh                  # full update + rebuild all hosts
-#   ./scripts/update-fleet.sh --no-update       # skip flake update, just rebuild
-#   ./scripts/update-fleet.sh --skip-local      # skip flipper (local rebuild)
-#   ./scripts/update-fleet.sh --boot            # use 'boot' instead of 'switch' (requires reboot)
-#   ./scripts/update-fleet.sh fivenix ntfy      # rebuild specific hosts only
-#   ./scripts/update-fleet.sh --no-update fivenix  # combo
-#   ./scripts/update-fleet.sh --boot ntfy langlab omada  # boot specific hosts
+#   ./scripts/update-fleet.sh                       # full update + rebuild all hosts
+#   ./scripts/update-fleet.sh --no-update            # skip flake update, just rebuild
+#   ./scripts/update-fleet.sh --skip-local           # skip flipper (local rebuild)
+#   ./scripts/update-fleet.sh --boot                 # use 'boot' + reboot (for critical changes)
+#   ./scripts/update-fleet.sh fivenix ntfy           # rebuild specific hosts only
+#   ./scripts/update-fleet.sh --no-update fivenix    # combo
+#   ./scripts/update-fleet.sh --boot ntfy langlab omada
 #
 # Auth order for each remote host:
 #   1. SSH to Tailscale hostname — uses whatever is in the SSH agent (1Password)
@@ -29,6 +29,12 @@ FLAKE="$HOME/nixos-config"
 # 1Password secret reference for the SSH private key used to reach remote hosts.
 # Override via environment: OP_SSH_KEY_REF="op://..." ./scripts/update-fleet.sh
 OP_SSH_KEY_REF="${OP_SSH_KEY_REF:-op://Personal/SSH Key/private key}"
+
+# Minimum free space required on /nix before deploying, in MiB.
+DISK_THRESHOLD_MIB="${DISK_THRESHOLD_MIB:-2048}"
+
+# Seconds to wait for a host to come back after reboot before giving up.
+REBOOT_TIMEOUT="${REBOOT_TIMEOUT:-180}"
 
 # ── Host definitions ──────────────────────────────────────────────────────────
 # All remote hosts are on Tailscale (vimba-stairs.ts.net).
@@ -88,6 +94,7 @@ should_run() { [[ ${#HOSTS_FILTER[@]} -eq 0 ]] || printf '%s\n' "${HOSTS_FILTER[
 log()  { printf '\n\033[1;34m==> %s\033[0m\n' "$*"; }
 ok()   { printf '\033[1;32m  ✓ %s\033[0m\n' "$*"; }
 err()  { printf '\033[1;31m  ✗ %s\033[0m\n' "$*" >&2; }
+warn() { printf '\033[1;33m  ! %s\033[0m\n' "$*"; }
 info() { printf '\033[0;37m  ~ %s\033[0m\n' "$*"; }
 
 # Temp dir for OP key material; cleaned up on exit.
@@ -179,6 +186,54 @@ resolve_ssh() {
   return 1
 }
 
+# Check free space on /nix (or / if /nix is not a separate mount).
+# Returns 1 and prints an error if below DISK_THRESHOLD_MIB.
+check_disk_space() {
+  local target="$1"
+  local avail_kib
+  avail_kib=$(ssh $NIX_SSH_EXTRA "$target" \
+    "df --output=avail /nix 2>/dev/null || df --output=avail /" \
+    | tail -1 | tr -d ' ')
+  local avail_mib=$(( avail_kib / 1024 ))
+  if [[ $avail_mib -lt $DISK_THRESHOLD_MIB ]]; then
+    err "Disk space too low: ${avail_mib} MiB free (need ${DISK_THRESHOLD_MIB} MiB)"
+    err "Run: ssh $target 'nix-collect-garbage -d' to free space"
+    return 1
+  fi
+  info "Disk space OK: ${avail_mib} MiB free"
+}
+
+# After a reboot, poll until SSH comes back or timeout expires.
+wait_for_ssh() {
+  local target="$1"
+  local deadline=$(( SECONDS + REBOOT_TIMEOUT ))
+  info "Waiting for $target to come back (up to ${REBOOT_TIMEOUT}s)..."
+  sleep 5  # give it a moment to start rebooting before we poll
+  while [[ $SECONDS -lt $deadline ]]; do
+    if ssh_connects $NIX_SSH_EXTRA -- "$target"; then
+      return 0
+    fi
+    sleep 5
+  done
+  err "$target did not come back within ${REBOOT_TIMEOUT}s"
+  return 1
+}
+
+# Check the current boot's journal for error-level entries.
+# Prints a summary and returns 1 if errors are found.
+check_health() {
+  local target="$1"
+  local errors
+  errors=$(ssh $NIX_SSH_EXTRA "$target" \
+    "journalctl -b -p err --no-pager -q 2>/dev/null | head -30" || true)
+  if [[ -n "$errors" ]]; then
+    warn "Journal errors found on $target:"
+    printf '%s\n' "$errors" | sed 's/^/    /'
+    return 1
+  fi
+  ok "Health check passed: no journal errors"
+}
+
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 cd "$FLAKE"
@@ -216,6 +271,11 @@ for host in "${REMOTE_HOSTS[@]}"; do
     continue
   fi
 
+  if ! check_disk_space "$TARGET"; then
+    FAILED+=("$host")
+    continue
+  fi
+
   extra_flags="${SSH_FLAGS[$host]:-}"
 
   # shellcheck disable=SC2086  # word splitting on flags is intentional
@@ -224,11 +284,32 @@ for host in "${REMOTE_HOSTS[@]}"; do
          --flake ".#$host" \
          --target-host "$TARGET" \
          $extra_flags; then
-    ok "$host done"
+    ok "$host deployed"
+
     if [[ "$NR_ACTION" == boot ]]; then
       info "Rebooting $host..."
       ssh $NIX_SSH_EXTRA "$TARGET" reboot || true
+      if wait_for_ssh "$TARGET"; then
+        if ! check_health "$TARGET"; then
+          warn "$host came back but has journal errors — marking as failed"
+          FAILED+=("$host")
+          continue
+        fi
+        ok "$host healthy"
+      else
+        FAILED+=("$host")
+        continue
+      fi
+    else
+      # switch: host didn't reboot, check health in place
+      if ! check_health "$TARGET"; then
+        warn "$host switched but has journal errors — marking as failed"
+        FAILED+=("$host")
+        continue
+      fi
+      ok "$host healthy"
     fi
+
   else
     err "$host FAILED"
     FAILED+=("$host")
