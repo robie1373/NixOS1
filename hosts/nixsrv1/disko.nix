@@ -15,8 +15,8 @@
   disko.devices = {
     disk.main = {
       type   = "disk";
-      # TODO: Verify with `lsblk` before deploying. Intel MBP NVMe is typically nvme0n1.
-      device = "/dev/nvme0n1";
+      # Confirmed /dev/sda via lsblk 2026-05-09. This MBP has a SATA SSD, not NVMe.
+      device = "/dev/sda";
       content = {
         type = "gpt";
         partitions = {

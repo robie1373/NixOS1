@@ -8,14 +8,14 @@
 #   2. Hypervisor — KVM/libvirt, Podman, microvm.nix for future Proxmox replacement
 #
 # PRE-DEPLOY CHECKLIST:
-#   [ ] Copy ansible2 key to machine (ssh-copy-id with echo of known pubkey)
-#   [ ] Run `ip link show` to get actual NIC interface name — update networking.interfaces below
-#   [ ] Run `lsblk` to confirm /dev/nvme0n1 is correct — update disko.nix if not
-#   [ ] Run `nixos-generate-config --show-hardware-config` → save as hardware-configuration.nix
-#   [ ] Generate host SSH key: ssh-keygen -t ed25519 -f /tmp/nixsrv1_host_key -N ""
-#       → store private key in 1Password devops/"nixsrv1 host SSH key"
-#       → commit public key to hosts/nixsrv1/ssh_host_ed25519_key.pub
-#       → add to secrets/secrets.nix recipients, re-key: nix run github:ryantm/agenix -- -r
+#   [x] NIC confirmed: enp0s20u1 (USB-C Ethernet adapter, 2026-05-09)
+#   [x] Disk confirmed: /dev/sda 699.7GB SATA SSD (2026-05-09)
+#   [x] Copy personal key to root (ansible2 key copied 2026-05-09, root SSH confirmed)
+#   [x] Run `ssh root@192.168.7.126 nixos-generate-config --show-hardware-config` → hardware-configuration.nix saved
+#   [x] Generate host SSH key: generated 2026-05-09
+#       → private key stored in 1Password devops/"nixsrv1 host SSH key"
+#       → public key committed to hosts/nixsrv1/ssh_host_ed25519_key.pub
+#       → added to secrets/secrets.nix recipients (re-key pending: nix run github:ryantm/agenix -- -r)
 #   [ ] Configure SG108PE port 7: PVID=20, member of VLAN 20 untagged
 #   [ ] Add microvm flake input to flake.nix (see modules/hosts/nixsrv1/default.nix)
 
@@ -37,11 +37,9 @@
   networking.hostName = "nixsrv1";
 
   # ── Network ───────────────────────────────────────────────────────────────
-  # TODO: Run `ip link show` on the machine before deploying to confirm
-  # the Ethernet adapter interface name. Intel MBP uses USB-C/Thunderbolt
-  # adapters — NIC names vary by adapter: enp0s20f0u1, enp2s0, eth0, etc.
-  # Replace TODO_NIC_NAME below with the actual name.
-  networking.interfaces.TODO_NIC_NAME.ipv4.addresses = [{
+  # USB-C Ethernet adapter — confirmed enp0s20u1 via `ip link show` 2026-05-09.
+  # altname: enxe000000fab75 (MAC-based). Use enp0s20u1.
+  networking.interfaces.enp0s20u1.ipv4.addresses = [{
     address      = "192.168.20.55";
     prefixLength = 24;
   }];
