@@ -9,7 +9,8 @@
 #   3. Commit the encrypted .age file (safe — only listed hosts can decrypt)
 #
 # To re-key after adding a new host:
-#   nix run github:ryantm/agenix -- -r
+#   cd ~/nixos-config/secrets && nix run github:ryantm/agenix -- -r
+#   (must be run from secrets/ dir; admin key allows re-keying from flipper)
 #
 # Host keys are committed at hosts/<hostname>/ssh_host_ed25519_key.pub
 # Private keys are in 1Password (devops/"<hostname> host SSH key") and
@@ -19,28 +20,29 @@
 # here. 1Password only. See CLAUDE.md Secrets section.
 
 let
+  # Admin key — robie's personal SSH key on flipper (~/.ssh/id_ed25519).
+  # Added to ALL secrets so agenix -r can always be run from flipper.
+  # This is the standard agenix admin pattern — keeps re-keying unblocked.
+  admin = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC/F5DsOqJb2KM0JGV3Tx6kYVYOxR0xXGuJOyu/benFU";
+
   # Host SSH public keys — age recipients
   ntfy    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFsO2AFvp2lJUJAyQ3PXWbU1/nrDEcN/UuqzfMXoC+aQ";
   omada   = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAptqMehU2xN/Oc/s26C9GC3TggyoxRuhisDkFrtxYo";
   langlab = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDb0aYMGmaB70EJZ32jqi9+tKncViDYp9CEYUAuoa2Td";
   flipper = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL8IYPm1NhuaOhtarrtZTCDXtETLqA7IHSBvQCKaAAjO";
   fivenix = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPjxC4iKXkoDqa8RQVoxelZfnCZM9HtRQbV0yoJbMImM";
-
-  # TODO: Generate host SSH keys for dns1 and dns2 before deploying them.
-  # Same process: ssh-keygen -t ed25519, store private key in 1Password,
-  # commit public key to hosts/<host>/ssh_host_ed25519_key.pub, update below.
   dns1    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC71l/Vni8C2hgxqBjLxElP0h9sY9odeCB/Z09+ToZw8";
   dns2    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINoEr1sKMbGAACXedcWoSiqGPEaU+vYmGeVJw+FQEIW4";
   nixsrv1 = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFXHryUaD7XVLX8/YXpFDRITGtvzNhmG0e4RpbYcHjWz";
 
   # All servers that use tailscale-autoconnect.nix must be listed here.
-  # Re-key after adding each new server: nix run github:ryantm/agenix -- -r
-  tailscaleServers = [ ntfy omada langlab dns1 dns2 nixsrv1 ];
+  # Re-key after adding each new server: cd secrets && nix run github:ryantm/agenix -- -r
+  tailscaleServers = [ admin ntfy omada langlab dns1 dns2 nixsrv1 ];
 in
 {
   # ntfy admin password — local user database (pre-Kanidm migration)
   # After Kanidm is deployed, migrate ntfy auth to LDAP and remove this secret.
-  "ntfy-admin-password.age".publicKeys = [ ntfy ];
+  "ntfy-admin-password.age".publicKeys = [ admin ntfy ];
 
   # Tailscale reusable auth key — shared across all lab servers.
   # Source: 1Password devops/"Tailscale Auth Key" — must be a reusable key.
@@ -52,24 +54,24 @@ in
   #   GEMINI_API_KEY=<key>
   #   CLAUDE_API_KEY=<key>
   # Source: 1Password devops/"LangLab env"
-  "langlab-env.age".publicKeys = [ langlab ];
+  "langlab-env.age".publicKeys = [ admin langlab ];
 
   # Restic backup SSH keys — ed25519 keypairs used by restic SFTP to authenticate
   # as svc_backup on the NAS. One per host. Private key encrypted here; public key
   # must be added to svc_backup's authorized_keys on the NAS.
   # Source: 1Password devops/"restic-backup-<hostname>"
-  "restic-backup-flipper.age".publicKeys  = [ flipper ];
-  "restic-backup-fivenix.age".publicKeys  = [ fivenix ];
-  "restic-backup-ntfy.age".publicKeys     = [ ntfy ];
-  "restic-backup-omada.age".publicKeys    = [ omada ];
-  "restic-backup-langlab.age".publicKeys  = [ langlab ];
+  "restic-backup-flipper.age".publicKeys  = [ admin flipper ];
+  "restic-backup-fivenix.age".publicKeys  = [ admin fivenix ];
+  "restic-backup-ntfy.age".publicKeys     = [ admin ntfy ];
+  "restic-backup-omada.age".publicKeys    = [ admin omada ];
+  "restic-backup-langlab.age".publicKeys  = [ admin langlab ];
 
   # Restic repo passwords — one per host, used to encrypt backup data at rest.
   # Source: 1Password devops/"restic-repo-password-<hostname>"
   # Keep a copy in 1Password — needed at restore time when the host may be unavailable.
-  "restic-repo-password-flipper.age".publicKeys  = [ flipper ];
-  "restic-repo-password-fivenix.age".publicKeys  = [ fivenix ];
-  "restic-repo-password-ntfy.age".publicKeys     = [ ntfy ];
-  "restic-repo-password-omada.age".publicKeys    = [ omada ];
-  "restic-repo-password-langlab.age".publicKeys  = [ langlab ];
+  "restic-repo-password-flipper.age".publicKeys  = [ admin flipper ];
+  "restic-repo-password-fivenix.age".publicKeys  = [ admin fivenix ];
+  "restic-repo-password-ntfy.age".publicKeys     = [ admin ntfy ];
+  "restic-repo-password-omada.age".publicKeys    = [ admin omada ];
+  "restic-repo-password-langlab.age".publicKeys  = [ admin langlab ];
 }
