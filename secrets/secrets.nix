@@ -26,9 +26,19 @@ let
   flipper = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL8IYPm1NhuaOhtarrtZTCDXtETLqA7IHSBvQCKaAAjO";
   fivenix = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPjxC4iKXkoDqa8RQVoxelZfnCZM9HtRQbV0yoJbMImM";
 
+  # TODO: Generate host SSH keys for these new hosts before re-keying.
+  # For each: ssh-keygen -t ed25519 -f /tmp/<host>_key -N ""
+  #           → private key → 1Password devops/"<host> host SSH key"
+  #           → public key  → hosts/<host>/ssh_host_ed25519_key.pub
+  # Then update these placeholders with the real keys and run:
+  #   nix run github:ryantm/agenix -- -r
+  dns1    = "TODO-replace-with-generated-pubkey";
+  dns2    = "TODO-replace-with-generated-pubkey";
+  nixsrv1 = "TODO-replace-with-generated-pubkey";
+
   # All servers that use tailscale-autoconnect.nix must be listed here.
   # Re-key after adding each new server: nix run github:ryantm/agenix -- -r
-  tailscaleServers = [ ntfy omada langlab ];
+  tailscaleServers = [ ntfy omada langlab dns1 dns2 nixsrv1 ];
 in
 {
   # ntfy admin password — local user database (pre-Kanidm migration)
