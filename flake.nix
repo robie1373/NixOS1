@@ -76,6 +76,13 @@
       url = "github:noctalia-dev/noctalia-shell";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # microvm.nix: lightweight type-1 VMs via cloud-hypervisor/QEMU.
+    # Used by nixsrv1 (Intel MBP hypervisor role).
+    microvm = {
+      url = "github:astro/microvm.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs:

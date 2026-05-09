@@ -21,9 +21,8 @@
 
     # ── KVM / libvirt ─────────────────────────────────────────────────────
     virtualisation.libvirtd = {
-      enable           = true;
-      qemu.ovmf.enable = true;
-      qemu.runAsRoot   = false;
+      enable         = true;
+      qemu.runAsRoot = false;
     };
 
     # ── Podman ────────────────────────────────────────────────────────────

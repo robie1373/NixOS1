@@ -19,7 +19,7 @@
 #   [ ] Configure SG108PE port 7: PVID=20, member of VLAN 20 untagged
 #   [ ] Add microvm flake input to flake.nix (see modules/hosts/nixsrv1/default.nix)
 
-{ inputs, config, ... }:
+{ inputs, config, lib, ... }:
 
 {
   imports = [
@@ -79,7 +79,7 @@
   # Intel MBP uses Apple EFI — systemd-boot works but some firmware vars
   # may be read-only. canTouchEfiVariables is set to false as a precaution.
   # server-common.nix sets it true; override here.
-  boot.loader.efi.canTouchEfiVariables = false;
+  boot.loader.efi.canTouchEfiVariables = lib.mkForce false;
 
   system.stateVersion = "25.05";
 }
