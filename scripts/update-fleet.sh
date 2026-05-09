@@ -47,7 +47,7 @@ declare -A SSH_FLAGS     # extra nixos-rebuild flags per host
 
 SSH_TARGET[fivenix]="robie@fivenix.vimba-stairs.ts.net"
 SSH_FALLBACK[fivenix]="robie@192.168.7.137"
-SSH_FLAGS[fivenix]="--sudo"
+SSH_FLAGS[fivenix]="--sudo --ask-sudo-password"
 
 SSH_TARGET[ntfy]="root@ntfy.vimba-stairs.ts.net"
 SSH_FLAGS[ntfy]=""
