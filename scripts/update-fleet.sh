@@ -219,19 +219,37 @@ wait_for_ssh() {
   return 1
 }
 
-# Check the current boot's journal for error-level entries.
-# Prints a summary and returns 1 if errors are found.
+# Check the journal for error-level entries since a given timestamp.
+# Usage: check_health <ssh-target> <since-timestamp>
+# <since-timestamp> is a string passed to journalctl --since (e.g. "2026-05-10 09:30:00").
+# Only errors after the switch started are reported — pre-existing boot noise is ignored.
+#
+# Suppressed patterns (benign, host-specific):
+#   kvm_intel          — nested virt unavailable in LXC containers
+#   dbus-broker        — duplicate .service file names in NixOS path
+#   ucsi_ccg           — USB-C controller init failure on fivenix (hardware quirk)
+#   nvidia.*i2c        — Nvidia i2c timeout on fivenix (hardware quirk)
+#   uvcvideo           — USB camera driver init on fivenix (hardware quirk)
+#   sm-notify.*sm.bak  — NFS statd benign startup message
+#   pam_env.*fcitx     — fcitx im= variable warning, harmless
+#   useradd warning.*uid — Omada Docker container low-UID user, harmless
+#   tail:.*inaccessible — Omada nightly log rotation artifact
 check_health() {
   local target="$1"
+  local since="${2:-$(date '+%Y-%m-%d %H:%M:%S')}"
   local errors
-  # Suppress known-benign patterns from LXC containers and nixpkgs:
-  #   kvm_intel          — nested virt unavailable in LXC, harmless
-  #   dbus-broker        — duplicate .service file warnings from NixOS path, harmless
   errors=$(ssh $NIX_SSH_EXTRA "$target" \
-    "journalctl -b -p err --no-pager -q 2>/dev/null | head -30" || true)
+    "journalctl -b -p err --since '$since' --no-pager -q 2>/dev/null | head -30" || true)
   errors=$(printf '%s\n' "$errors" \
     | grep -v "kvm_intel" \
     | grep -v "Ignoring duplicate name 'org.freedesktop" \
+    | grep -v "ucsi_ccg" \
+    | grep -v "nvidia.*i2c\|i2c.*nvidia" \
+    | grep -v "uvcvideo" \
+    | grep -v "sm-notify.*sm\.bak" \
+    | grep -v "pam_env.*fcitx" \
+    | grep -v "useradd warning.*uid" \
+    | grep -v "tail:.*inaccessible\|tail:.*appeared" \
     | grep -v "^$")
   if [[ -n "$errors" ]]; then
     warn "Journal errors found on $target:"
@@ -284,6 +302,8 @@ for host in "${REMOTE_HOSTS[@]}"; do
   fi
 
   extra_flags="${SSH_FLAGS[$host]:-}"
+  local switch_time
+  switch_time=$(date '+%Y-%m-%d %H:%M:%S')
 
   # shellcheck disable=SC2086  # word splitting on flags is intentional
   if NIX_SSHOPTS="$NIX_SSH_EXTRA" \
@@ -297,7 +317,7 @@ for host in "${REMOTE_HOSTS[@]}"; do
       info "Rebooting $host..."
       ssh $NIX_SSH_EXTRA "$TARGET" reboot || true
       if wait_for_ssh "$TARGET"; then
-        if ! check_health "$TARGET"; then
+        if ! check_health "$TARGET" "$switch_time"; then
           warn "$host came back but has journal errors — marking as failed"
           FAILED+=("$host")
           continue
@@ -309,7 +329,7 @@ for host in "${REMOTE_HOSTS[@]}"; do
       fi
     else
       # switch: host didn't reboot, check health in place
-      if ! check_health "$TARGET"; then
+      if ! check_health "$TARGET" "$switch_time"; then
         warn "$host switched but has journal errors — marking as failed"
         FAILED+=("$host")
         continue
