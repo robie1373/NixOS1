@@ -55,6 +55,18 @@
   programs.neovim.enable = true;
   programs.neovim.defaultEditor = true;
 
+  # Allow robie to reboot/poweroff without interactive polkit auth.
+  # Required for remote reboot via SSH (e.g. fleet update script).
+  security.polkit.extraConfig = ''
+    polkit.addRule(function(action, subject) {
+      if ((action.id == "org.freedesktop.login1.reboot" ||
+           action.id == "org.freedesktop.login1.power-off") &&
+          subject.user == "robie") {
+        return polkit.Result.YES;
+      }
+    });
+  '';
+
   # Install tailscale
   services.tailscale.enable = true;
 
