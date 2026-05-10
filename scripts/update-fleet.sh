@@ -224,8 +224,15 @@ wait_for_ssh() {
 check_health() {
   local target="$1"
   local errors
+  # Suppress known-benign patterns from LXC containers and nixpkgs:
+  #   kvm_intel          — nested virt unavailable in LXC, harmless
+  #   dbus-broker        — duplicate .service file warnings from NixOS path, harmless
   errors=$(ssh $NIX_SSH_EXTRA "$target" \
     "journalctl -b -p err --no-pager -q 2>/dev/null | head -30" || true)
+  errors=$(printf '%s\n' "$errors" \
+    | grep -v "kvm_intel" \
+    | grep -v "Ignoring duplicate name 'org.freedesktop" \
+    | grep -v "^$")
   if [[ -n "$errors" ]]; then
     warn "Journal errors found on $target:"
     printf '%s\n' "$errors" | sed 's/^/    /'
