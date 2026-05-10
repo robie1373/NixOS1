@@ -1,14 +1,17 @@
 #!/usr/bin/env bash
 # update-fleet.sh — flake update + rebuild all managed NixOS hosts.
 #
+# Remote hosts are rebooted after a successful switch by default (Chaos Monkey principle:
+# everything must survive a reboot). Use --no-reboot to skip. flipper is never
+# auto-rebooted — a reminder is printed at the end if it was updated.
+#
 # Usage:
-#   ./scripts/update-fleet.sh                       # full update + rebuild all hosts
+#   ./scripts/update-fleet.sh                       # full update + rebuild + reboot remotes
+#   ./scripts/update-fleet.sh --no-reboot           # update + rebuild, skip reboots
 #   ./scripts/update-fleet.sh --no-update            # skip flake update, just rebuild
 #   ./scripts/update-fleet.sh --skip-local           # skip flipper (local rebuild)
-#   ./scripts/update-fleet.sh --boot                 # use 'boot' + reboot (for critical changes)
 #   ./scripts/update-fleet.sh fivenix ntfy           # rebuild specific hosts only
 #   ./scripts/update-fleet.sh --no-update fivenix    # combo
-#   ./scripts/update-fleet.sh --boot ntfy langlab omada
 #
 # Auth order for each remote host:
 #   1. SSH to Tailscale hostname — uses whatever is in the SSH agent (1Password)
@@ -68,8 +71,10 @@ REMOTE_HOSTS=(fivenix ntfy langlab omada)
 
 SKIP_UPDATE=false
 SKIP_LOCAL=false
+REBOOT=true
 NR_ACTION=switch
 HOSTS_FILTER=()
+FLIPPER_UPDATED=false
 
 usage() {
   grep '^# ' "$0" | head -20 | sed 's/^# //'
@@ -80,7 +85,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --no-update)  SKIP_UPDATE=true; shift ;;
     --skip-local) SKIP_LOCAL=true;  shift ;;
-    --boot)       NR_ACTION=boot;   shift ;;
+    --no-reboot)  REBOOT=false;     shift ;;
     -h|--help)    usage ;;
     -*)           echo "Unknown option: $1" >&2; exit 1 ;;
     *)            HOSTS_FILTER+=("$1"); shift ;;
@@ -249,10 +254,10 @@ fi
 
 # 2. Flipper (local)
 if [[ "$SKIP_LOCAL" == false ]] && should_run flipper; then
-  log "Rebuilding flipper (local, $NR_ACTION)..."
-  if sudo nixos-rebuild "$NR_ACTION" --flake ".#flipper"; then
+  log "Rebuilding flipper (local, switch)..."
+  if sudo nixos-rebuild switch --flake ".#flipper"; then
     ok "flipper done"
-    [[ "$NR_ACTION" == boot ]] && info "Reboot flipper to activate."
+    FLIPPER_UPDATED=true
   else
     err "flipper FAILED"
     FAILED+=(flipper)
@@ -278,29 +283,28 @@ for host in "${REMOTE_HOSTS[@]}"; do
   fi
 
   extra_flags="${SSH_FLAGS[$host]:-}"
-  local switch_time
   switch_time=$(date '+%Y-%m-%d %H:%M:%S')
 
   # shellcheck disable=SC2086  # word splitting on flags is intentional
   if NIX_SSHOPTS="$NIX_SSH_EXTRA" \
-       nixos-rebuild "$NR_ACTION" \
+       nixos-rebuild switch \
          --flake ".#$host" \
          --target-host "$TARGET" \
          $extra_flags; then
     ok "$host deployed"
 
-    if [[ "$NR_ACTION" == boot ]]; then
+    if [[ "$REBOOT" == true ]]; then
       info "Rebooting $host..."
       ssh $NIX_SSH_EXTRA "$TARGET" reboot || true
       if wait_for_ssh "$TARGET"; then
+        switch_time=$(date '+%Y-%m-%d %H:%M:%S')  # reset to post-reboot for health check
         check_health "$TARGET" "$switch_time"
-        ok "$host healthy"
+        ok "$host back up"
       else
         FAILED+=("$host")
         continue
       fi
     else
-      # switch: host didn't reboot, check health in place
       check_health "$TARGET" "$switch_time"
       ok "$host healthy"
     fi
@@ -317,5 +321,10 @@ if [[ ${#FAILED[@]} -eq 0 ]]; then
   log "All hosts updated successfully."
 else
   err "Failed hosts: ${FAILED[*]}"
-  exit 1
 fi
+
+if [[ "$FLIPPER_UPDATED" == true && "$REBOOT" == true ]]; then
+  warn "flipper was updated — reboot when ready: sudo reboot"
+fi
+
+[[ ${#FAILED[@]} -eq 0 ]] || exit 1
