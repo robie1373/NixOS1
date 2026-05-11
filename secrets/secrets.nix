@@ -31,9 +31,9 @@ let
   langlab = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDb0aYMGmaB70EJZ32jqi9+tKncViDYp9CEYUAuoa2Td";
   flipper = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL8IYPm1NhuaOhtarrtZTCDXtETLqA7IHSBvQCKaAAjO";
   fivenix = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPjxC4iKXkoDqa8RQVoxelZfnCZM9HtRQbV0yoJbMImM";
-  dns1    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC71l/Vni8C2hgxqBjLxElP0h9sY9odeCB/Z09+ToZw8";
-  dns2    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINoEr1sKMbGAACXedcWoSiqGPEaU+vYmGeVJw+FQEIW4";
-  nixsrv1 = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFXHryUaD7XVLX8/YXpFDRITGtvzNhmG0e4RpbYcHjWz";
+  dns1    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIH2PEicoYAZHh4Bz5gEUTwvnnuS5VSF3gKcBT3n6RYhI";
+  dns2    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIDUs4mTQoOk/eq2Y9Hw87xNW02ZXaDoa+EE8xBZ/HlH";
+  nixsrv1 = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHBe1/IsK/d6n6/jmdKItZSdaNTD9ozqSqQsHWIomnZy";
 
   # All servers that use tailscale-autoconnect.nix must be listed here.
   # Re-key after adding each new server: cd secrets && nix run github:ryantm/agenix -- -r
