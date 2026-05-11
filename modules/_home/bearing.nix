@@ -454,6 +454,25 @@ in {
       Install.WantedBy = [ "timers.target" ];
     };
 
+    systemd.user.services.qmd-update = {
+      Unit = {
+        Description = "QMD — re-index markdown collections";
+        After       = [ "default.target" ];
+      };
+      Service = {
+        Type      = "oneshot";
+        ExecStart = "/home/robie/.npm-global/bin/qmd update";
+      };
+    };
+    systemd.user.timers.qmd-update = {
+      Unit.Description = "QMD — hourly re-index timer (no catch-up on wake)";
+      Timer = {
+        OnCalendar = "hourly";
+        # Persistent omitted — missed runs while asleep are skipped, not replayed
+      };
+      Install.WantedBy = [ "timers.target" ];
+    };
+
     # ── Dunst fix ─────────────────────────────────────────────────────────
     # mouse_left_click: trigger the action on click rather than just dismissing
     # bearing rule: when a "The Bearing" notification is actioned, open a terminal
