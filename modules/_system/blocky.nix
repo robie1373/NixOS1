@@ -47,11 +47,13 @@
           denylists = {
             ads-tracking = [
               # Hagezi Pro — comprehensive ads, tracking, telemetry
-              "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/wildcard/pro-onlydomains.txt"
+              # GitHub raw: bypass jsDelivr CDN which rate-limits and serves garbage 429 bodies
+              # that blocky parses as empty lists (failOnError doesn't catch content-level failures)
+              "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/pro-onlydomains.txt"
             ];
             nrd = [
               # Hagezi NRD-7 — newly registered domains (last 7 days)
-              "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/domains/nrd7.txt"
+              "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/nrd7.txt"
             ];
             fakenews = [
               # StevenBlack fakenews alternate
@@ -94,13 +96,14 @@
         log.level = "warn";
 
         # ── Port / IP version ───────────────────────────────────────────
-        ports.dns = 53;
+        ports.dns  = 53;
+        ports.http = 4000;
         # Force IPv4 only — VMs on VLAN 20 have no IPv6 routing
         connectIPVersion = "v4";
       };
     };
 
-    networking.firewall.allowedTCPPorts = [ 53 ];
+    networking.firewall.allowedTCPPorts = [ 53 4000 ];
     networking.firewall.allowedUDPPorts = [ 53 ];
   };
 }
