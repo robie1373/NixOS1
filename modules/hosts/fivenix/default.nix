@@ -16,6 +16,7 @@
       ../../_features/desktop-niri.nix
       ../../_features/desktop-noctalia.nix
       ../../_features/greeter-regreet.nix
+      ../../_features/elite-dangerous-sync.nix
       inputs.home-manager.nixosModules.home-manager
       {
         home-manager.useGlobalPkgs       = true;
