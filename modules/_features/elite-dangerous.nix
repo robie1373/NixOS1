@@ -32,6 +32,12 @@
     # once the nixpkgs openldap derivation is fixed upstream.
     # bottles
 
+    # ── Proton prefix tooling ──────────────────────────────────────────────
+    # protontricks installs Windows components into Steam Proton prefixes.
+    # VoiceAttack requires .NET 8 x64 — install after first VA launch:
+    #   protontricks 583010 dotnet80
+    protontricks
+
     # ── VoiceAttack + HCS Voice Packs ─────────────────────────────────────
     # VoiceAttack is on Steam (App ID 583010). Install it from the Steam store;
     # it runs via Proton automatically. HCS Voice Packs install into VoiceAttack's
