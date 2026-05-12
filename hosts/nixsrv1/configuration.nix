@@ -1,7 +1,7 @@
 # hosts/nixsrv1/configuration.nix
 #
 # nixsrv1 — Intel MacBook Pro, bare metal NixOS.
-# IP: 192.168.20.55/24  |  VLAN: 20  |  Switch: SG108PE port 7
+# IP: 192.168.20.55/24  |  VLAN: 20  |  Switch: SG3210XHP-M2 port 4 (recabled 2026-05-10)
 #
 # Dual role:
 #   1. dns3 — third Blocky DNS instance (redundancy across pve, pve2, bare metal)
@@ -16,7 +16,7 @@
 #       → private key stored in 1Password devops/"nixsrv1 host SSH key"
 #       → public key committed to hosts/nixsrv1/ssh_host_ed25519_key.pub
 #       → added to secrets/secrets.nix recipients (re-key pending: nix run github:ryantm/agenix -- -r)
-#   [ ] Configure SG108PE port 7: PVID=20, member of VLAN 20 untagged
+#   [ ] Configure SG3210XHP-M2 port 4: PVID=20, all VLANs tagged (⚠️ NOT same as port 3 — PVID=20, not 10)
 #   [ ] Add microvm flake input to flake.nix (see modules/hosts/nixsrv1/default.nix)
 
 { inputs, config, lib, ... }:
