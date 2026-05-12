@@ -26,7 +26,11 @@
     #                         (obsrvr.github.io) — may run without Bottles
     #   - EDEngineer     — download from github.com/msarilar/EDEngineer, run .exe
     #   - HCS Voice Packs — install AFTER VoiceAttack (see below)
-    bottles
+    #
+    # Disabled 2026-05-12: openldap-2.6.13 test017-syncreplication-refresh fails
+    # in nixpkgs unstable build sandbox (provider/consumer DB diff). Re-enable
+    # once the nixpkgs openldap derivation is fixed upstream.
+    # bottles
 
     # ── VoiceAttack + HCS Voice Packs ─────────────────────────────────────
     # VoiceAttack is on Steam (App ID 583010). Install it from the Steam store;
