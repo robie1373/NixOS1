@@ -27,6 +27,15 @@
       enable   = true;
       settings = {
 
+        # ── Bootstrap DNS ───────────────────────────────────────────────
+        # Plain-IP resolvers used only to resolve DoH upstream hostnames
+        # (one.one.one.one, dns.google) on startup. Without this, blocky
+        # tries to use the system resolver — which is itself — and fails.
+        bootstrapDns = [
+          "tcp+udp:1.1.1.1"
+          "tcp+udp:8.8.8.8"
+        ];
+
         # ── Upstream resolvers ──────────────────────────────────────────
         upstreams.groups.default = [
           "https://one.one.one.one/dns-query"   # Cloudflare DoH
@@ -35,19 +44,17 @@
 
         # ── Blocking ────────────────────────────────────────────────────
         blocking = {
-          blackLists = {
+          denylists = {
             ads-tracking = [
               # Hagezi Pro — comprehensive ads, tracking, telemetry
-              # Format: domain-only (no 0.0.0.0 prefix)
               "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/wildcard/pro-onlydomains.txt"
             ];
             nrd = [
               # Hagezi NRD-7 — newly registered domains (last 7 days)
-              # High-risk category: most malware uses freshly registered domains
               "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/domains/nrd7.txt"
             ];
             fakenews = [
-              # StevenBlack fakenews alternate — fake news, misinformation sources
+              # StevenBlack fakenews alternate
               "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews/hosts"
             ];
           };
@@ -55,14 +62,16 @@
           # Apply all block categories to all clients by default
           clientGroupsBlock.default = [ "ads-tracking" "nrd" "fakenews" ];
 
-          # Refresh blocklists every 4 hours
-          refreshPeriod = "4h";
-
-          # NRD list is large and changes daily — allow failures without stopping service
-          downloadAttempts   = 3;
-          downloadCooldown   = "5s";
-          downloadTimeout    = "60s";
-          startStrategy     = "failOnError";
+          # blocky 0.29 moved these under blocking.loading.*
+          loading = {
+            refreshPeriod = "4h";
+            strategy      = "failOnError";
+            downloads = {
+              attempts  = 3;
+              cooldown  = "5s";
+              timeout   = "60s";
+            };
+          };
         };
 
         # ── Local DNS ───────────────────────────────────────────────────
@@ -84,8 +93,10 @@
         # Future: add queryLog.type = loki when Loki stack is deployed.
         log.level = "warn";
 
-        # ── Port ────────────────────────────────────────────────────────
-        port = "53";
+        # ── Port / IP version ───────────────────────────────────────────
+        ports.dns = 53;
+        # Force IPv4 only — VMs on VLAN 20 have no IPv6 routing
+        connectIPVersion = "v4";
       };
     };
 

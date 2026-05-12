@@ -39,7 +39,7 @@ in
   # _features/gaming.nix (also imported for this host). No need to repeat.
 
   # ── Ollama (local LLM — primary purpose of this host) ───────────────────────
-  # Exposed on 0.0.0.0 so other Tailscale hosts (flipper, nixos1) can send
+  # Exposed on 0.0.0.0 so other Tailscale hosts (flipper, etc.) can send
   # inference requests without installing Ollama locally.
   #
   # RTX 4070 has 12 GB VRAM. With a second GPU (3070, 8 GB), Ollama auto-
@@ -105,24 +105,15 @@ in
       # Gaming tools are added by _features/gaming.nix
     ];
 
-  # ── KDE Plasma 6 ─────────────────────────────────────────────────────────────
-  # Full desktop for gaming, browser, general use. No Hyprland on this host.
-  services.xserver.enable         = true;
-  services.desktopManager.plasma6.enable = true;
-  services.displayManager.sddm = {
-    enable          = true;
-    wayland.enable  = true;
-  };
-
-  # ── Dual-GPU KWin fix ────────────────────────────────────────────────────────
-  # With two NVIDIA GPUs, KWin Wayland gets confused about which DRM device to
-  # use for the display, causing a freeze/blank screen at login.
-  # Card numbering (verified via /sys/class/drm/card*/device/device):
-  #   card0 = 0x1f06 = RTX 2060 Super
-  #   card1 = 0x2786 = RTX 4070  ← monitor is plugged in here
-  # Must use environment.variables (not sessionVariables) so SDDM picks it up
-  # before the compositor starts. The 2060 Super remains available to CUDA/Ollama.
-  environment.variables.KWIN_DRM_DEVICES = "/dev/dri/card1";
+  # ── Desktop ──────────────────────────────────────────────────────────────────
+  # Niri + noctalia + regreet — configured via _features/desktop-niri.nix,
+  # _features/desktop-noctalia.nix, and _features/greeter-regreet.nix imported
+  # in modules/hosts/fivenix/default.nix.
+  #
+  # NVIDIA driver loading: services.xserver.videoDrivers triggers the
+  # hardware/nvidia.nix module in NixOS regardless of whether X11 is enabled.
+  # Wayland DRM/KMS is handled by hardware.nvidia.modesetting.enable = true above.
+  services.xserver.videoDrivers = [ "nvidia" ];
 
   # ── Unfree allowlist ─────────────────────────────────────────────────────────
   # mkForce overrides common.nix's predicate with a superset that adds NVIDIA,

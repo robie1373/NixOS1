@@ -16,6 +16,9 @@
       ../../_features/gaming.nix
       ../../_features/korean.nix
       ../../_features/restic.nix
+      ../../_features/desktop-niri.nix
+      ../../_features/desktop-noctalia.nix
+      ../../_features/greeter-regreet.nix
       inputs.home-manager-stable.nixosModules.home-manager
       {
         home-manager.useGlobalPkgs       = true;
@@ -31,6 +34,7 @@
           ../../_home/claude.nix
           ../../_home/obsidian.nix
           ../../_home/bearing.nix
+          ../../_home/desktop-noctalia.nix
           ../../_home/firefox.nix
           ../../_home/yazi.nix
           ../../_home/mpv.nix
