@@ -1,13 +1,5 @@
-{ config, pkgs, lib, inputs, ... }:
+{ config, pkgs, lib, ... }:
 
-let
-  # Unstable nixpkgs instance with unfree allowed — used to pull Ollama 0.20+
-  # while keeping everything else on stable (25.11).
-  unstable = import inputs.nixpkgs {
-    system = pkgs.system;
-    config.allowUnfree = true;
-  };
-in
 {
   imports = [
     ./hardware-configuration.nix
@@ -19,10 +11,8 @@ in
   # ── NVIDIA GPU ───────────────────────────────────────────────────────────────
   # RTX 4070 (AD104, Ada Lovelace). Proprietary driver required for CUDA.
   # open = false: use proprietary blobs (open kernel modules are not production-
-  # ready for CUDA workloads as of 25.11 — re-evaluate when they stabilise).
+  # ready for CUDA workloads — re-evaluate when open modules stabilise for CUDA).
   # modesetting.enable: required for DRM KMS; enables proper Wayland + GBM support.
-  services.xserver.videoDrivers = [ "nvidia" ];
-
   hardware.nvidia = {
     open              = false;
     modesetting.enable = true;
@@ -46,11 +36,7 @@ in
   # distributes layers across both cards — see the dual-GPU note in docs/.
   services.ollama = {
     enable  = true;
-    # nixpkgs-stable (25.11) ships Ollama 0.12.x; qwen3.5 models (nvfp4/mxfp8
-    # quantisation formats) require 0.20+. Pull ollama-cuda from the unstable
-    # input directly. This is the NixOS-idiomatic approach — services.ollama
-    # docs say to set .package rather than .acceleration.
-    package = unstable.ollama-cuda;
+    package = pkgs.ollama-cuda;
     host    = "0.0.0.0";
     port    = 11434;
 

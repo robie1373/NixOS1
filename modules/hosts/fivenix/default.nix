@@ -1,9 +1,6 @@
 { inputs, self, ... }:
 {
-  # fivenix uses nixpkgs-stable (25.11) — CUDA/PyTorch stack is fragile on
-  # unstable. home-manager.useGlobalPkgs = true means HM inherits the stable
-  # pkgs from the system, so home packages also come from stable.
-  flake.nixosConfigurations.fivenix = inputs.nixpkgs-stable.lib.nixosSystem {
+  flake.nixosConfigurations.fivenix = inputs.nixpkgs.lib.nixosSystem {
     system = "x86_64-linux";
     specialArgs = { inherit inputs self; };
     modules = [
@@ -19,12 +16,12 @@
       ../../_features/desktop-niri.nix
       ../../_features/desktop-noctalia.nix
       ../../_features/greeter-regreet.nix
-      inputs.home-manager-stable.nixosModules.home-manager
+      inputs.home-manager.nixosModules.home-manager
       {
         home-manager.useGlobalPkgs       = true;
         home-manager.useUserPackages     = true;
         home-manager.backupFileExtension = "backup";
-        home-manager.extraSpecialArgs    = { inherit self; };
+        home-manager.extraSpecialArgs    = { inherit self inputs; };
         home-manager.users.robie.imports = [
           inputs.nix-index-database.homeModules.nix-index
           ../../../hosts/fivenix/home.nix

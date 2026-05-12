@@ -4,22 +4,10 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
 
-    # nixpkgs-stable: used by hosts that prioritise reliability over freshness.
-    # Currently: fivenix (gaming desktop — CUDA/PyTorch stack is fragile on unstable).
-    # Intentionally does NOT follow the unstable nixpkgs input.
-    nixpkgs-stable.url = "github:nixos/nixpkgs?ref=nixos-25.11";
     hyprland.url = "github:hyprwm/Hyprland";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    # home-manager-stable: release-25.11 branch for stable hosts (fivenix).
-    # The unstable home-manager introduced services-modular which requires
-    # lib/services/lib.nix — a file that only exists in nixpkgs-unstable.
-    home-manager-stable = {
-      url = "github:nix-community/home-manager/release-25.11";
-      inputs.nixpkgs.follows = "nixpkgs-stable";
     };
     flake-parts = {
       url= "github:hercules-ci/flake-parts";
