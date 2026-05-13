@@ -31,9 +31,7 @@
   # ── Ollama (local LLM — primary purpose of this host) ───────────────────────
   # Exposed on 0.0.0.0 so other Tailscale hosts (flipper, etc.) can send
   # inference requests without installing Ollama locally.
-  #
-  # RTX 4070 has 12 GB VRAM. With a second GPU (3070, 8 GB), Ollama auto-
-  # distributes layers across both cards — see the dual-GPU note in docs/.
+  # RTX 4070 — 12 GB VRAM (sole GPU as of 2026-05-13).
   services.ollama = {
     enable  = true;
     package = pkgs.ollama-cuda;
@@ -42,9 +40,9 @@
 
     # Performance tuning:
     # KEEP_ALIVE=-1   — never evict a model from VRAM; always warm on first request.
-    # NUM_PARALLEL=4  — 20 GB combined VRAM (4070 12 GB + 2060 Super 8 GB).
+    # NUM_PARALLEL=4  — 12 GB VRAM (RTX 4070).
     # FLASH_ATTENTION — uses flash-attention kernel; faster and lower memory bandwidth.
-    #                   Supported on Ampere / Ada Lovelace. Disable if you see errors.
+    #                   Supported on Ada Lovelace. Disable if you see errors.
     environmentVariables = {
       OLLAMA_KEEP_ALIVE    = "-1";
       OLLAMA_NUM_PARALLEL  = "4";
