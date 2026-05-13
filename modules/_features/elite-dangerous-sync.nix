@@ -7,22 +7,18 @@ let
   # NAS backup root — dated snapshots land under versions/YYYYMMDD/
   nasBackup = "${nasBase}/elite-backup";
 
-  # Proton prefix roots (Steam app IDs)
-  # ED:          359320  — Elite Dangerous
-  # VoiceAttack: 583010  — VoiceAttack
+  # Proton prefix root (Steam app ID 359320 — Elite Dangerous)
   edProton = "$HOME/.local/share/Steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser";
-  vaProton = "$HOME/.local/share/Steam/steamapps/compatdata/583010/pfx/drive_c/users/steamuser";
 
-  # Config paths within prefixes
+  # Config paths within prefix
   edBindings = "${edProton}/Saved Games/Frontier Developments/Elite Dangerous/Options/Bindings";
-  vaConfig   = "${vaProton}/AppData/Roaming/VoiceAttack";
 
   # Native Linux app configs (XDG paths — not in Proton prefix)
   edmcConfig = "$HOME/.config/EDMarketConnector";
 
   # ── ed-setup: NAS → local ───────────────────────────────────────────────────
-  # Run once after Steam has initialized the Proton prefixes (launch ED and VA
-  # at least once before running this). Idempotent — safe to re-run.
+  # Run once after Steam has initialized the ED Proton prefix (launch ED at
+  # least once before running this). Idempotent — safe to re-run.
   edSetup = pkgs.writeShellScriptBin "ed-setup" ''
     set -euo pipefail
 
@@ -44,14 +40,6 @@ let
       "${nasBase}/eliteDangerous/Bindings/" \
       "${edBindings}/"
     echo "  ✓ ED bindings"
-
-    # VoiceAttack
-    check_prefix "${vaProton}" "VoiceAttack" || exit 1
-    mkdir -p "${vaConfig}"
-    ${pkgs.rsync}/bin/rsync -av --delete \
-      "${nasBase}/VoiceAttack/full-backup-2026-05-12/" \
-      "${vaConfig}/"
-    echo "  ✓ VoiceAttack config"
 
     # EDMC (native Linux — XDG config)
     mkdir -p "${edmcConfig}"
@@ -86,9 +74,8 @@ let
 
     echo "==> ed-backup: syncing configs to NAS"
 
-    sync_path "${edBindings}"  "${nasBase}/eliteDangerous/Bindings"     "ED bindings"
-    sync_path "${vaConfig}"    "${nasBase}/VoiceAttack/config"          "VoiceAttack"
-    sync_path "${edmcConfig}"  "${nasBase}/eliteDangerous/EDMC"         "EDMC"
+    sync_path "${edBindings}"  "${nasBase}/eliteDangerous/Bindings"  "ED bindings"
+    sync_path "${edmcConfig}"  "${nasBase}/eliteDangerous/EDMC"      "EDMC"
 
     # Prune version snapshots older than 90 days
     find "${nasBackup}/versions" -maxdepth 1 -type d -mtime +90 -exec rm -rf {} + 2>/dev/null || true
@@ -97,8 +84,6 @@ let
   '';
 
   # ── Watcher service ─────────────────────────────────────────────────────────
-  # Triggered by systemd path units defined below.
-  # Debounces by running at most once per 30s (AccuracySec on the path unit).
   backupService = {
     description = "Elite Dangerous config backup to NAS";
     serviceConfig = {
@@ -109,11 +94,6 @@ let
 
 in {
   environment.systemPackages = [ edSetup edBackup pkgs.rsync ];
-
-  # ── Systemd user units ──────────────────────────────────────────────────────
-  # Path units watch specific files — populated interactively once the Proton
-  # prefixes exist and we've identified which files are signal vs noise.
-  # See: ledger2/interests/elite-dangerous.md → config sync runbook
 
   systemd.user.services.ed-backup = backupService;
 
