@@ -136,8 +136,9 @@
   services.openssh.settings.PermitRootLogin        = "no";
   services.openssh.settings.PasswordAuthentication = true;
 
-  # Allow Ollama API from Tailscale peers. Add other LAN CIDRs here if needed.
-  networking.firewall.allowedTCPPorts = [ 11434 ];
+  # 11434 — Ollama API
+  # 4500  — EDCopter web UI (access from flipper or any LAN browser)
+  networking.firewall.allowedTCPPorts = [ 11434 4500 ];
 
   # ── Bluetooth ────────────────────────────────────────────────────────────────
   hardware.bluetooth.enable        = true;
