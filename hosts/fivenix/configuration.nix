@@ -133,7 +133,9 @@
   services.openssh.enable = true;
   services.openssh.settings.PermitRootLogin        = "no";
   services.openssh.settings.PasswordAuthentication = true;
-  services.openssh.settings.StreamLocalBindUnlink  = true;
+  services.openssh.settings.StreamLocalBindUnlink     = true;
+  services.openssh.settings.AllowStreamLocalForwarding = "yes";
+  services.openssh.settings.SetEnv                    = "XDG_RUNTIME_DIR=/run/user/1000";
 
   security.pam.services.sshd.startSession = true;
 
