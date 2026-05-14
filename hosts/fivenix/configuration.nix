@@ -133,6 +133,7 @@
   services.openssh.enable = true;
   services.openssh.settings.PermitRootLogin        = "no";
   services.openssh.settings.PasswordAuthentication = true;
+  services.openssh.settings.StreamLocalBindUnlink  = true;
 
   # 11434 — Ollama API
   # 4500  — EDCopter web UI (access from flipper or any LAN browser)
