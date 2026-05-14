@@ -104,16 +104,6 @@
 
   security.pam.services.sshd.startSession = true;
 
-  # Route SSH to fivenix via LAN IP so connections hit the real sshd.
-  # fivenix's hostname resolves to its Tailscale IP, and Tailscale SSH
-  # intercepts those — it doesn't support Unix domain socket forwarding,
-  # which waypipe requires. The LAN IP bypasses Tailscale SSH entirely.
-  programs.ssh.extraConfig = ''
-    Host fivenix
-      Hostname 192.168.7.137
-      User robie
-  '';
-
 # iPhone mounting via ifuse
   # usbmuxd handles the USB pairing layer; ifuse mounts the filesystem.
   # udev rules trigger systemd user services on plug/unplug.
