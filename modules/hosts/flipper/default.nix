@@ -18,6 +18,7 @@
       ../../_features/speaker-fix.nix
       inputs.disko.nixosModules.disko
       ../../../hosts/flipper/disko.nix
+      ../../_features/remote-access.nix
       ../../_features/gaming.nix
       ../../_features/korean.nix
       ../../_features/restic.nix
