@@ -102,6 +102,8 @@
   services.openssh.settings.PermitRootLogin = "no";
   services.openssh.settings.PasswordAuthentication = true;
 
+  security.pam.services.sshd.startSession = true;
+
 # iPhone mounting via ifuse
   # usbmuxd handles the USB pairing layer; ifuse mounts the filesystem.
   # udev rules trigger systemd user services on plug/unplug.

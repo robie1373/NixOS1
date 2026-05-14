@@ -135,6 +135,8 @@
   services.openssh.settings.PasswordAuthentication = true;
   services.openssh.settings.StreamLocalBindUnlink  = true;
 
+  security.pam.services.sshd.startSession = true;
+
   # 11434 — Ollama API
   # 4500  — EDCopter web UI (access from flipper or any LAN browser)
   networking.firewall.allowedTCPPorts = [ 11434 4500 ];
