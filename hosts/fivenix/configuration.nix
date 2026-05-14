@@ -139,6 +139,11 @@
 
   security.pam.services.sshd.startSession = true;
 
+  # XDG_RUNTIME_DIR is not reliably set in SSH sessions because pam_systemd
+  # and OpenSSH's SetEnv conflict under UsePAM=yes. Writing to /etc/pam/environment
+  # via environment.variables ensures pam_env (order 10100) sets it early.
+  environment.variables.XDG_RUNTIME_DIR = "/run/user/1000";
+
   # 11434 — Ollama API
   # 4500  — EDCopter web UI (access from flipper or any LAN browser)
   networking.firewall.allowedTCPPorts = [ 11434 4500 ];
