@@ -70,7 +70,6 @@
   # Scripts call `ydotool key <key>` and ED receives them via uinput regardless of
   # Wayland/XWayland — as long as ED has compositor focus.
   programs.ydotool.enable = true;
-  users.users.robie.extraGroups = [ "render" "ydotool" ];
 
   # ── System packages ──────────────────────────────────────────────────────────
   environment.systemPackages = with pkgs; [
@@ -230,7 +229,7 @@
   # ── User extras ──────────────────────────────────────────────────────────────
   # render group: direct access to /dev/dri/renderD128 (CUDA, ROCm, VA-API)
   # without sudo. Common group for GPU compute without full video group access.
-  users.users.robie.extraGroups = [ "render" ];
+  users.users.robie.extraGroups = [ "render" "ydotool" ];
 
   # ── Open WebUI ───────────────────────────────────────────────────────────────
   # Web frontend for Ollama. Accessible from home VLAN (192.168.7.x) on :8080.
