@@ -109,33 +109,24 @@
       # MENU_OFFSET: down-arrow presses in context menu before confirming.
       # Tune if "Request Docking" isn't the first context menu option.
       (pkgs.writeShellScriptBin "ed-request-docking" ''
-        PANEL_KEY="1"
         PREV_TAB="insert"
         NEXT_TAB="home"
         UI_DOWN="down"
         UI_SELECT="leftctrl+leftalt+i"
-        TAB_OFFSET=2
-        MENU_OFFSET=0
+        MENU_OFFSET=0   # down-arrow presses in context menu before confirming;
+                        # tune if "Request Docking" isn't the first item
 
-        # Open / focus left panel
-        ydotool key "$PANEL_KEY"
+        # Open / focus left panel (assumed to be on Navigation tab)
+        ydotool key 1
         sleep 0.4
 
-        # Smash to Navigation (leftmost tab) — Insert stops at left edge in ED
-        for _i in $(seq 1 5); do
-          ydotool key "$PREV_TAB"
-          sleep 0.12
-        done
-        sleep 0.3
-
-        # Navigate right to Contacts tab
-        for _i in $(seq 1 "$TAB_OFFSET"); do
-          ydotool key "$NEXT_TAB"
-          sleep 0.25
-        done
+        # Navigate right to Contacts (Navigation → Transactions → Contacts)
+        ydotool key "$NEXT_TAB"
+        sleep 0.25
+        ydotool key "$NEXT_TAB"
         sleep 0.35
 
-        # Select first contact (targeted station should be top of list)
+        # Select first contact (targeted station should be at top)
         ydotool key "$UI_DOWN"
         sleep 0.25
         ydotool key "$UI_SELECT"
@@ -149,6 +140,12 @@
 
         # Confirm
         ydotool key "$UI_SELECT"
+        sleep 0.4
+
+        # Return to Navigation tab (Contacts → Transactions → Navigation)
+        ydotool key "$PREV_TAB"
+        sleep 0.15
+        ydotool key "$PREV_TAB"
       '')
 
       # Gaming tools are added by _features/gaming.nix
