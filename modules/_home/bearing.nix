@@ -168,6 +168,50 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
     fi
   '';
 
+  # bearing-ingest: runs claude non-interactively to ingest new files from ~/raw/.
+  # Tracks processed files in ~/work/.ingest-manifest to avoid re-processing.
+  # For each unprocessed .md file, pipes the ingest template + file contents to
+  # claude --print. Sends an ntfy summary when new files are processed.
+  # Capped at 3 minutes per file via timeout.
+  bearingIngest = pkgs.writeShellScriptBin "bearing-ingest" ''
+    MANIFEST="${cfg.workDir}/.ingest-manifest"
+    RAW_DIR="$HOME/raw"
+    touch "$MANIFEST"
+    NEW_COUNT=0
+    LOG_LINES=""
+
+    while IFS= read -r f; do
+      if grep -qxF "$f" "$MANIFEST"; then
+        continue
+      fi
+      rel="''${f#$RAW_DIR/}"
+      SOURCE_TYPE="''${rel%%/*}"
+      CONTENTS=$(cat "$f" 2>/dev/null) || continue
+      PROMPT=$(sed \
+        -e "s|{{SOURCE_FILE}}|$f|g" \
+        -e "s|{{SOURCE_TYPE}}|$SOURCE_TYPE|g" \
+        "${cfg.workDir}/templates/ledger-ingest.md")
+      RESULT=$(printf '%s\n\n%s' "$PROMPT" "$CONTENTS" \
+        | timeout 180 ${pkgs.claude-code}/bin/claude --print \
+            --allowedTools "Bash,Read,Write" 2>/dev/null)
+      printf '%s\n' "$f" >> "$MANIFEST"
+      LAST_LINE=$(printf '%s' "$RESULT" | grep -v '^[[:space:]]*$' | tail -1)
+      LOG_LINES="''${LOG_LINES}''${LAST_LINE}\n"
+      NEW_COUNT=$((NEW_COUNT + 1))
+    done < <(find "$RAW_DIR" -name "*.md" -not -path "*/.obsidian/*" | sort)
+
+    TOPIC="$(cat ${cfg.workDir}/.ntfy-topic 2>/dev/null)"
+    if [ "$NEW_COUNT" -gt 0 ] && [ -n "$TOPIC" ]; then
+      MSG="Ingested $NEW_COUNT new file(s) into the Ledger."
+      ${pkgs.curl}/bin/curl -s \
+        -H "Title: Ledger ingestion" \
+        -H "Priority: low" \
+        -H "Tags: inbox_tray" \
+        -d "$MSG" \
+        "${cfg.ntfy.server}/$TOPIC"
+    fi
+  '';
+
   # bearing-status: offline status card — no AI, no network.
   # Reads OBLIGATIONS.md, DELEGATIONS.md, and study-robie.log and prints
   # a compact summary to stdout.
@@ -341,13 +385,18 @@ in {
         default = "16:00";
         description = "Time for daily Ledger lint run (headless, sends ntfy with findings)";
       };
+      ingest = lib.mkOption {
+        type    = lib.types.str;
+        default = "02:00";
+        description = "Time for nightly Ledger ingestion run (processes new files in ~/raw/)";
+      };
     };
   };
 
   config = lib.mkIf cfg.enable {
 
     # ── Scripts on PATH ────────────────────────────────────────────────────
-    home.packages = [ bearingCmd bearingNotify bearingCheckin bearingBriefing bearingActivity bearingLint bearingStatus bearingLog ];
+    home.packages = [ bearingCmd bearingNotify bearingCheckin bearingBriefing bearingActivity bearingLint bearingIngest bearingStatus bearingLog ];
 
     # dunst: bearing notifications and the click-to-open rule depend on dunst.
     # Enable it here so the bearing module is self-contained regardless of which
@@ -449,6 +498,26 @@ in {
       Unit.Description = "The Bearing — daily Ledger lint timer";
       Timer = {
         OnCalendar = "Mon-Sun ${cfg.schedule.lint}";
+        Persistent = true;
+      };
+      Install.WantedBy = [ "timers.target" ];
+    };
+
+    systemd.user.services.bearing-ingest = {
+      Unit = {
+        Description = "The Bearing — nightly Ledger ingestion from ~/raw/";
+        After       = [ "default.target" ];
+      };
+      Service = {
+        Type        = "oneshot";
+        ExecStart   = "${bearingIngest}/bin/bearing-ingest";
+        Environment = [ "SSH_AUTH_SOCK=" ];
+      };
+    };
+    systemd.user.timers.bearing-ingest = {
+      Unit.Description = "The Bearing — nightly Ledger ingestion timer";
+      Timer = {
+        OnCalendar = "Mon-Sun ${cfg.schedule.ingest}";
         Persistent = true;
       };
       Install.WantedBy = [ "timers.target" ];
