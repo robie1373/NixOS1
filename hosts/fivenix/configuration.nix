@@ -108,6 +108,11 @@
       # MENU_OFFSET: down-arrow presses in context menu before confirming.
       # Tune if "Request Docking" isn't the first context menu option.
       (pkgs.writeShellScriptBin "ed-request-docking" ''
+        # NixOS programs.ydotool puts the socket at /run/ydotoold/socket, but
+        # ydotool falls back to $XDG_RUNTIME_DIR/.ydotool_socket when the env
+        # var is absent — wrong path. Set it explicitly so niri spawn-sh works.
+        export YDOTOOL_SOCKET=/run/ydotoold/socket
+
         PREV_TAB="insert"
         NEXT_TAB="home"
         UI_DOWN="down"
