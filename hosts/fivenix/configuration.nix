@@ -64,6 +64,14 @@
     ];
   };
 
+  # ── ydotool (uinput key injection for gaming macros) ─────────────────────────
+  # Used to send key sequences to Elite Dangerous from scripts (e.g. request docking).
+  # ydotoold runs as a system service; robie must be in the ydotool group.
+  # Scripts call `ydotool key <key>` and ED receives them via uinput regardless of
+  # Wayland/XWayland — as long as ED has compositor focus.
+  programs.ydotool.enable = true;
+  users.users.robie.extraGroups = [ "render" "ydotool" ];
+
   # ── System packages ──────────────────────────────────────────────────────────
   environment.systemPackages = with pkgs; [
       # whisper-cpp: C++ reimplementation with GGML backend.
@@ -85,6 +93,63 @@
       wget
       tree
       ripgrep
+
+      # ed-request-docking: sends the "Request Docking Permission" key sequence to
+      # Elite Dangerous via ydotool. Triggered by Mod+G niri keybind (ED must have
+      # focus — niri handles the hotkey at compositor level without stealing focus).
+      #
+      # Key mappings from RobieCustomBinds2026.4.2.binds:
+      #   Key_1       = FocusLeftPanel
+      #   Key_Insert  = CyclePreviousPage  (tab left — smash left to reach Navigation)
+      #   Key_Home    = CycleNextPage      (tab right)
+      #   DownArrow   = UI_Down
+      #   Ctrl+Alt+I  = UI_Select
+      #
+      # Contacts tab is 2 presses right from Navigation (Nav → Transactions → Contacts).
+      # MENU_OFFSET: down-arrow presses in context menu before confirming.
+      # Tune if "Request Docking" isn't the first context menu option.
+      (pkgs.writeShellScriptBin "ed-request-docking" ''
+        PANEL_KEY="1"
+        PREV_TAB="insert"
+        NEXT_TAB="home"
+        UI_DOWN="down"
+        UI_SELECT="leftctrl+leftalt+i"
+        TAB_OFFSET=2
+        MENU_OFFSET=0
+
+        # Open / focus left panel
+        ydotool key "$PANEL_KEY"
+        sleep 0.4
+
+        # Smash to Navigation (leftmost tab) — Insert stops at left edge in ED
+        for _i in $(seq 1 5); do
+          ydotool key "$PREV_TAB"
+          sleep 0.12
+        done
+        sleep 0.3
+
+        # Navigate right to Contacts tab
+        for _i in $(seq 1 "$TAB_OFFSET"); do
+          ydotool key "$NEXT_TAB"
+          sleep 0.25
+        done
+        sleep 0.35
+
+        # Select first contact (targeted station should be top of list)
+        ydotool key "$UI_DOWN"
+        sleep 0.25
+        ydotool key "$UI_SELECT"
+        sleep 0.5
+
+        # Navigate to "Request Docking Permission" in context menu
+        for _i in $(seq 1 "$MENU_OFFSET"); do
+          ydotool key "$UI_DOWN"
+          sleep 0.12
+        done
+
+        # Confirm
+        ydotool key "$UI_SELECT"
+      '')
 
       # Gaming tools are added by _features/gaming.nix
     ];

@@ -94,6 +94,11 @@
             # Bearing session in a foot terminal
             "Mod+B".spawn = [ "${selfpkgs.foot}/bin/foot" "--" "bash" "-c" "cd ~/work && claude bearing; exec bash" ];
 
+            # Elite Dangerous: request docking (fivenix only — no-op on other hosts)
+            # Compositor handles this hotkey without stealing focus from ED; ydotool
+            # injects the key sequence into the currently-focused window (ED).
+            "Mod+G".spawn-sh = "ed-request-docking";
+
             # Volume — allow-when-locked so keys work on the lock screen
             "XF86AudioRaiseVolume" = _: { props."allow-when-locked" = true; content."spawn-sh" = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"; };
             "XF86AudioLowerVolume" = _: { props."allow-when-locked" = true; content."spawn-sh" = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"; };
