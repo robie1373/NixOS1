@@ -84,6 +84,8 @@
     bambu-studio
     ollama		# CLI client — server runs on fivenix (see OLLAMA_HOST below)
     calibre		# eBook manager
+    obsidian
+    anki-bin
   ];
 
   # Add local scripts and apps to the path

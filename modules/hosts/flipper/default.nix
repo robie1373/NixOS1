@@ -21,6 +21,20 @@
       ../../_features/gaming.nix
       ../../_features/korean.nix
       ../../_features/restic.nix
+      ../../_features/bearing.nix
+      ../../_features/teacha.nix
+      {
+        bearing = {
+          enable      = true;
+          terminal    = "foot";
+          ntfy.server = "https://ntfy.vimba-stairs.ts.net";
+        };
+        teacha = {
+          enable      = true;
+          package     = inputs.teacha.packages.x86_64-linux.teacha-daemon;
+          pollSeconds = 120;
+        };
+      }
       inputs.home-manager.nixosModules.home-manager
       {
         home-manager.useGlobalPkgs         = true;
@@ -33,17 +47,12 @@
           ../../_home/common.nix
           ../../_home/gemini-cli.nix
           ../../_home/claude.nix
-          ../../_home/obsidian.nix
-          ../../_home/bearing.nix
           ../../_home/desktop-noctalia.nix
           ../../_home/firefox.nix
           ../../_home/mpv.nix
           ../../_home/imv.nix
           ../../_home/mpd.nix
-          ../../_home/nas.nix
           ../../_home/yazi.nix
-          ../../_home/anki-bin.nix
-          ../../_home/teacha.nix
         ];
       }
     ];

@@ -1,31 +1,21 @@
 { lib, config, pkgs, ... }:
 
+# The Bearing — life-tracking assistant and daily rhythm system.
+# Migrated from _home/bearing.nix (HM) to a NixOS system module (2026-05-20).
+# Key changes from HM version:
+#   - home.packages → environment.systemPackages
+#   - services.dunst.* removed — noctalia is the notification daemon now
+#   - dunstify → notify-send (libnotify); dunst-specific flags dropped
+#   - bearingOpen script removed — dunst click rule no longer applies
+#   - ${config.home.homeDirectory} → hardcoded /home/robie
+
 let
-  cfg = config.myHome.bearing;
+  cfg = config.bearing;
 
-  # ── Scripts ────────────────────────────────────────────────────────────────
-
-  # bearing-open: opens a terminal with a typed claude session.
-  # Called by:
-  #   - dunst script rule (args: appname summary body icon urgency → unknown $1, falls back to "bearing")
-  #   - Hyprland Super+B bind (explicit "bearing" arg)
-  # The case statement validates $1 so dunst's appname arg doesn't corrupt the type.
-  bearingOpen = pkgs.writeShellScript "bearing-open" ''
-    case "''${1}" in
-      morning|checkin|afternoon|briefing|bearing) TYPE="''${1}" ;;
-      *) TYPE="bearing" ;;
-    esac
-    exec ${cfg.terminal} -- bash -c "cd ${cfg.workDir} && claude $TYPE; exec bash"
-  '';
-
-  # bearing: ad-hoc user command. Runs a bearing session in the current terminal.
-  # exec replaces the shell — terminal closes when the session ends.
   bearingCmd = pkgs.writeShellScriptBin "bearing" ''
     cd ${cfg.workDir} && exec claude bearing
   '';
 
-  # bearing-notify: sends a non-blocking desktop notification via dunst.
-  # No -A flag — click handling is dunst's responsibility via the rule below.
   bearingNotify = pkgs.writeShellScriptBin "bearing-notify" ''
     TYPE="''${1:-checkin}"
     case "$TYPE" in
@@ -55,17 +45,12 @@ let
         URGENCY="normal"
         ;;
     esac
-    ${pkgs.dunst}/bin/dunstify \
-      -a "The Bearing" \
+    ${pkgs.libnotify}/bin/notify-send \
+      --app-name "The Bearing" \
       -u "$URGENCY" \
-      -t 0 \
       "$TITLE" "$BODY"
   '';
 
-  # bearing-checkin: called by systemd timers. Fires desktop (dunst) and phone (ntfy) notifications.
-  # ntfy topic is read from ~/work/.ntfy-topic at runtime — populate with:
-  #   op read 'op://devops/temp ntfy topic bearing/password' > ~/work/.ntfy-topic
-  # Silently skips ntfy if the file is missing.
   bearingCheckin = pkgs.writeShellScriptBin "bearing-checkin" ''
     TYPE="''${1:-checkin}"
     ${bearingNotify}/bin/bearing-notify "$TYPE" &
@@ -91,11 +76,6 @@ let
     wait
   '';
 
-  # bearing-briefing: runs claude non-interactively to pre-gather morning context.
-  # Substitutes {{RECENT_TOPICS}} in the template with section headers from the last
-  # 3 briefing files so the agent avoids picking the same topics two days running.
-  # Claude writes output to ~/work/briefing/YYYY-MM-DD.md per template instructions.
-  # Requires templates/briefing-gather.md to exist in workDir.
   bearingBriefing = pkgs.writeShellScriptBin "bearing-briefing" ''
     mkdir -p ${cfg.workDir}/briefing
     cd ${cfg.workDir}
@@ -114,18 +94,13 @@ for fn in files:
                 t = line.strip().lstrip('# ').strip()
                 if t and t not in topics:
                     topics.append(t)
-recent = '\n'.join('- ' + t for t in topics) or '(none yet — all topics are fair game)'
+recent = '\n'.join('- ' + t for t in topics) or '(none yet -- all topics are fair game)'
 template = open('${cfg.workDir}/templates/briefing-gather.md').read()
 sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
 " | ${pkgs.claude-code}/bin/claude --print \
         --allowedTools "WebSearch,WebFetch,Write"
   '';
 
-  # bearing-activity: runs claude non-interactively to summarise yesterday's git activity.
-  # Reads prompt from ~/work/templates/activity-gather.md via stdin pipe.
-  # Claude writes output to ~/work/briefing/YYYY-MM-DD-activity.md per template instructions.
-  # Requires templates/activity-gather.md to exist in workDir.
-  # No network tools needed — git log is local. SSH_AUTH_SOCK cleared in service.
   bearingActivity = pkgs.writeShellScriptBin "bearing-activity" ''
     mkdir -p ${cfg.workDir}/briefing
     cd ${cfg.workDir}
@@ -134,11 +109,6 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
           --allowedTools "Bash,Write"
   '';
 
-  # bearing-lint: runs claude non-interactively to lint ~/ledger/.
-  # Substitutes {{LINT_FILE}} in the template with today's dated log path.
-  # Claude writes detailed findings to ~/work/lint/YYYY-MM-DD.md and prints
-  # a one-line summary as its final stdout line, which is sent via ntfy.
-  # Capped at 10 minutes via timeout.
   bearingLint = pkgs.writeShellScriptBin "bearing-lint" ''
     mkdir -p ${cfg.workDir}/lint
     TODAY=$(date +%Y-%m-%d)
@@ -156,7 +126,7 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
         MSG="Lint timed out after 10 minutes."; PRI="low"; TAGS="warning"
       else
         MSG=$(printf "%s" "$SUMMARY" | grep -v '^[[:space:]]*$' | tail -1)
-        [ -z "$MSG" ] && MSG="Lint complete — see ~/work/lint/$TODAY.md"
+        [ -z "$MSG" ] && MSG="Lint complete -- see ~/work/lint/$TODAY.md"
         PRI="low"; TAGS="books"
       fi
       ${pkgs.curl}/bin/curl -s \
@@ -168,9 +138,6 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
     fi
   '';
 
-  # bearing-status: offline status card — no AI, no network.
-  # Reads OBLIGATIONS.md, DELEGATIONS.md, and study-robie.log and prints
-  # a compact summary to stdout.
   bearingStatus = pkgs.writeShellScriptBin "bearing-status" ''
     TODAY=$(date +%Y-%m-%d)
     TOMORROW=$(date -d "tomorrow" +%Y-%m-%d)
@@ -181,7 +148,6 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
     printf "  %s\n" "$(date '+%A, %B %-d %Y')"
     printf "══════════════════════════════════════\n"
 
-    # ── Obligations (today/tomorrow from ## Upcoming) ─────────────────────
     printf "\n▸ OBLIGATIONS\n"
     OBL=$(awk -F'|' -v today="$TODAY" -v tom="$TOMORROW" '
       /^## Upcoming/  { sect=1; next }
@@ -194,7 +160,6 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
     ' "$WORK/OBLIGATIONS.md" 2>/dev/null)
     [ -n "$OBL" ] && printf "%s\n" "$OBL" || printf "  (none today or tomorrow)\n"
 
-    # ── Todos (from ## Todos — any row with a due date) ───────────────────
     printf "\n▸ TODOS\n"
     TODOS=$(awk -F'|' '
       /^## Todos/  { sect=1; next }
@@ -206,7 +171,6 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
     ' "$WORK/OBLIGATIONS.md" 2>/dev/null)
     [ -n "$TODOS" ] && printf "%s\n" "$TODOS" || printf "  (none)\n"
 
-    # ── Recurring (from ## Recurring — items overdue by frequency) ────────
     printf "\n▸ RECURRING\n"
     RECUR=$(awk -F'|' '
       /^## Recurring/ { sect=1; next }
@@ -222,14 +186,13 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
         printf "%d|%s|%s\n", days, last, item
       }
     ' "$WORK/OBLIGATIONS.md" 2>/dev/null | while IFS='|' read -r days last item; do
-      [ -z "$last" ] && { printf "  [due — never done] %s\n" "$item"; continue; }
+      [ -z "$last" ] && { printf "  [due -- never done] %s\n" "$item"; continue; }
       last_epoch=$(date -d "$last" +%s 2>/dev/null) || continue
       days_ago=$(( ($(date +%s) - last_epoch) / 86400 ))
-      [ "$days_ago" -ge "$days" ] && printf "  [due — %d days ago] %s\n" "$days_ago" "$item"
+      [ "$days_ago" -ge "$days" ] && printf "  [due -- %d days ago] %s\n" "$days_ago" "$item"
     done)
     [ -n "$RECUR" ] && printf "%s\n" "$RECUR" || printf "  (all up to date)\n"
 
-    # ── Korean ────────────────────────────────────────────────────────────
     printf "\n▸ KOREAN\n"
     if [ -f "$LANG_LOG" ]; then
       KOREAN_DATES=$(grep $'\tkorean\t' "$LANG_LOG" \
@@ -237,9 +200,6 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
       TOTAL_DAYS=$(printf "%s\n" "$KOREAN_DATES" | grep -c '.')
       LAST_DATE=$(printf "%s\n" "$KOREAN_DATES" | tail -1)
 
-      # Streak: count consecutive days ending at most recent studied day
-      # (today if done today, yesterday if not yet done today — preserves
-      # the "at-risk" streak so it shows before you do the day's lesson)
       STREAK=0
       if [ -n "$LAST_DATE" ]; then
         TODAY_EPOCH=$(date +%s)
@@ -264,7 +224,6 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
       printf "  (no study log found)\n"
     fi
 
-    # ── Next up (DELEGATIONS.md Outbox — priority "next" or "pri 1") ──────
     printf "\n▸ NEXT UP\n"
     NEXT=$(awk -F'|' '
       /^## Outbox/  { sect=1; next }
@@ -279,8 +238,6 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
     printf "\n"
   '';
 
-  # bearing-log: open (or create) today's log file in $EDITOR.
-  # Creates ~/work/log/YYYY-MM-DD.md with the standard template if it doesn't exist.
   bearingLog = pkgs.writeShellScriptBin "bearing-log" ''
     TODAY=$(date +%Y-%m-%d)
     LOG_DIR="${cfg.workDir}/log"
@@ -297,172 +254,126 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
   '';
 
 in {
-  options.myHome.bearing = {
+  options.bearing = {
     enable = lib.mkEnableOption "The Bearing life-tracking assistant";
 
     workDir = lib.mkOption {
       type    = lib.types.str;
-      default = "${config.home.homeDirectory}/work";
-      description = "Working directory for The Bearing (Claude session and data files)";
+      default = "/home/robie/work";
     };
 
     terminal = lib.mkOption {
       type    = lib.types.str;
       default = "foot";
-      description = "Terminal emulator to launch when opening The Bearing";
     };
 
-    ntfy = {
-      server = lib.mkOption {
-        type    = lib.types.str;
-        default = "https://ntfy.sh";
-        description = "ntfy server URL";
-      };
+    ntfy.server = lib.mkOption {
+      type    = lib.types.str;
+      default = "https://ntfy.sh";
     };
 
     schedule = {
-      briefing = lib.mkOption {
-        type    = lib.types.str;
-        default = "06:30";
-        description = "Time for morning briefing pre-gather (runs claude --print headlessly)";
-      };
-      morning = lib.mkOption {
-        type    = lib.types.str;
-        default = "08:00";
-        description = "Time for morning check-in notification";
-      };
-      checkin = lib.mkOption {
-        type    = lib.types.str;
-        default = "13:00";
-        description = "Time for midday check-in notification";
-      };
-      lint = lib.mkOption {
-        type    = lib.types.str;
-        default = "16:00";
-        description = "Time for daily Ledger lint run (headless, sends ntfy with findings)";
-      };
+      briefing = lib.mkOption { type = lib.types.str; default = "06:30"; };
+      morning  = lib.mkOption { type = lib.types.str; default = "08:00"; };
+      checkin  = lib.mkOption { type = lib.types.str; default = "13:00"; };
+      lint     = lib.mkOption { type = lib.types.str; default = "16:00"; };
     };
   };
 
   config = lib.mkIf cfg.enable {
 
-    # ── Scripts on PATH ────────────────────────────────────────────────────
-    home.packages = [ bearingCmd bearingNotify bearingCheckin bearingBriefing bearingActivity bearingLint bearingStatus bearingLog ];
-
-    # dunst: bearing notifications and the click-to-open rule depend on dunst.
-    # Enable it here so the bearing module is self-contained regardless of which
-    # desktop module is active.
-    services.dunst.enable = true;
-
-    # ── Systemd timer + service units ──────────────────────────────────────
+    environment.systemPackages = [
+      bearingCmd bearingNotify bearingCheckin
+      bearingBriefing bearingActivity bearingLint
+      bearingStatus bearingLog
+    ];
 
     systemd.user.services.bearing-briefing = {
-      Unit = {
-        Description = "The Bearing — morning briefing pre-gather";
-        After       = [ "network-online.target" ];
-      };
-      Service = {
+      description = "The Bearing — morning briefing pre-gather";
+      after       = [ "network-online.target" ];
+      serviceConfig = {
         Type        = "oneshot";
         ExecStart   = "${bearingBriefing}/bin/bearing-briefing";
-        Environment = [ "SSH_AUTH_SOCK=" ];  # prevent 1Password prompts in unattended context
+        Environment = "SSH_AUTH_SOCK=";
       };
     };
     systemd.user.timers.bearing-briefing = {
-      Unit.Description = "The Bearing — morning briefing pre-gather timer";
-      Timer = {
+      description = "The Bearing — morning briefing pre-gather timer";
+      timerConfig = {
         OnCalendar = "Mon-Sun ${cfg.schedule.briefing}";
         Persistent = true;
       };
-      Install.WantedBy = [ "timers.target" ];
+      wantedBy = [ "timers.target" ];
     };
 
     systemd.user.services.bearing-activity = {
-      Unit = {
-        Description = "The Bearing — git activity pre-gather";
-        After       = [ "default.target" ];
-      };
-      Service = {
+      description = "The Bearing — git activity pre-gather";
+      after       = [ "default.target" ];
+      serviceConfig = {
         Type        = "oneshot";
         ExecStart   = "${bearingActivity}/bin/bearing-activity";
-        Environment = [ "SSH_AUTH_SOCK=" ];  # git log is local; no 1Password prompts
+        Environment = "SSH_AUTH_SOCK=";
       };
     };
     systemd.user.timers.bearing-activity = {
-      Unit.Description = "The Bearing — git activity pre-gather timer";
-      Timer = {
+      description = "The Bearing — git activity pre-gather timer";
+      timerConfig = {
         OnCalendar = "Mon-Sun ${cfg.schedule.briefing}";
         Persistent = true;
       };
-      Install.WantedBy = [ "timers.target" ];
+      wantedBy = [ "timers.target" ];
     };
 
     systemd.user.services.bearing-morning = {
-      Unit = {
-        Description = "The Bearing — morning check-in";
-        After       = [ "graphical-session.target" ];
-      };
-      Service = {
+      description = "The Bearing — morning check-in";
+      after       = [ "graphical-session.target" ];
+      serviceConfig = {
         Type      = "oneshot";
         ExecStart = "${bearingCheckin}/bin/bearing-checkin morning";
       };
     };
     systemd.user.timers.bearing-morning = {
-      Unit.Description = "The Bearing — morning check-in timer";
-      Timer = {
+      description = "The Bearing — morning check-in timer";
+      timerConfig = {
         OnCalendar = "Mon-Sun ${cfg.schedule.morning}";
         Persistent = true;
       };
-      Install.WantedBy = [ "timers.target" ];
+      wantedBy = [ "timers.target" ];
     };
 
     systemd.user.services.bearing-checkin = {
-      Unit = {
-        Description = "The Bearing — midday check-in";
-        After       = [ "graphical-session.target" ];
-      };
-      Service = {
+      description = "The Bearing — midday check-in";
+      after       = [ "graphical-session.target" ];
+      serviceConfig = {
         Type      = "oneshot";
         ExecStart = "${bearingCheckin}/bin/bearing-checkin checkin";
       };
     };
     systemd.user.timers.bearing-checkin = {
-      Unit.Description = "The Bearing — midday check-in timer";
-      Timer = {
+      description = "The Bearing — midday check-in timer";
+      timerConfig = {
         OnCalendar = "Mon-Sun ${cfg.schedule.checkin}";
         Persistent = true;
       };
-      Install.WantedBy = [ "timers.target" ];
+      wantedBy = [ "timers.target" ];
     };
 
     systemd.user.services.bearing-lint = {
-      Unit = {
-        Description = "The Bearing — daily Ledger lint";
-        After       = [ "default.target" ];
-      };
-      Service = {
+      description = "The Bearing — daily Ledger lint";
+      after       = [ "default.target" ];
+      serviceConfig = {
         Type        = "oneshot";
         ExecStart   = "${bearingLint}/bin/bearing-lint";
-        Environment = [ "SSH_AUTH_SOCK=" ];
+        Environment = "SSH_AUTH_SOCK=";
       };
     };
     systemd.user.timers.bearing-lint = {
-      Unit.Description = "The Bearing — daily Ledger lint timer";
-      Timer = {
+      description = "The Bearing — daily Ledger lint timer";
+      timerConfig = {
         OnCalendar = "Mon-Sun ${cfg.schedule.lint}";
         Persistent = true;
       };
-      Install.WantedBy = [ "timers.target" ];
-    };
-
-    # ── Dunst fix ─────────────────────────────────────────────────────────
-    # mouse_left_click: trigger the action on click rather than just dismissing
-    # bearing rule: when a "The Bearing" notification is actioned, open a terminal
-    services.dunst.settings = {
-      global.mouse_left_click = "do_action, close_notification";
-      bearing = {
-        appname = "The Bearing";
-        script  = "${bearingOpen}";
-      };
+      wantedBy = [ "timers.target" ];
     };
   };
 }
