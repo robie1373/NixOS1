@@ -52,8 +52,8 @@
 
             # Apps
             "Mod+Return".spawn = [ "${selfpkgs.foot}/bin/foot" ];
-            "Mod+D".spawn      = [ "${selfpkgs.rofi}/bin/rofi" "-show" "drun" ];
-            "Mod+E".spawn      = [ "${selfpkgs.rofi}/bin/rofi" "-show" "window" ];
+            "Mod+D".spawn = [ "${selfpkgs.noctalia}/bin/noctalia-shell" "ipc" "call" "launcher" "toggle" ];
+            "Mod+E".spawn = [ "${selfpkgs.noctalia}/bin/noctalia-shell" "ipc" "call" "launcher" "windows" ];
 
             # Window management
             "Mod+U".close-window           = _: {};
