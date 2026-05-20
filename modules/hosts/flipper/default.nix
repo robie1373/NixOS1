@@ -37,13 +37,11 @@
           ../../_home/bearing.nix
           ../../_home/desktop-noctalia.nix
           ../../_home/firefox.nix
-          ../../_home/tablet.nix
           ../../_home/mpv.nix
           ../../_home/imv.nix
           ../../_home/mpd.nix
           ../../_home/nas.nix
           ../../_home/yazi.nix
-          ../../_home/hyprshot.nix
           ../../_home/anki-bin.nix
           ../../_home/teacha.nix
         ];

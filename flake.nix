@@ -8,7 +8,6 @@
     # Currently: fivenix (gaming desktop — CUDA/PyTorch stack is fragile on unstable).
     # Intentionally does NOT follow the unstable nixpkgs input.
     nixpkgs-stable.url = "github:nixos/nixpkgs?ref=nixos-25.11";
-    hyprland.url = "github:hyprwm/Hyprland";
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";

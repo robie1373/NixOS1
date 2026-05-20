@@ -39,7 +39,7 @@ in
   # _features/gaming.nix (also imported for this host). No need to repeat.
 
   # ── Ollama (local LLM — primary purpose of this host) ───────────────────────
-  # Exposed on 0.0.0.0 so other Tailscale hosts (flipper, nixos1) can send
+  # Exposed on 0.0.0.0 so other Tailscale hosts can send
   # inference requests without installing Ollama locally.
   #
   # RTX 4070 has 12 GB VRAM. With a second GPU (3070, 8 GB), Ollama auto-
