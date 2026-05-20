@@ -37,7 +37,7 @@ A tracked [TODO list](todo.md) for keeping track of tasks.
 | Battery + USB-C charging | ✅ Working | UCSI, 2 ports |
 | Thunderbolt 4 | ✅ Working | |
 | NVMe (WD SN5000S) | ✅ Working | |
-| SD card reader (GL9750) | ⚠️ Needs fix | D3cold after suspend — udev + resume hook in config |
+| SD card reader (GL9750) | ✅ Working | D3cold fix: udev rule + resume hook in configuration.nix |
 | Screen auto-rotation | ❌ Broken | Intel ISH firmware rejected — no fix yet |
 | IR camera | ⚠️ Unknown | IPU6 pipeline not configured |
 | Fingerprint reader | — | not present on this SKU |
@@ -314,16 +314,5 @@ implemented for this model's BIOS.  Fan speed is managed automatically by firmwa
 ---
 
 ## NixOS Config Changes Needed
-
-The current `hosts/flipper/configuration.nix` is missing a few things:
-
-```nix
-# Bluetooth — hardware is ready, just needs the service
-hardware.bluetooth.enable = true;
-services.bluetooth.enable = true;
-
-# Make sure redistributable firmware is on (wifi, bt, sof, vpu all need it)
-hardware.enableRedistributableFirmware = true;
-```
 
 For the internal speakers fix, see [01-speakers-fix.md](./01-speakers-fix.md).
