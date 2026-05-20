@@ -1,4 +1,4 @@
-{ config, pkgs, self, ... }:
+{ config, pkgs, lib, self, ... }:
 
 {
   imports = [
@@ -8,6 +8,7 @@
 
   networking.hostName = "flipper";
 
+  hardware.enableRedistributableFirmware = true;
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
 
@@ -94,8 +95,7 @@
   # Point ollama CLI at fivenix's GPU server so `ollama run` works without flags.
   environment.sessionVariables.OLLAMA_HOST = "http://192.168.7.137:11434";
 
-  # Enable CUPS to print documents.
-  services.printing.enable = false;
+  services.printing.enable = lib.mkForce true;
 
   services.openssh.enable = true;
 # Optional: Customize other settings
