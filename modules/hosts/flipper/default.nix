@@ -30,7 +30,7 @@
           ntfy.server = "https://ntfy.vimba-stairs.ts.net";
         };
         teacha = {
-          enable      = true;
+          enable      = false;
           package     = inputs.teacha.packages.x86_64-linux.teacha-daemon;
           pollSeconds = 120;
         };
