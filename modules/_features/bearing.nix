@@ -364,7 +364,7 @@ in {
       serviceConfig = {
         Type        = "oneshot";
         ExecStart   = "${bearingLint}/bin/bearing-lint";
-        Environment = "SSH_AUTH_SOCK=";
+        Environment = [ "SSH_AUTH_SOCK=" "SHELL=/run/current-system/sw/bin/bash" ];
       };
     };
     systemd.user.timers.bearing-lint = {
