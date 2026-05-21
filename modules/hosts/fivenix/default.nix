@@ -1,9 +1,6 @@
 { inputs, self, ... }:
 {
-  # fivenix uses nixpkgs-stable (25.11) — CUDA/PyTorch stack is fragile on
-  # unstable. home-manager.useGlobalPkgs = true means HM inherits the stable
-  # pkgs from the system, so home packages also come from stable.
-  flake.nixosConfigurations.fivenix = inputs.nixpkgs-stable.lib.nixosSystem {
+  flake.nixosConfigurations.fivenix = inputs.nixpkgs.lib.nixosSystem {
     system = "x86_64-linux";
     specialArgs = { inherit inputs self; };
     modules = [
@@ -18,25 +15,6 @@
       ../../_features/restic.nix
       # bearing: moved from _home/ to _features/ in Phase 3.7 Tier 1; disabled on fivenix
       ../../_features/bearing.nix
-      inputs.home-manager.nixosModules.home-manager
-      {
-        home-manager.useGlobalPkgs       = true;
-        home-manager.useUserPackages     = true;
-        home-manager.backupFileExtension = "backup";
-        home-manager.extraSpecialArgs    = { inherit self; };
-        home-manager.users.robie.imports = [
-          inputs.nix-index-database.homeModules.nix-index
-          ../../../hosts/fivenix/home.nix
-          ../../_home/common.nix
-          ../../_home/1password.nix
-          ../../_home/gemini-cli.nix
-          ../../_home/claude.nix
-          ../../_home/firefox.nix
-          ../../_home/yazi.nix
-          ../../_home/mpv.nix
-          ../../_home/imv.nix
-        ];
-      }
     ];
   };
 }

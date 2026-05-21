@@ -1,13 +1,5 @@
-{ config, pkgs, lib, inputs, ... }:
+{ config, pkgs, lib, ... }:
 
-let
-  # Unstable nixpkgs instance with unfree allowed — used to pull Ollama 0.20+
-  # while keeping everything else on stable (25.11).
-  unstable = import inputs.nixpkgs {
-    system = pkgs.system;
-    config.allowUnfree = true;
-  };
-in
 {
   imports = [
     ./hardware-configuration.nix
@@ -46,24 +38,15 @@ in
   # distributes layers across both cards — see the dual-GPU note in docs/.
   services.ollama = {
     enable  = true;
-    # nixpkgs-stable (25.11) ships Ollama 0.12.x; qwen3.5 models (nvfp4/mxfp8
-    # quantisation formats) require 0.20+. Pull ollama-cuda from the unstable
-    # input directly. This is the NixOS-idiomatic approach — services.ollama
-    # docs say to set .package rather than .acceleration.
-    package = unstable.ollama-cuda;
+    package = pkgs.ollama-cuda;
     host    = "0.0.0.0";
     port    = 11434;
 
-    # Performance tuning:
-    # KEEP_ALIVE=-1   — never evict a model from VRAM; always warm on first request.
-    # NUM_PARALLEL=4  — 20 GB combined VRAM (4070 12 GB + 2060 Super 8 GB).
-    # FLASH_ATTENTION — uses flash-attention kernel; faster and lower memory bandwidth.
-    #                   Supported on Ampere / Ada Lovelace. Disable if you see errors.
     environmentVariables = {
-      OLLAMA_KEEP_ALIVE    = "-1";
-      OLLAMA_NUM_PARALLEL  = "4";
-      OLLAMA_FLASH_ATTENTION = "1";
-      OLLAMA_NUM_CTX = "65536";
+      OLLAMA_KEEP_ALIVE      = "-1";  # never evict from VRAM
+      OLLAMA_NUM_PARALLEL    = "2";   # 12 GB VRAM (RTX 4070 only, 2060 Super removed 2026-05-15)
+      OLLAMA_FLASH_ATTENTION = "1";   # Ada Lovelace supports this; disable if errors appear
+      OLLAMA_NUM_CTX         = "65536";
     };
   };
 
@@ -82,11 +65,6 @@ in
 
   # ── System packages ──────────────────────────────────────────────────────────
   environment.systemPackages = with pkgs; [
-      # whisper-cpp: C++ reimplementation with GGML backend.
-      # Faster startup, lower overhead than Python Whisper, and CUDA support
-      # via GGML (no PyTorch/triton involved — avoids nixpkgs CUDA Python mess).
-      # Python openai-whisper + CUDA is broken in nixpkgs 25.11 due to duplicate
-      # triton derivations in the closure; use whisper-cpp instead.
       whisper-cpp
 
       # CUDA developer toolchain (nvcc, profiler, libraries)
@@ -107,7 +85,56 @@ in
       # Migrated from _home/ in Phase 3.7 (_home/obsidian.nix and anki-bin.nix deleted)
       obsidian
       anki-bin
+
+      # Migrated from _home/ in Phase 3.7 HM removal
+      gemini-cli
+      claude-code
+      yazi
+      git-secrets
+      uv
+      imv
+      (mpv.override {
+        scripts = with mpvScripts; [ uosc sponsorblock ];
+        mpv-unwrapped = mpv-unwrapped.override { waylandSupport = true; };
+      })
     ];
+
+  # ── Firefox ──────────────────────────────────────────────────────────────────
+  programs.firefox = {
+    enable = true;
+    policies = {
+      DisableTelemetry         = true;
+      EnableTrackingProtection = { Value = true; Locked = false; };
+      Homepage                 = { URL = "about:blank"; Locked = false; };
+      NewTabPage               = false;
+    };
+  };
+
+  # ── imv image viewer ─────────────────────────────────────────────────────────
+  xdg.mime.defaultApplications = {
+    "image/jpeg"    = "imv.desktop";
+    "image/png"     = "imv.desktop";
+    "image/gif"     = "imv.desktop";
+    "image/webp"    = "imv.desktop";
+    "image/tiff"    = "imv.desktop";
+    "image/bmp"     = "imv.desktop";
+    "image/svg+xml" = "imv.desktop";
+    "application/pdf" = "org.pwmt.zathura.desktop";
+  };
+
+  systemd.user.tmpfiles.rules = [
+    "L+ %h/.config/imv/config - - - - ${pkgs.writeText "imv-config" ''
+      [options]
+      background        = 24273a
+      overlay_font      = JetBrainsMono Nerd Font:13
+      overlay_text_color       = cad3f5ff
+      overlay_background_color = 1e2030cc
+      slideshow_duration = 0
+
+      [aliases]
+      q = quit
+    ''}"
+  ];
 
   # ── KDE Plasma 6 ─────────────────────────────────────────────────────────────
   # Full desktop for gaming, browser, general use. No Hyprland on this host.
@@ -118,14 +145,9 @@ in
     wayland.enable  = true;
   };
 
-  # ── Dual-GPU KWin fix ────────────────────────────────────────────────────────
-  # With two NVIDIA GPUs, KWin Wayland gets confused about which DRM device to
-  # use for the display, causing a freeze/blank screen at login.
-  # Card numbering (verified via /sys/class/drm/card*/device/device):
-  #   card0 = 0x1f06 = RTX 2060 Super
-  #   card1 = 0x2786 = RTX 4070  ← monitor is plugged in here
+  # KWIN_DRM_DEVICES: pin KWin to the RTX 4070 (card1 = 0x2786).
   # Must use environment.variables (not sessionVariables) so SDDM picks it up
-  # before the compositor starts. The 2060 Super remains available to CUDA/Ollama.
+  # before the compositor starts.
   environment.variables.KWIN_DRM_DEVICES = "/dev/dri/card1";
 
   # ── Unfree allowlist ─────────────────────────────────────────────────────────
