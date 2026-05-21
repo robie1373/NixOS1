@@ -97,6 +97,9 @@
       scripts = with mpvScripts; [ uosc sponsorblock ];
       mpv-unwrapped = mpv-unwrapped.override { waylandSupport = true; };
     })
+    imv
+    mpc
+    ncmpcpp
   ];
 
   # Add local scripts and apps to the path
@@ -128,6 +131,94 @@
     # 0xffff) and sdhci-pci's reset never completes. See docs/flipper/README.md.
     ACTION=="add", SUBSYSTEM=="pci", ENV{PCI_ID}=="17A0:9750", ATTR{d3cold_allowed}="0"
   '';
+
+  # ── Firefox ─────────────────────────────────────────────────────────────────
+  programs.firefox = {
+    enable = true;
+    policies = {
+      DisableTelemetry          = true;
+      EnableTrackingProtection  = { Value = true; Locked = false; };
+      Homepage                  = { URL = "about:blank"; Locked = false; };
+      NewTabPage                = false;
+    };
+  };
+
+  # ── imv image viewer ─────────────────────────────────────────────────────────
+  xdg.mime.defaultApplications = {
+    "image/jpeg"    = "imv.desktop";
+    "image/png"     = "imv.desktop";
+    "image/gif"     = "imv.desktop";
+    "image/webp"    = "imv.desktop";
+    "image/tiff"    = "imv.desktop";
+    "image/bmp"     = "imv.desktop";
+    "image/svg+xml" = "imv.desktop";
+    "application/pdf" = "org.pwmt.zathura.desktop";
+  };
+
+  # ── MPD music daemon ─────────────────────────────────────────────────────────
+  # Runs as a systemd user service. Config written via user tmpfiles.
+  # mpd package ships lib/systemd/user/mpd.service (WantedBy=default.target).
+  systemd.packages = [ pkgs.mpd ];
+
+  systemd.user.tmpfiles.rules = [
+    "L+ %h/.config/imv/config - - - - ${pkgs.writeText "imv-config" ''
+      [options]
+      background        = 24273a
+      overlay_font      = JetBrainsMono Nerd Font:13
+      overlay_text_color       = cad3f5ff
+      overlay_background_color = 1e2030cc
+      slideshow_duration = 0
+
+      [aliases]
+      q = quit
+    ''}"
+    "L+ %h/.config/mpd/mpd.conf - - - - ${pkgs.writeText "mpd.conf" ''
+      music_directory    "~/Music"
+
+      audio_output {
+        type "pipewire"
+        name "PipeWire"
+      }
+
+      audio_output {
+        type   "fifo"
+        name   "Visualizer"
+        path   "/tmp/mpd.fifo"
+        format "44100:16:2"
+      }
+    ''}"
+    "L+ %h/.config/ncmpcpp/config - - - - ${pkgs.writeText "ncmpcpp-config" ''
+      user_interface             = alternative
+      alternative_ui_separator_color = blue
+      playlist_display_mode      = columns
+      browser_display_mode       = columns
+      startup_screen             = playlist
+      song_list_format           =  {%a - }{%t}|{%f} $R {%l}
+      song_status_format         = %t $3[ %a ]$9
+      song_columns_list_format   = (50)[blue]{t|f:Title} (25)[cyan]{a:Artist} (25)[]{b:Album} (7f)[]{l:Length}
+      visualizer_data_source     = /tmp/mpd.fifo
+      visualizer_output_name     = Visualizer
+      visualizer_in_stereo       = yes
+      visualizer_type            = spectrum
+      visualizer_look            = ●▋
+      visualizer_color           = blue,cyan,green,yellow,magenta
+      progressbar_look           = ─╼
+      progressbar_color          = black
+      progressbar_elapsed_color  = blue
+      colors_enabled             = yes
+      main_window_color          = white
+      header_window_color        = cyan
+      volume_color               = cyan
+      state_flags_color          = cyan:b
+      active_column_color        = blue
+      active_window_border       = blue
+      window_border_color        = black
+      display_remaining_time     = yes
+      follow_now_playing_lyrics  = yes
+      mouse_support              = yes
+      mouse_list_scroll_whole_page = no
+    ''}"
+  ];
 
   # Safety net: if the GL9750 still ends up in D3cold after resume (e.g. first
   # boot before the udev rule fires, or a firmware-driven transition), rebind

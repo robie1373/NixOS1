@@ -61,6 +61,69 @@ in {
   # ── Backlight ───────────────────────────────────────────────────────────────
   services.udev.packages = [ pkgs.brightnessctl ];
 
+  # ── wlr-which-key config ────────────────────────────────────────────────────
+  # Written via user tmpfiles so the store path (with embedded selfpkgs paths) is
+  # always current after a switch.
+  systemd.user.tmpfiles.rules = [
+    "L+ %h/.config/wlr-which-key/config.yaml - - - - ${pkgs.writeText "wlr-which-key-config.yaml" ''
+      font: "JetBrainsMono Nerd Font 14"
+      background: "#24273a"
+      color: "#cad3f5"
+      border: "#8aadf4"
+      border_width: 2
+      corner_r: 10
+      padding: 20
+      margin_top: 20
+      margin_right: 20
+      margin_bottom: 20
+      margin_left: 20
+      anchor: center
+
+      menu:
+        - key: Return
+          desc: "terminal"
+          cmd: "${selfpkgs.foot}/bin/foot"
+        - key: d
+          desc: "app launcher"
+          cmd: "${selfpkgs.rofi}/bin/rofi -show drun"
+        - key: e
+          desc: "window switcher"
+          cmd: "${selfpkgs.rofi}/bin/rofi -show window"
+        - key: w
+          desc: "windows →"
+          submenu:
+            - key: u
+              desc: "close"
+              cmd: "niri msg action close-window"
+            - key: f
+              desc: "fullscreen"
+              cmd: "niri msg action fullscreen-window"
+            - key: v
+              desc: "float toggle"
+              cmd: "niri msg action toggle-window-floating"
+        - key: m
+          desc: "media →"
+          submenu:
+            - key: u
+              desc: "vol +"
+              cmd: "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+"
+              keep_open: true
+            - key: d
+              desc: "vol -"
+              cmd: "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
+              keep_open: true
+            - key: m
+              desc: "mute toggle"
+              cmd: "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+            - key: p
+              desc: "play/pause"
+              cmd: "playerctl play-pause"
+            - key: n
+              desc: "next track"
+              cmd: "playerctl next"
+    ''}"
+  ];
+
   # ── Session environment ─────────────────────────────────────────────────────
   environment.sessionVariables = {
     NIXOS_OZONE_WL      = "1";      # Electron apps (VS Code, etc.)
