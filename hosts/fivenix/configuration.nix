@@ -103,6 +103,10 @@ in
       ripgrep
 
       # Gaming tools are added by _features/gaming.nix
+
+      # Migrated from _home/ in Phase 3.7 (_home/obsidian.nix and anki-bin.nix deleted)
+      obsidian
+      anki-bin
     ];
 
   # ── KDE Plasma 6 ─────────────────────────────────────────────────────────────

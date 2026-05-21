@@ -16,6 +16,8 @@
       ../../_features/gaming.nix
       ../../_features/korean.nix
       ../../_features/restic.nix
+      # bearing: moved from _home/ to _features/ in Phase 3.7 Tier 1; disabled on fivenix
+      ../../_features/bearing.nix
       inputs.home-manager.nixosModules.home-manager
       {
         home-manager.useGlobalPkgs       = true;
@@ -29,13 +31,10 @@
           ../../_home/1password.nix
           ../../_home/gemini-cli.nix
           ../../_home/claude.nix
-          ../../_home/obsidian.nix
-          ../../_home/bearing.nix
           ../../_home/firefox.nix
           ../../_home/yazi.nix
           ../../_home/mpv.nix
           ../../_home/imv.nix
-          ../../_home/anki-bin.nix
         ];
       }
     ];
