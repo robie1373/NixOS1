@@ -42,17 +42,11 @@
         home-manager.backupFileExtension   = "backup";
         home-manager.extraSpecialArgs      = { inherit self inputs; };
         home-manager.users.robie.imports   = [
-          inputs.nix-index-database.homeModules.nix-index
           ../../../hosts/flipper/home.nix
-          ../../_home/common.nix
-          ../../_home/gemini-cli.nix
-          ../../_home/claude.nix
           ../../_home/desktop-noctalia.nix
           ../../_home/firefox.nix
-          ../../_home/mpv.nix
           ../../_home/imv.nix
           ../../_home/mpd.nix
-          ../../_home/yazi.nix
         ];
       }
     ];

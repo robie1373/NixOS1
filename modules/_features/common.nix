@@ -2,6 +2,7 @@
 {
   imports = [
     inputs.agenix.nixosModules.default
+    inputs.nix-index-database.nixosModules.nix-index
   ];
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
@@ -51,6 +52,9 @@
 
   programs.fish.enable = true;
   programs.git.enable  = true;
+  programs.git.config  = [{ user = { name = "robie1373"; email = "robie1373@gmail.com"; }; }];
+
+  programs.nix-index-database.comma.enable = true;
 
   # Install neovim and make it the default editor system-wide
   programs.neovim.enable        = true;

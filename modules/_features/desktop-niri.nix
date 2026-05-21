@@ -4,8 +4,17 @@ let
 in {
   # Install wrapped niri (includes filesToPatch'd niri.service pointing at the wrapper).
   # systemd.packages makes the user service visible to `systemctl --user`.
-  environment.systemPackages = [ selfpkgs.niri pkgs.xwayland-satellite ];
-  systemd.packages           = [ selfpkgs.niri ];
+  environment.systemPackages = [
+    selfpkgs.niri pkgs.xwayland-satellite
+    # Wrapped desktop apps (nix-wrapper-modules — config baked in)
+    selfpkgs.zathura selfpkgs.foot selfpkgs.rofi selfpkgs.waybar selfpkgs.okular
+  ];
+  systemd.packages = [
+    selfpkgs.niri
+    # poweralertd ships a user service file; wantedBy wires it to the graphical session.
+    pkgs.poweralertd
+  ];
+  systemd.user.services.poweralertd.wantedBy = [ "graphical-session.target" ];
 
   # fish is also enabled in common.nix; both setting it true is idempotent
   programs.fish.enable = true;

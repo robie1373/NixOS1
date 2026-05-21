@@ -86,6 +86,17 @@
     calibre		# eBook manager
     obsidian
     anki-bin
+    # Migrated from HM
+    gemini-cli
+    claude-code
+    yazi
+    nodejs_22	# QMD runtime
+    git-secrets
+    uv
+    (mpv.override {
+      scripts = with mpvScripts; [ uosc sponsorblock ];
+      mpv-unwrapped = mpv-unwrapped.override { waylandSupport = true; };
+    })
   ];
 
   # Add local scripts and apps to the path

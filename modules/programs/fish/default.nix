@@ -53,6 +53,16 @@
               && nix-env --delete-generations +1 \
               && nix-collect-garbage
           end
+
+          # yazi: cd to the last directory on exit
+          function y
+            set tmp (mktemp -t "yazi-cwd.XXXXXX")
+            yazi $argv --cwd-file "$tmp"
+            if set cwd (cat -- "$tmp"); and [ -n "$cwd" ]; and [ "$cwd" != "$PWD" ]
+              builtin cd -- "$cwd"
+            end
+            rm -f -- "$tmp"
+          end
         '';
 
         fishWrapper = pkgs.writeShellScriptBin "fish" ''
