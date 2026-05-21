@@ -294,7 +294,7 @@ in {
       serviceConfig = {
         Type        = "oneshot";
         ExecStart   = "${bearingBriefing}/bin/bearing-briefing";
-        Environment = "SSH_AUTH_SOCK=";
+        Environment = [ "SSH_AUTH_SOCK=" "SHELL=/run/current-system/sw/bin/bash" ];
       };
     };
     systemd.user.timers.bearing-briefing = {
@@ -312,7 +312,7 @@ in {
       serviceConfig = {
         Type        = "oneshot";
         ExecStart   = "${bearingActivity}/bin/bearing-activity";
-        Environment = "SSH_AUTH_SOCK=";
+        Environment = [ "SSH_AUTH_SOCK=" "SHELL=/run/current-system/sw/bin/bash" ];
       };
     };
     systemd.user.timers.bearing-activity = {
