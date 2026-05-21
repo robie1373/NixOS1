@@ -2,7 +2,7 @@
 {
   # cifs-utils provides mount.cifs
   environment.systemPackages = [
-    pkgs.cifs-utils
+    pkgs.cifs-utils.bin
 
     # nas-mount [//nas01/fauxbox] [/mnt/fauxbox]
     # Reads credentials from 1Password at runtime — no plaintext secrets on disk.
@@ -29,7 +29,7 @@
 
         printf 'username=%s\npassword=%s\ndomain=%s\n' "$NAS_USER" "$NAS_PASS" "WORKGROUP" > "$CREDS"
 
-        sudo ${pkgs.cifs-utils}/bin/mount.cifs "$SHARE" "$MOUNT" \
+        sudo ${pkgs.cifs-utils.bin}/bin/mount.cifs "$SHARE" "$MOUNT" \
           -o "credentials=$CREDS,uid=$(id -u),gid=$(id -g),file_mode=0644,dir_mode=0755,vers=3.0,sec=ntlmssp"
 
         echo "Mounted $SHARE at $MOUNT"
@@ -63,7 +63,7 @@
       runAs  = "root";
       commands = [
         {
-          command = "${pkgs.cifs-utils}/bin/mount.cifs";
+          command = "${pkgs.cifs-utils.bin}/bin/mount.cifs";
           options = [ "NOPASSWD" ];
         }
         {
