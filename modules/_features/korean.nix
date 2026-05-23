@@ -16,7 +16,7 @@
           "Groups/0/Items/1" = { "Name" = "hangul";      "Layout" = ""; };
           "GroupOrder"       = { "0" = "Default"; };
         };
-        # No TriggerKeys — toggle is handled by Hyprland bind calling fcitx5-remote -t.
+        # No TriggerKeys — toggle is handled by a niri keybind calling fcitx5-remote -t.
         # fcitx5 cannot intercept modifier keys (Alt_R) on Wayland via the IM protocol;
         # the compositor must do it at the keyboard event level instead.
         globalOptions = {
@@ -27,8 +27,8 @@
   };
 
   # Start fcitx5 via systemd user service.
-  # i18n.inputMethod creates an XDG autostart .desktop file, but Hyprland does not
-  # process XDG autostart entries. A systemd user service is required instead.
+  # i18n.inputMethod creates an XDG autostart .desktop file, but niri does not
+  # process XDG autostart entries either. A systemd user service is required.
   systemd.user.services.fcitx5 = {
     description = "Fcitx5 input method daemon";
     partOf      = [ "graphical-session.target" ];

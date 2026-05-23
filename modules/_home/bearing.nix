@@ -8,7 +8,7 @@ let
   # bearing-open: opens a terminal with a typed claude session.
   # Called by:
   #   - dunst script rule (args: appname summary body icon urgency → unknown $1, falls back to "bearing")
-  #   - Hyprland Super+B bind (explicit "bearing" arg)
+  #   - niri Super+B bind (explicit "bearing" arg)
   # The case statement validates $1 so dunst's appname arg doesn't corrupt the type.
   bearingOpen = pkgs.writeShellScript "bearing-open" ''
     case "''${1}" in

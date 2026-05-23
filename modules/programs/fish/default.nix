@@ -1,8 +1,8 @@
 { inputs, ... }:
 # Fish shell — custom symlinkJoin wrapper (no nix-wrapper-modules support).
 # Config is baked in via --init-command "source ${configFish}" on every invocation.
-# All aliases from _home/common.nix and _home/desktop-hyprland.nix are included here
-# so they survive after programs.fish is removed from the HM config.
+# Aliases originally lived in HM modules (common, desktop-hyprland) and are
+# preserved here so they survive once programs.fish is removed from the HM config.
 {
   perSystem = { pkgs, ... }: {
     packages.fish =
@@ -31,7 +31,7 @@
               && sudo nix-collect-garbage
           end
 
-          # ── Aliases (from _home/desktop-hyprland.nix) ─────────────────────
+          # ── Aliases (carried over from the old HM desktop module) ─────────
           alias mount-phone 'mkdir -p ~/mnt/iphone && ${pkgs.ifuse}/bin/ifuse ~/mnt/iphone'
 
           # ── Functions ─────────────────────────────────────────────────────
