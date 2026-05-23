@@ -44,7 +44,6 @@
           ../../_home/mpd.nix
           ../../_home/nas.nix
           ../../_home/yazi.nix
-          ../../_home/hyprshot.nix
           ../../_home/anki-bin.nix
           ../../_home/teacha.nix
         ];
