@@ -2,6 +2,11 @@
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+  # Cap boot-menu entries so old generations get pruned automatically on each
+  # rebuild. Same rationale as _features/common.nix — without this, entries
+  # accumulate forever and a GC leaves a boot menu full of dead .conf files
+  # pointing at collected store paths.
+  boot.loader.systemd-boot.configurationLimit = 20;
 
   # Enable networking
   networking.networkmanager.enable = true;

@@ -22,6 +22,11 @@
   # explicitly selected. The disko config must include an ESP partition.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+  # Cap boot-menu entries so old generations get pruned automatically on each
+  # rebuild. Same rationale as _features/common.nix — without this, entries
+  # accumulate forever. Server VMs see fewer rebuilds than desktops but the
+  # ESP is small on these so the cap matters more, not less.
+  boot.loader.systemd-boot.configurationLimit = 20;
 
   # Automatically grow the root partition and filesystem to fill available disk
   # space on boot. Allows Proxmox disk resizes (qm resize) to take effect on
