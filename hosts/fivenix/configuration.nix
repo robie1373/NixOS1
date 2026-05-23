@@ -210,9 +210,11 @@
   networking.firewall.allowedTCPPorts = [ 11434 4500 ];
 
   # ── Bluetooth ────────────────────────────────────────────────────────────────
+  # No blueman — noctalia provides the bluetooth widget. Matches the flipper
+  # cleanup from 2026-05-23: blueman-applet was a hyprland-era carryover that
+  # fights noctalia for control of the radio.
   hardware.bluetooth.enable        = true;
   hardware.bluetooth.powerOnBoot   = true;
-  services.blueman.enable          = true;
 
   # xpadneo: Xbox One/Series BT driver. The in-kernel hid-xbox is unreliable
   # over Bluetooth; xpadneo handles rumble, analog triggers, and reconnection.
