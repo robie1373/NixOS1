@@ -32,7 +32,11 @@ in {
   };
 
   # ── Bluetooth ───────────────────────────────────────────────────────────────
-  services.blueman.enable = true;
+  # No blueman — noctalia provides its own bluetooth widget. blueman-applet was
+  # carried over from the hyprland-era desktop feature and was fighting noctalia
+  # for control of the radio (state desync, BT off after resume, two BT GUIs
+  # visible in the launcher). hardware.bluetooth.enable + hardware.bluetooth.powerOnBoot
+  # are set in hosts/flipper/configuration.nix; that's enough at the system layer.
 
   # ── PAM ─────────────────────────────────────────────────────────────────────
   # Unlock gnome-keyring at greetd login so 1Password CLI + SSH agents survive reboots.
