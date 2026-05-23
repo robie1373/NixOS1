@@ -6,6 +6,10 @@
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+  # Cap boot-menu entries so old generations get pruned automatically on each
+  # nh os switch. Without this, entries accumulate forever and a system GC
+  # leaves a boot menu full of entries pointing at collected store paths.
+  boot.loader.systemd-boot.configurationLimit = 20;
 
   # Enable networking
   networking.networkmanager.enable = true;
