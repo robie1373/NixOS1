@@ -123,6 +123,8 @@
   # the sdhci-pci driver to force a clean reprobe. If it fell off the bus
   # entirely, rescan the parent bridge (00:1c.4 → bus 2c).
   powerManagement.resumeCommands = ''
+    ${pkgs.bluez}/bin/bluetoothctl power on
+
     if [ -d /sys/bus/pci/devices/0000:2c:00.0 ]; then
       if [ "$(cat /sys/bus/pci/devices/0000:2c:00.0/power_state 2>/dev/null)" = "D3cold" ]; then
         echo 0 > /sys/bus/pci/devices/0000:2c:00.0/d3cold_allowed
