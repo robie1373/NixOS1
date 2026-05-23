@@ -47,9 +47,38 @@
             nix-shell -p acpi --run "acpi -b"
           end
 
-          # Delete all but the last generation
+          # Delete all but the last system + user generation, then collect garbage.
+          # Destructive and irreversible: if the most recent generation is broken,
+          # there is no fallback. Requires typing "yes" to confirm.
           function cleangen
-            echo "running: sudo nix-env --delete-generations +1 --profile /nix/var/nix/profiles/system && nix-env --delete-generations +1 && nix-collect-garbage"
+            if contains -- --help $argv; or contains -- -h $argv
+              echo "cleangen — delete all system and user generations except the most recent, then run nix-collect-garbage."
+              echo
+              echo "Usage: cleangen"
+              echo
+              echo "Takes no arguments. Destructive: only the most recent generation survives."
+              return 0
+            end
+
+            if test (count $argv) -gt 0
+              echo "cleangen: unexpected argument(s): $argv" >&2
+              echo "Run 'cleangen --help' for usage." >&2
+              return 2
+            end
+
+            echo "About to delete ALL system and user generations except the most recent,"
+            echo "then run nix-collect-garbage. If the most recent generation is broken you"
+            echo "will have no fallback. Commands:"
+            echo "  sudo nix-env --delete-generations +1 --profile /nix/var/nix/profiles/system"
+            echo "  nix-env --delete-generations +1"
+            echo "  nix-collect-garbage"
+            echo
+            read -P "Type 'yes' to continue, anything else aborts: " -l confirm
+            if test "$confirm" != yes
+              echo "Aborted."
+              return 1
+            end
+
             sudo nix-env --delete-generations +1 --profile /nix/var/nix/profiles/system \
               && nix-env --delete-generations +1 \
               && nix-collect-garbage
