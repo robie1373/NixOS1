@@ -123,7 +123,12 @@
   # the sdhci-pci driver to force a clean reprobe. If it fell off the bus
   # entirely, rescan the parent bridge (00:1c.4 → bus 2c).
   powerManagement.resumeCommands = ''
-    ${pkgs.bluez}/bin/bluetoothctl power on
+    # Power the BT controller back on after suspend/hibernate.
+    # USB BT goes to Powered=false on suspend; bluez does not re-set it on resume.
+    # Use btmgmt (kernel mgmt socket) rather than bluetoothctl — bluetoothctl 5.86
+    # has a regression where its list/power commands silently return exit 0 with
+    # no effect. btmgmt talks straight to the kernel and is reliable.
+    ${pkgs.bluez}/bin/btmgmt power on
 
     if [ -d /sys/bus/pci/devices/0000:2c:00.0 ]; then
       if [ "$(cat /sys/bus/pci/devices/0000:2c:00.0/power_state 2>/dev/null)" = "D3cold" ]; then
