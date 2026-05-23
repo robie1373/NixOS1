@@ -253,87 +253,37 @@ Note from Robie: Flipper is effectively a single user machine. running in multiu
 
 ## Phase 3: Niri + Noctalia
 
-### Pre-flight: Goal and Acceptance Criteria
-- [ ] Write phase goal and acceptance criteria before beginning any implementation
-- [ ] Review whether this phase should be combined with an adjacent phase or split for cleaner separation of concerns and more effective testing
+**Status: COMPLETE on flipper (2026-05-08) and fivenix (2026-05-22).** See notes below.
 
 **Goal:** Replace Hyprland + Waybar + dunst + rofi + hyprlock + hypridle + hyprpaper with niri + noctalia.
 
-### 3.1 — Preparation
-- [ ] Create branch: `git checkout -b experiment/niri`
-- [ ] Re-read `docs/comparison/niri-and-noctalia.md` and `niri-migration-plan.md`
-- [ ] Study vimjoyer's niri wrapper module in detail
-- [ ] Study vimjoyer's noctalia config in detail
+### 3.1–3.6 — COMPLETE ✓
 
-### 3.2 — Flake Inputs
-- [ ] Add `niri-flake` input:
-  ```
-  niri-flake.url = "github:sodiboo/niri-flake";
-  niri-flake.inputs.nixpkgs.follows = "nixpkgs";
-  ```
-- [ ] Add niri cachix to `nix.settings` (avoids local compilation)
-- [ ] `nix flake update`
+All phases executed. Both hosts running niri + noctalia + regreet on `main`.
 
-### 3.3 — Niri System Module
-- [ ] Create `modules/features/desktop-niri/default.nix`
-  - `programs.niri.enable = true`
-  - XDG portals: replace `-hyprland` with `-gnome`
-  - PAM: `security.pam.services.swaylock = {}`
-  - greetd: change session command to `niri-session`
-  - Remove `security.pam.services.hyprlock`
-- [ ] In flipper host: disable `desktopHyprland`, enable `desktopNiri`
-- [ ] `nixos-rebuild test` (not switch) — activates without becoming boot default
-- [ ] Confirm niri session starts and basic keyboard/mouse work
+Key implementation notes (not in the original plan):
+- **niri-flake NOT used** — niri 26.04 is in nixpkgs; using `pkgs.niri` via nix-wrapper-modules
+- **Config via nix-wrapper-modules** — `inputs.nix-wrapper-modules.wrappers.niri.wrap` with `v2-settings = true`; config baked into binary as store path
+- **niri-session** — always use as greetd cmd, not bare `niri`; exports env to systemd user session
+- **xdg-desktop-portal-gnome** required for screencasting (replacing xdg-desktop-portal-hyprland)
+- **ReGreet (Phase 4)** folded into Phase 3 — regreet + cage wired via `programs.regreet` module; running on both hosts
 
-### 3.4 — Niri Program Wrapper
-- [ ] Create `modules/programs/niri/default.nix` following vimjoyer's wrapper
-  - KDL config generated as a derivation
-  - All keybinds (replicate Hyprland binds where possible)
-  - Output config (eDP-1, scale, mode)
-  - Layout: gaps, focus ring color (Catppuccin Macchiato)
-  - `spawn-at-startup` entries
-  - Window rules for floating dialogs
-  - XWayland via xwayland-satellite
+> **Branch note (2026-05-22):** `experiment/niri` was **tainted** and **deleted**. Commit 910bcb8 on that branch silently gutted fivenix's module imports (removed desktop-niri, desktop-noctalia, greeter-regreet, disko, remote-access, elite-dangerous-sync, and HM block) while the commit message only mentioned HM removal. Three boot-failing generations built from this. All work landed on `main` directly. Do not recreate `experiment/niri`.
 
-### 3.5 — Replace Waybar Hyprland Modules
-- [ ] In waybar wrapper: change `hyprland/workspaces` → `niri/workspaces`
-- [ ] In waybar wrapper: change `hyprland/window` → `niri/window`
-- [ ] Remove any `hyprctl`-based custom modules
+### 3.7 — HM Removal (partial)
 
-### 3.6 — Noctalia (replaces Waybar + dunst + rofi + lockers)
-- [ ] Add noctalia cachix to `nix.settings`
-- [ ] Create `modules/programs/noctalia/default.nix` following vimjoyer's config
-- [ ] Remove waybar, dunst, rofi wrapper modules from spawn list
-- [ ] Configure noctalia: colors (Catppuccin Macchiato), keybinds, plugins
-- [ ] Confirm: notifications, launcher, lock screen, idle all work via noctalia
+**Goal:** Remove all remaining Home Manager references.
 
-### 3.7 — Cleanup Hyprland
-- [ ] Confirm niri + noctalia is stable daily driver (at least one week)
-- [ ] Remove `modules/features/desktop-hyprland/default.nix`
-- [ ] Remove `modules/programs/hyprpaper`, `hypridle`, `hyprlock`, `rofi`, `dunst` wrappers
+- [x] flipper: HM block removed (commits 771fd94, 1d50a10 on `main`)
+- [ ] **fivenix: HM block still present** — must be done cleanly on `main`, NOT via a branch. The `experiment/niri` attempt failed catastrophically. Treat this as a standalone commit on main: edit `modules/hosts/fivenix/default.nix`, remove the HM block and HM import, rebuild, verify.
+- [ ] Remove `modules/programs/hyprpaper`, `hypridle`, `hyprlock`, `rofi`, `dunst` wrappers (if still present)
 - [ ] Remove `hyprland` flake input if no longer needed
-- [ ] `git checkout main && git merge experiment/niri`
 
 ---
 
 ## Phase 4: Graphical Greeter (ReGreet)
 
-### Pre-flight: Goal and Acceptance Criteria
-- [ ] Write phase goal and acceptance criteria before beginning any implementation
-- [ ] Review whether this phase should be combined with an adjacent phase or split for cleaner separation of concerns and more effective testing
-
-**Goal:** Replace plain tuigreet with a styled GTK4 greeter.
-
-- [ ] Research ReGreet config options and theming (GTK CSS)
-- [ ] Create branch: `git checkout -b feature/regreet`
-- [ ] In `modules/features/desktop-niri/default.nix` (or a new greeter module):
-  - `programs.regreet.enable = true`
-  - Configure cage as the launch compositor for greetd
-  - Apply GTK theme matching Catppuccin Macchiato
-  - Set background image
-- [ ] `nixos-rebuild test` — confirm greeter appears and login works
-- [ ] `nixos-rebuild switch`
-- [ ] `git checkout main && git merge feature/regreet`
+**Status: COMPLETE** — folded into Phase 3. regreet + cage running on both flipper and fivenix as of 2026-05-22. See Phase 3.6 notes above.
 
 ---
 
