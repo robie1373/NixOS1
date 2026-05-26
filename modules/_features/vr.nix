@@ -41,7 +41,28 @@
   # the override approach broke Steam menus (see ledger2/tech/vr-nixos.md).
   environment.sessionVariables.PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES = "1";
 
-  # ── OpenComposite — pending step 4 ───────────────────────────────────
-  # Per-game Steam launch option (once OpenComposite is wired up):
+  # ── OpenComposite — OpenVR → OpenXR bridge ────────────────────────────
+  # Intercepts Steam game OpenVR calls and routes them to Monado.
+  # openvrpaths.vrpath is written as a symlink via tmpfiles so it tracks
+  # the opencomposite store path across version updates automatically.
+  environment.systemPackages = [ pkgs.opencomposite ];
+
+  systemd.user.tmpfiles.rules =
+    let
+      vrpaths = pkgs.writeText "openvrpaths.vrpath" (builtins.toJSON {
+        config           = [];
+        external_drivers = null;
+        jsonid           = "vrpathreg";
+        log              = [];
+        runtime          = [ "${pkgs.opencomposite}/lib/opencomposite" ];
+        version          = 1;
+      });
+    in [
+      "L+ %h/.config/openvr/openvrpaths.vrpath - - - - ${vrpaths}"
+    ];
+
+  # ── Per-game Steam launch option ─────────────────────────────────────
+  # Add to ED's launch options in Steam so the game can reach the Monado
+  # socket inside Steam's bubblewrap container:
   #   env PRESSURE_VESSEL_FILESYSTEMS_RW=$XDG_RUNTIME_DIR/monado_comp_ipc %command%
 }
