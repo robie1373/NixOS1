@@ -21,12 +21,15 @@
     highPriority = true;
   };
 
-  systemd.user.services.monado.environment = {
-    WMR_HANDTRACKING = "0";
-    U_PACING_APP_USE_MIN_FRAME_PERIOD = "1";
-    U_PACING_COMP_MIN_TIME_MS = "5";
-    # NVIDIA: uncomment and set to display name from xrandr if headset not detected:
-    # XRT_COMPOSITOR_FORCE_NVIDIA_DISPLAY = "";
+  systemd.user.services.monado = {
+    environment = {
+      WMR_HANDTRACKING = "0";
+      U_PACING_APP_USE_MIN_FRAME_PERIOD = "1";
+      U_PACING_COMP_MIN_TIME_MS = "5";
+      # NVIDIA: uncomment and set to display name from xrandr if headset not detected:
+      # XRT_COMPOSITOR_FORCE_NVIDIA_DISPLAY = "";
+    };
+    serviceConfig.TimeoutStopSec = 5;  # default 90s causes long reboot delay
   };
 
   # ── Steam — OpenXR runtime visibility inside bubblewrap sandbox ──────
