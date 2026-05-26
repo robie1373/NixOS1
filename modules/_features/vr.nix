@@ -29,6 +29,13 @@
     # XRT_COMPOSITOR_FORCE_NVIDIA_DISPLAY = "";
   };
 
+  # ── Steam — OpenXR runtime visibility inside bubblewrap sandbox ──────
+  # Steam runs games in an FHS bubblewrap container. Without this variable
+  # it cannot see the Monado socket and ignores the OpenXR runtime entirely.
+  # Using sessionVariables rather than programs.steam.package override —
+  # the override approach broke Steam menus (see ledger2/tech/vr-nixos.md).
+  environment.sessionVariables.PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES = "1";
+
   # ── OpenComposite — pending step 4 ───────────────────────────────────
   # Per-game Steam launch option (once OpenComposite is wired up):
   #   env PRESSURE_VESSEL_FILESYSTEMS_RW=$XDG_RUNTIME_DIR/monado_comp_ipc %command%
