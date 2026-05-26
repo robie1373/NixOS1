@@ -1,4 +1,21 @@
 { pkgs, ... }:
+let
+  # Niri output name for the HP Reverb G2 (from `niri msg outputs`).
+  # Disabling it before Monado starts prevents niri from competing for the
+  # DP-2 DRM lease, which would cause it to be withdrawn and the stereo
+  # rendering to fall back to a broken non-direct path.
+  g2OutputName = "HP Inc. 0x36C1 0x88272E62";
+
+  niriBin = "${pkgs.niri}/bin/niri";
+
+  niriG2Off = pkgs.writeShellScript "monado-pre" ''
+    ${niriBin} msg output "${g2OutputName}" off || true
+  '';
+
+  niriG2On = pkgs.writeShellScript "monado-post" ''
+    ${niriBin} msg output "${g2OutputName}" on || true
+  '';
+in
 {
   # ── USB device access ─────────────────────────────────────────────────
   # HP Reverb G2 uses Microsoft USB vendor ID (045e).
@@ -30,11 +47,17 @@
       U_PACING_COMP_MIN_TIME_MS = "5";
       # Forces G2 into NVIDIA's display allowlist for direct mode rendering.
       # DP-2 confirmed via /sys/class/drm (DP-1=monitor, DP-2=G2 at 2880x1440).
-      # Without this, Monado falls back to a non-direct rendering path and
-      # the stereo image layout is wrong (large vertical offset).
       XRT_COMPOSITOR_FORCE_NVIDIA_DISPLAY = "DP-2";
     };
-    serviceConfig.TimeoutStopSec = 5;  # default 90s causes long reboot delay
+    serviceConfig = {
+      TimeoutStopSec = 5;  # default 90s causes long reboot delay
+      # Disable the G2 niri output before Monado starts so niri doesn't compete
+      # for the DP-2 DRM lease. Without this, niri grants the lease then immediately
+      # withdraws it, causing Monado to fall back to a broken non-direct rendering
+      # path (vertical stereo offset / double vision).
+      ExecStartPre = "-${niriG2Off}";
+      ExecStopPost = "-${niriG2On}";
+    };
   };
 
   # ── Steam — OpenXR runtime visibility inside bubblewrap sandbox ──────
