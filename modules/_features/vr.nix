@@ -28,8 +28,11 @@
       WMR_HANDTRACKING = "0";
       U_PACING_APP_USE_MIN_FRAME_PERIOD = "1";
       U_PACING_COMP_MIN_TIME_MS = "5";
-      # NVIDIA: uncomment and set to display name from xrandr if headset not detected:
-      # XRT_COMPOSITOR_FORCE_NVIDIA_DISPLAY = "";
+      # Forces G2 into NVIDIA's display allowlist for direct mode rendering.
+      # DP-2 confirmed via /sys/class/drm (DP-1=monitor, DP-2=G2 at 2880x1440).
+      # Without this, Monado falls back to a non-direct rendering path and
+      # the stereo image layout is wrong (large vertical offset).
+      XRT_COMPOSITOR_FORCE_NVIDIA_DISPLAY = "DP-2";
     };
     serviceConfig.TimeoutStopSec = 5;  # default 90s causes long reboot delay
   };
