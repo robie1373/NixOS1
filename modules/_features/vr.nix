@@ -28,13 +28,9 @@
   };
 
   # ── Steam — OpenXR visibility inside bubblewrap sandbox ───────────────
-  # Steam runs in an FHS bubblewrap environment and cannot see the Monado
-  # socket unless PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES is set.
-  programs.steam.package = pkgs.steam.override {
-    extraProfile = ''
-      export PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES=1
-    '';
-  };
+  # NOTE: programs.steam.package override removed — broke Steam right-click
+  # context menus. PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES=1 needs a
+  # different delivery mechanism (per-game launch option or environment.d).
 
   # ── OpenComposite — OpenVR → OpenXR bridge ────────────────────────────
   # NOTE: NOT installed system-wide. Installing opencomposite globally intercepts
