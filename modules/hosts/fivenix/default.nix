@@ -11,7 +11,7 @@
       ../../_features/audio.nix
       ../../_features/nfs-data.nix
       ../../_features/gaming.nix
-      ../../_features/vr.nix
+      # ../../_features/vr.nix  # temporarily disabled — diagnosing Steam context menu regression
       ../../_features/korean.nix
       ../../_features/restic.nix
       ../../_features/desktop-niri.nix
