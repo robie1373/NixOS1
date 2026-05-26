@@ -12,7 +12,11 @@
   # ── Monado — OpenXR runtime with WMR driver ───────────────────────────
   services.monado = {
     enable = true;
-    defaultRuntime = true;  # sets system-wide OPENXR_RUNTIME_FILE
+    # defaultRuntime = true permanently writes Monado as the system-wide OpenXR
+    # runtime — Steam sees it on every startup, tries to init OpenXR, and
+    # right-click context menus break. Use forceDefaultRuntime instead: it only
+    # sets the active runtime while monado.service is actually running.
+    forceDefaultRuntime = true;
     highPriority = true;    # real-time scheduling for the compositor
   };
 
