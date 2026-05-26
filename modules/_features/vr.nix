@@ -37,12 +37,10 @@
   };
 
   # ── OpenComposite — OpenVR → OpenXR bridge ────────────────────────────
-  # Intercepts SteamVR/OpenVR API calls and routes them to Monado.
-  # Means SteamVR does not need to run as the VR compositor.
+  # NOTE: NOT installed system-wide. Installing opencomposite globally intercepts
+  # Steam's own internal OpenVR use and breaks right-click context menus.
+  # Install per-user via nix profile or add to a game-specific wrapper instead.
   #
-  # Per-game Steam launch option required:
+  # Per-game Steam launch option when using opencomposite:
   #   env PRESSURE_VESSEL_FILESYSTEMS_RW=$XDG_RUNTIME_DIR/monado_comp_ipc %command%
-  environment.systemPackages = with pkgs; [
-    opencomposite
-  ];
 }
