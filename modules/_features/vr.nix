@@ -9,9 +9,10 @@
     SUBSYSTEM=="hidraw", ATTRS{idVendor}=="045e", TAG+="uaccess"
   '';
 
-  # ── Monado — service + WMR config, no runtime registration ───────────
-  # forceDefaultRuntime excluded — runtime selection handled separately
-  # (step 3). This step tests whether the service alone affects Steam.
+  # ── Monado — service with runtime registration ───────────────────────
+  # forceDefaultRuntime writes ~/.config/openxr/1/active_runtime.json only
+  # while the service is running — safe, does not affect Steam at rest.
+  # (contrast: defaultRuntime=true writes permanently and broke Steam menus)
   #
   # Start/stop manually when doing VR:
   #   systemctl --user start monado
@@ -19,6 +20,7 @@
   services.monado = {
     enable = true;
     highPriority = true;
+    forceDefaultRuntime = true;
   };
 
   systemd.user.services.monado = {
