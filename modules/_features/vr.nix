@@ -9,18 +9,27 @@
     SUBSYSTEM=="hidraw", ATTRS{idVendor}=="045e", TAG+="uaccess"
   '';
 
-  # ── Monado — package only, no service units ───────────────────────────
-  # services.monado.enable = true uses socket activation which starts Monado
-  # regardless of wantedBy — it runs at login and claims Wayland input
-  # resources, breaking Steam context menus. Confirmed on fivenix 2026-05-26.
+  # ── Monado — service + WMR config, no runtime registration ───────────
+  # forceDefaultRuntime excluded — runtime selection handled separately
+  # (step 3). This step tests whether the service alone affects Steam.
   #
-  # Package is installed directly. Start manually before VR, stop when done:
-  #   monado-service &    # start
-  #   kill %1             # stop (or pkill monado-service)
-  environment.systemPackages = [ pkgs.monado ];
+  # Start/stop manually when doing VR:
+  #   systemctl --user start monado
+  #   systemctl --user stop monado
+  services.monado = {
+    enable = true;
+    highPriority = true;
+  };
 
-  # ── OpenComposite — OpenVR → OpenXR bridge ────────────────────────────
-  # NOT system-wide — breaks Steam menus (intercepts Steam's internal OpenVR).
-  # Per-game Steam launch option when ready to use:
+  systemd.user.services.monado.environment = {
+    WMR_HANDTRACKING = "0";
+    U_PACING_APP_USE_MIN_FRAME_PERIOD = "1";
+    U_PACING_COMP_MIN_TIME_MS = "5";
+    # NVIDIA: uncomment and set to display name from xrandr if headset not detected:
+    # XRT_COMPOSITOR_FORCE_NVIDIA_DISPLAY = "";
+  };
+
+  # ── OpenComposite — pending step 4 ───────────────────────────────────
+  # Per-game Steam launch option (once OpenComposite is wired up):
   #   env PRESSURE_VESSEL_FILESYSTEMS_RW=$XDG_RUNTIME_DIR/monado_comp_ipc %command%
 }
