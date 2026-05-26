@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 {
   # ── USB device access ─────────────────────────────────────────────────
   # HP Reverb G2 uses Microsoft USB vendor ID (045e).
@@ -9,38 +9,37 @@
     SUBSYSTEM=="hidraw", ATTRS{idVendor}=="045e", TAG+="uaccess"
   '';
 
-  # ── Monado — OpenXR runtime with WMR driver ───────────────────────────
+  # ── Monado — installed but NOT autostarted ────────────────────────────
+  # services.monado.enable = true autostarts monado.service at login. Monado
+  # claims Wayland input resources on startup, causing Steam popup/context
+  # menus to require a text-box click to unstick (focus not established until
+  # keyboard input occurs). Confirmed on fivenix 2026-05-26.
+  #
+  # Instead: install the package and provide env config, start on demand:
+  #   systemctl --user start monado    # before launching a VR game
+  #   systemctl --user stop monado     # when done
+  #
+  # The service unit and environment are still defined via services.monado
+  # so the config is available; it just won't autostart.
   services.monado = {
     enable = true;
-    # defaultRuntime = true permanently writes Monado as the system-wide OpenXR
-    # runtime — Steam sees it on every startup, tries to init OpenXR, and
-    # right-click context menus break. Use forceDefaultRuntime instead: it only
-    # sets the active runtime while monado.service is actually running.
     forceDefaultRuntime = true;
-    highPriority = true;    # real-time scheduling for the compositor
+    highPriority = true;
   };
 
-  # Monado environment tuning for WMR headsets
-  systemd.user.services.monado.environment = {
-    WMR_HANDTRACKING = "0";                  # skip: needs external model files
-    U_PACING_APP_USE_MIN_FRAME_PERIOD = "1"; # reduces frame pacing issues
-    U_PACING_COMP_MIN_TIME_MS = "5";         # reduces headset view stuttering
-
-    # NVIDIA: if Monado fails to detect the headset display, uncomment and set
-    # to the display name from `xrandr` (e.g. "DP-1" or "HDMI-0"):
-    # XRT_COMPOSITOR_FORCE_NVIDIA_DISPLAY = "";
+  systemd.user.services.monado = {
+    wantedBy = lib.mkForce [];  # remove from default.target — no autostart
+    environment = {
+      WMR_HANDTRACKING = "0";
+      U_PACING_APP_USE_MIN_FRAME_PERIOD = "1";
+      U_PACING_COMP_MIN_TIME_MS = "5";
+      # NVIDIA: uncomment and set to display name from xrandr if headset not detected:
+      # XRT_COMPOSITOR_FORCE_NVIDIA_DISPLAY = "";
+    };
   };
-
-  # ── Steam — OpenXR visibility inside bubblewrap sandbox ───────────────
-  # NOTE: programs.steam.package override removed — broke Steam right-click
-  # context menus. PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES=1 needs a
-  # different delivery mechanism (per-game launch option or environment.d).
 
   # ── OpenComposite — OpenVR → OpenXR bridge ────────────────────────────
-  # NOTE: NOT installed system-wide. Installing opencomposite globally intercepts
-  # Steam's own internal OpenVR use and breaks right-click context menus.
-  # Install per-user via nix profile or add to a game-specific wrapper instead.
-  #
-  # Per-game Steam launch option when using opencomposite:
+  # NOT system-wide — breaks Steam menus (intercepts Steam's internal OpenVR).
+  # Start monado first, then launch VR game with this Steam launch option:
   #   env PRESSURE_VESSEL_FILESYSTEMS_RW=$XDG_RUNTIME_DIR/monado_comp_ipc %command%
 }
