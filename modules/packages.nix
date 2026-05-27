@@ -17,11 +17,6 @@
 { inputs, lib, ... }:
 
 let
-  # qmd: local hybrid search engine for markdown files.
-  # Packaged here because it's not in nixpkgs.
-  # Build: nix build .#qmd
-  qmdPkg = system: inputs.nixpkgs.legacyPackages.${system}.callPackage ../pkgs/qmd { };
-
   # ansible2 automation key — baked into the bootstrap image so Director (and manual
   # provisioning) can SSH in as root immediately after the VM boots.
   # This is a PUBLIC key — safe to commit. The private key lives in 1Password (devops/ansible2).
@@ -29,9 +24,6 @@ let
   ansibleKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKD+F2AoDhUcKLXji5jOmPI/XduaADEs2cxAF1w/HSnr";
 in
 {
-  # Exposed as packages.x86_64-linux.qmd and packages.x86_64-linux.proxmox-bootstrap
-  flake.packages.x86_64-linux.qmd = qmdPkg "x86_64-linux";
-
   # Proxmox templates are always x86_64; this output is intentionally arch-specific.
   flake.packages.x86_64-linux.proxmox-bootstrap = inputs.nixos-generators.nixosGenerate {
     system = "x86_64-linux";

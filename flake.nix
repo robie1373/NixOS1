@@ -70,6 +70,14 @@
       url = "github:astro/microvm.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # QMD: local hybrid search engine for markdown (BM25 + vector + LLM reranking).
+    # Not in nixpkgs; upstream flake provides packages.default. Tracked here so
+    # nix flake update keeps it current automatically.
+    qmd = {
+      url = "github:tobi/qmd";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs:
