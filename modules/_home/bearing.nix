@@ -530,7 +530,7 @@ in {
       };
       Service = {
         Type      = "oneshot";
-        ExecStart = "/home/robie/.npm-global/bin/qmd update";
+        ExecStart = "${pkgs.qmd}/bin/qmd update";
       };
     };
     systemd.user.timers.qmd-update = {

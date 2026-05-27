@@ -4,6 +4,8 @@
     system = "x86_64-linux";
     specialArgs = { inherit inputs self; };
     modules = [
+      # Overlay: adds pkgs.qmd (local derivation, not in nixpkgs)
+      { nixpkgs.overlays = [ (final: _: { qmd = final.callPackage "${self}/pkgs/qmd" { }; }) ]; }
       ../../../hosts/flipper/configuration.nix
       ../../_features/common.nix
       ../../_features/tailscale-watchdog.nix
