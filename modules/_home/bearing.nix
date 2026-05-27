@@ -396,7 +396,7 @@ in {
   config = lib.mkIf cfg.enable {
 
     # ── Scripts on PATH ────────────────────────────────────────────────────
-    home.packages = [ bearingCmd bearingNotify bearingCheckin bearingBriefing bearingActivity bearingLint bearingIngest bearingStatus bearingLog ];
+    home.packages = [ bearingCmd bearingNotify bearingCheckin bearingBriefing bearingActivity bearingLint bearingIngest bearingStatus bearingLog pkgs.qmd ];
 
     # dunst: bearing notifications and the click-to-open rule depend on dunst.
     # Enable it here so the bearing module is self-contained regardless of which
