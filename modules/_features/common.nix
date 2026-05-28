@@ -106,5 +106,6 @@
   environment.systemPackages = with pkgs; [
     disko
     nixos-anywhere
+    unzip
   ];
 }
