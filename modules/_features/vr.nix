@@ -67,28 +67,12 @@ in
   # the override approach broke Steam menus (see ledger2/tech/vr-nixos.md).
   environment.sessionVariables.PRESSURE_VESSEL_IMPORT_OPENXR_1_RUNTIMES = "1";
 
-  # ── OpenComposite — OpenVR → OpenXR bridge ────────────────────────────
+  # ── OpenComposite — OpenVR → OpenXR bridge (Monado path) ─────────────
   # Intercepts Steam game OpenVR calls and routes them to Monado.
-  # openvrpaths.vrpath is written as a symlink via tmpfiles so it tracks
-  # the opencomposite store path across version updates automatically.
+  # Installed but NOT registered as the active runtime — SteamVR manages
+  # openvrpaths.vrpath itself. To switch to the Monado path, manually set:
+  #   ~/.config/openvr/openvrpaths.vrpath → opencomposite store path
+  # (previously done via tmpfiles L+ rule, removed 2026-06-01 to allow
+  # Gamescope + SteamVR path to work — SteamVR can't override a forced symlink)
   environment.systemPackages = [ pkgs.opencomposite ];
-
-  systemd.user.tmpfiles.rules =
-    let
-      vrpaths = pkgs.writeText "openvrpaths.vrpath" (builtins.toJSON {
-        config           = [];
-        external_drivers = null;
-        jsonid           = "vrpathreg";
-        log              = [];
-        runtime          = [ "${pkgs.opencomposite}/lib/opencomposite" ];
-        version          = 1;
-      });
-    in [
-      "L+ %h/.config/openvr/openvrpaths.vrpath - - - - ${vrpaths}"
-    ];
-
-  # ── Per-game Steam launch option ─────────────────────────────────────
-  # Add to ED's launch options in Steam so the game can reach the Monado
-  # socket inside Steam's bubblewrap container:
-  #   env PRESSURE_VESSEL_FILESYSTEMS_RW=$XDG_RUNTIME_DIR/monado_comp_ipc %command%
 }

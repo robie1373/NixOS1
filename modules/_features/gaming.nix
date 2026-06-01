@@ -9,7 +9,13 @@
     enable                              = true;
     remotePlay.openFirewall             = true;
     localNetworkGameTransfers.openFirewall = true;
-    gamescopeSession.enable             = true;
+    gamescopeSession = {
+      enable = true;
+      # vrserver (SteamVR) ships Qt without the wayland plugin. WAYLAND_DISPLAY
+      # being set in the Gamescope env causes Qt to attempt wayland and crash.
+      # Force XCB so vrserver uses Gamescope's XWayland instead.
+      env.QT_QPA_PLATFORM = "xcb";
+    };
 
     # ProtonGE: community Proton fork with better codec support and
     # compatibility patches that haven't landed in upstream Proton yet.
