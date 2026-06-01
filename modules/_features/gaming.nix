@@ -9,6 +9,7 @@
     enable                              = true;
     remotePlay.openFirewall             = true;
     localNetworkGameTransfers.openFirewall = true;
+    gamescopeSession.enable             = true;
 
     # ProtonGE: community Proton fork with better codec support and
     # compatibility patches that haven't landed in upstream Proton yet.
