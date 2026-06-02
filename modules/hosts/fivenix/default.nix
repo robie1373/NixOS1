@@ -31,7 +31,6 @@
           inputs.nix-index-database.homeModules.nix-index
           ../../../hosts/fivenix/home.nix
           ../../_home/common.nix
-          ../../_home/1password.nix
           ../../_home/gemini-cli.nix
           ../../_home/claude.nix
           ../../_home/obsidian.nix
