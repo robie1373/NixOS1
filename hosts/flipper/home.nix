@@ -18,7 +18,6 @@
   xdg.mimeApps.defaultApplications."application/pdf" = "org.pwmt.zathura.desktop";
   myHome.imv.enable             = true;
   myHome.mpd.enable             = true;
-  myHome.nas.enable             = true;
   myHome.yazi.enable		= true;
 
   myHome.bearing = {

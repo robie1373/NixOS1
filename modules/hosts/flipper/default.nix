@@ -24,6 +24,7 @@
       ../../_features/remote-access.nix
       ../../_features/gaming.nix
       ../../_features/korean.nix
+      ../../_features/user-apps.nix
       ../../_features/restic.nix
       inputs.home-manager.nixosModules.home-manager
       {
@@ -37,16 +38,13 @@
           ../../_home/common.nix
           ../../_home/gemini-cli.nix
           ../../_home/claude.nix
-          ../../_home/obsidian.nix
           ../../_home/bearing.nix
           ../../_home/desktop-noctalia.nix
           ../../_home/firefox.nix
           ../../_home/mpv.nix
           ../../_home/imv.nix
           ../../_home/mpd.nix
-          ../../_home/nas.nix
           ../../_home/yazi.nix
-          ../../_home/anki-bin.nix
           ../../_home/teacha.nix
         ];
       }

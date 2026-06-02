@@ -68,6 +68,8 @@
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (pkgs.lib.getName pkg) [
     "1password"
     "1password-gui"
+    "obsidian"
+    "anki-bin"
   ];
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];

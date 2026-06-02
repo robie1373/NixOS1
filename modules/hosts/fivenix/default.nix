@@ -12,6 +12,7 @@
       ../../_features/nfs-data.nix
       ../../_features/gaming.nix
       ../../_features/vr.nix
+      ../../_features/user-apps.nix
       ../../_features/korean.nix
       ../../_features/restic.nix
       ../../_features/desktop-niri.nix
@@ -33,14 +34,12 @@
           ../../_home/common.nix
           ../../_home/gemini-cli.nix
           ../../_home/claude.nix
-          ../../_home/obsidian.nix
           ../../_home/bearing.nix
           ../../_home/desktop-noctalia.nix
           ../../_home/firefox.nix
           ../../_home/yazi.nix
           ../../_home/mpv.nix
           ../../_home/imv.nix
-          ../../_home/anki-bin.nix
         ];
       }
     ];
