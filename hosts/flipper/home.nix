@@ -4,7 +4,6 @@
   home.stateVersion = "25.05";
 
   myHome.firefox.enable         = true;
-  myHome.mpv.enable             = true;
   # Wrapped program derivations (nix-wrapper-modules — config baked in)
   home.packages = with self.packages.${pkgs.stdenv.hostPlatform.system}; [
     zathura
@@ -16,9 +15,7 @@
     pkgs.nodejs_22  # QMD runtime
   ];
   xdg.mimeApps.defaultApplications."application/pdf" = "org.pwmt.zathura.desktop";
-  myHome.imv.enable             = true;
   myHome.mpd.enable             = true;
-  myHome.yazi.enable		= true;
 
   myHome.bearing = {
     enable       = true;

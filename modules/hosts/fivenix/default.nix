@@ -37,9 +37,6 @@
           ../../_home/bearing.nix
           ../../_home/desktop-noctalia.nix
           ../../_home/firefox.nix
-          ../../_home/yazi.nix
-          ../../_home/mpv.nix
-          ../../_home/imv.nix
         ];
       }
     ];
