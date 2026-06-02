@@ -4,7 +4,6 @@
   home.stateVersion = "25.05";
 
   myHome.firefox.enable         = true;
-  myHome.tablet.enable          = true;
   myHome.mpv.enable             = true;
   # Wrapped program derivations (nix-wrapper-modules — config baked in)
   home.packages = with self.packages.${pkgs.stdenv.hostPlatform.system}; [

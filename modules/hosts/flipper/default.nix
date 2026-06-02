@@ -41,7 +41,6 @@
           ../../_home/bearing.nix
           ../../_home/desktop-noctalia.nix
           ../../_home/firefox.nix
-          ../../_home/tablet.nix
           ../../_home/mpv.nix
           ../../_home/imv.nix
           ../../_home/mpd.nix
