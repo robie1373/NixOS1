@@ -12,6 +12,9 @@
   hardware.bluetooth.enable = true;
   hardware.bluetooth.powerOnBoot = true;
 
+  # Prefer keeping processes in RAM; reduces swap pressure and speeds up shutdown.
+  boot.kernel.sysctl."vm.swappiness" = 10;
+
   # ── Power management ────────────────────────────────────────────────────────
   # Swap is 16G (= RAM) — sufficient for hibernate. resumeDevice tells the
   # kernel where to find the saved image. Label is set by disko:
