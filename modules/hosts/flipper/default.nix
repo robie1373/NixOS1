@@ -36,8 +36,6 @@
           inputs.nix-index-database.homeModules.nix-index
           ../../../hosts/flipper/home.nix
           ../../_home/common.nix
-          ../../_home/gemini-cli.nix
-          ../../_home/claude.nix
           ../../_home/bearing.nix
           ../../_home/desktop-noctalia.nix
           ../../_home/firefox.nix

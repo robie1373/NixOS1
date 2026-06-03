@@ -4,6 +4,8 @@
     anki-bin
     obsidian
     yazi
+    claude-code
+    gemini-cli
 
     # mpv with uosc UI + sponsorblock, Wayland native
     (mpv.override {
