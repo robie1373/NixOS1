@@ -17,6 +17,13 @@
     imv
   ];
 
+  # mpv: base config. mpv checks $XDG_CONFIG_DIRS, which includes /etc/xdg/.
+  environment.etc."xdg/mpv/mpv.conf".text = ''
+    profile=high-quality
+    ytdl-format=bestvideo+bestaudio
+    cache-default=4000000
+  '';
+
   # imv: Catppuccin Macchiato theme. imv checks $XDG_CONFIG_DIRS,
   # which includes /etc/xdg/ on NixOS.
   environment.etc."xdg/imv/config".text = ''
