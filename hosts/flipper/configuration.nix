@@ -76,6 +76,15 @@
   # re-add the overlay using docs/runbooks/pin-broken-package.md.
   # Known broken: 2.1.88, 2.1.77 (post-26.05 structure change)
 
+  # ── Hardware video acceleration ────────────────────────────────────────────
+  # iHD driver for Gen8+ Intel (Iris Xe on this host). Without it, VAAPI has no
+  # backend and Firefox/mpv/etc. fall back to software video decode — chronic
+  # CPU heat, thermal throttling, and visible stutter on YouTube under any
+  # sustained load. iHD provides H.264/H.265/VP9 hardware decode.
+  hardware.graphics.extraPackages = with pkgs; [
+    intel-media-driver
+  ];
+
   environment.systemPackages = with pkgs; [
     wget
     tree
@@ -87,6 +96,7 @@
     libimobiledevice  	# for mounting iphone
     ollama		# CLI client — server runs on fivenix (see OLLAMA_HOST below)
     calibre		# eBook manager
+    libva-utils		# vainfo, for verifying hardware video decode
   ];
 
   # Add local scripts and apps to the path
@@ -96,6 +106,10 @@
 
   # Point ollama CLI at fivenix's GPU server so `ollama run` works without flags.
   environment.sessionVariables.OLLAMA_HOST = "http://192.168.7.137:11434";
+
+  # Tell VAAPI clients (Firefox, mpv, etc.) which driver to dlopen. Paired with
+  # hardware.graphics.extraPackages above.
+  environment.sessionVariables.LIBVA_DRIVER_NAME = "iHD";
 
   services.printing.enable = lib.mkForce true;
 
