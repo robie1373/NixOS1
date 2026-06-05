@@ -85,7 +85,6 @@
     ripgrep
     ifuse 		# for mounting iphone
     libimobiledevice  	# for mounting iphone
-    bambu-studio
     ollama		# CLI client — server runs on fivenix (see OLLAMA_HOST below)
     calibre		# eBook manager
   ];
