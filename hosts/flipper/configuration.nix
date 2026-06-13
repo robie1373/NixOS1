@@ -186,5 +186,9 @@
     ];
   };
 
+  # Persistent desktop + ntfy alert if backups go stale (closed laptop / NAS
+  # outage skips are silent otherwise). maxAgeDays default 3.
+  mySystem.resticStalenessAlert.enable = true;
+
   system.stateVersion = "25.11";
 }
