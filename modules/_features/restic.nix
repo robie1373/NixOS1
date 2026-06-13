@@ -159,18 +159,5 @@ in
         echo "NAS ${cfg.nasHost} unreachable after 90 s — skipping backup" >&2
         exit 1
       '';
-
-    # Record the time of the last *successful* backup. ExecStartPost runs only
-    # when every ExecStart step (backup → unlock → prune) succeeded; a skip
-    # (ExecCondition) or a mid-run failure leaves the stamp untouched. Consumed
-    # by the restic-staleness-alert module to detect silently-missed backups
-    # (closed laptop, NAS outage) that systemd otherwise reports as "skipped",
-    # not "failed", and therefore never alerts on.
-    systemd.tmpfiles.rules = [
-      "d /var/lib/restic-staleness 0755 root root -"
-      "f /var/lib/restic-staleness/last-success 0644 root root -"
-    ];
-    systemd.services."restic-backups-nas".serviceConfig.ExecStartPost =
-      "${pkgs.coreutils}/bin/touch /var/lib/restic-staleness/last-success";
   };
 }
