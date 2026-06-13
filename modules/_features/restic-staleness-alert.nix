@@ -1,27 +1,27 @@
 # modules/_features/restic-staleness-alert.nix
 #
-# Alert when restic NAS backups are stale — by querying the ACTUAL repository,
-# not a local proxy.
+# Real backup monitoring for the NAS restic repo — two root-side checks that
+# query the ACTUAL repository (not a proxy), plus a user-side notifier.
 #
-# Design note (why a direct query, root-side): an earlier version touched a
-# success-stamp from the backup job's ExecStartPost and watched the stamp's age.
-# That only monitors the *producer's self-report* — "the backup job said it
-# succeeded" — and is blind to the repository itself (NAS-side data loss, repo
-# corruption, retention pruning everything, a snapshot that exited 0 but didn't
-# persist). This version runs `restic snapshots --json --latest 1` against the
-# real repo and checks the newest snapshot's age — the same thing `sudo restic-nas
-# snapshots` shows by hand. That needs the repo password + SSH key, which are
-# root-only agenix secrets, so the check is a ROOT systemd service (no interactive
-# sudo — root reads the secrets directly, exactly like the backup job does).
+#   1. restic-snapshot-check  (every 6h): is there a recent snapshot?
+#        `restic snapshots --json --latest 1` → alert if newest >= maxAgeDays.
+#   2. restic-restore-test    (weekly):    can we actually get bytes back?
+#        Picks a SEMI-RANDOM file (size-capped) from the latest snapshot,
+#        restores it, asserts the byte count matches. Proves the full
+#        decrypt→fetch→write path, which `restic snapshots` does not.
 #
-# Split responsibilities:
-#   - root  `restic-snapshot-check`  : queries the repo, decides stale/healthy,
-#                                       writes a state/alert file, sends ntfy.
-#   - user  `restic-staleness-notify`: reads the alert file, raises a persistent
-#                                       dunst notification in the live session.
+# Both need the root-only agenix repo creds, so they run as ROOT systemd
+# services (no interactive sudo — root reads the secrets directly, exactly like
+# the backup job). They read mySystem.restic.{nasUser,nasHost,nasPath,paths} +
+# the agenix secret paths declared by modules/_features/restic.nix, so host
+# params never drift.
 #
-# Reads mySystem.restic.{nasUser,nasHost,nasPath} and the agenix secret paths
-# that modules/_features/restic.nix already declares, so host params never drift.
+# Alerts: each check writes/clears its own file under ${stateDir}/alerts/ and
+# sends a deduped (1/24h) ntfy. The user `restic-staleness-notify` timer raises a
+# persistent dunst notification (-u critical -t 0) showing all active alerts.
+# Persistent = it does NOT auto-expire and is NOT auto-cleared on recovery; Robie
+# dismisses it himself (per request). While a problem persists the notification
+# is replaced in place (fixed -r id) rather than re-stacked.
 
 { config, lib, pkgs, ... }:
 
@@ -34,8 +34,7 @@ let
   keyPath = config.age.secrets."restic-backup-${hostname}".path;
   repo    = "sftp:${rcfg.nasUser}@${rcfg.nasHost}:/mnt/${rcfg.nasPath}";
 
-  # Same SFTP-subsystem invocation the backup uses (single token, no spaces).
-  sshCmd = pkgs.writeShellScript "restic-staleness-ssh" ''
+  sshCmd = pkgs.writeShellScript "restic-monitor-ssh" ''
     exec ${pkgs.openssh}/bin/ssh \
       -s -i ${keyPath} \
       -o BatchMode=yes \
@@ -45,78 +44,122 @@ let
 
   stateDir = "/var/lib/restic-staleness";
 
-  # ── root: query the real repo and decide ──────────────────────────────────
-  checkScript = pkgs.writeShellScript "restic-snapshot-check" ''
+  # Shared alert sink: `alert raise <name> <msg>` / `alert clear <name>`.
+  alertHelper = pkgs.writeShellScript "restic-monitor-alert" ''
     set -u
-    PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.gnugrep pkgs.gnused pkgs.curl pkgs.restic ]}
+    PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.curl ]}
+    action="$1"; name="$2"; msg="''${3:-}"
+    alerts="${stateDir}/alerts"; mkdir -p "$alerts"
+    case "$action" in
+      raise)
+        printf '%s\n' "$msg" > "$alerts/$name"
+        stamp="${stateDir}/notified.$name"
+        if [ ! -e "$stamp" ] || [ $(( $(date +%s) - $(stat -c %Y "$stamp") )) -ge 86400 ]; then
+          topic=$(cat "${cfg.ntfyTopicFile}" 2>/dev/null || true)
+          if [ -n "$topic" ] && curl -fsS \
+               -H "Title: ⚠ flipper backup: $name" -H "Priority: high" \
+               -H "Tags: floppy_disk,warning" -d "$msg" \
+               "${cfg.ntfyServer}/$topic" >/dev/null 2>&1; then
+            touch "$stamp"
+          fi
+        fi ;;
+      clear)
+        rm -f "$alerts/$name" "${stateDir}/notified.$name" ;;
+    esac
+  '';
+
+  # 1. Is there a recent snapshot? (queries the real repo)
+  snapshotCheck = pkgs.writeShellScript "restic-snapshot-check" ''
+    set -u
+    PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.gnugrep pkgs.gnused pkgs.restic ]}
     export RESTIC_REPOSITORY="${repo}"
     export RESTIC_PASSWORD_FILE="${pwPath}"
     export RESTIC_CACHE_DIR="/var/cache/restic-staleness"
-
-    ALERT="${stateDir}/alert"          # present => desktop shows it; contents = message
-    STATUS="${stateDir}/status"        # last result line, for `cat`/debugging
-    NOTIFIED="${stateDir}/notified"    # ntfy dedup stamp (once per 24h)
-    LASTVERIFY="${stateDir}/last-verify"  # last successful repo query
-    MAXAGE=${toString cfg.maxAgeDays}
+    LASTVERIFY="${stateDir}/last-verify"; MAXAGE=${toString cfg.maxAgeDays}
     now=$(date +%s)
-
-    send_ntfy() {
-      # de-duplicate: at most one push per 24h while stale
-      if [ -e "$NOTIFIED" ] && [ $(( now - $(stat -c %Y "$NOTIFIED") )) -lt 86400 ]; then
-        return 0
-      fi
-      topic=$(cat "${cfg.ntfyTopicFile}" 2>/dev/null || true)
-      [ -z "$topic" ] && return 0
-      if curl -fsS -H "Title: ⚠ flipper backups unverified" -H "Priority: high" \
-           -H "Tags: floppy_disk,warning" -d "$1" \
-           "${cfg.ntfyServer}/$topic" >/dev/null 2>&1; then
-        touch "$NOTIFIED"
-      fi
-    }
-    raise() { printf '%s\n' "$1" > "$ALERT"; printf '%s  ALERT: %s\n' "$(date -Is)" "$1" > "$STATUS"; send_ntfy "$1"; }
-    clear() { rm -f "$ALERT" "$NOTIFIED"; printf '%s  ok: %s\n' "$(date -Is)" "$1" > "$STATUS"; }
 
     if out=$(restic -o sftp.command=${sshCmd} snapshots --json --latest 1 2>/dev/null); then
       touch "$LASTVERIFY"
       ts=$(printf '%s' "$out" | grep -oE '"time":"[^"]+"' | tail -1 | sed 's/.*"time":"//; s/".*//')
       if [ -z "$ts" ]; then
-        raise "Backup repo is reachable but contains NO snapshots."
+        ${alertHelper} raise snapshot-age "Backup repo is reachable but contains NO snapshots."
       else
         epoch=$(date -d "$ts" +%s 2>/dev/null || echo 0)
         age=$(( (now - epoch) / 86400 ))
         when=$(date -d "$ts" '+%Y-%m-%d %H:%M' 2>/dev/null || echo "$ts")
         if [ "$age" -ge "$MAXAGE" ]; then
-          raise "Newest backup snapshot is $age days old (latest: $when). Repo is reachable — backups have lapsed."
+          ${alertHelper} raise snapshot-age "Newest backup snapshot is $age days old (latest: $when). Repo is reachable — backups have lapsed."
         else
-          clear "newest snapshot $when ($age d old)"
+          ${alertHelper} clear snapshot-age
         fi
       fi
     else
-      # Repo query failed (NAS down / network). Not necessarily stale backups —
-      # only alarm if we have not been able to VERIFY for >= MAXAGE days.
+      # Repo unreachable: only alarm if we have not verified for >= MAXAGE days.
       if [ ! -e "$LASTVERIFY" ] || [ $(( now - $(stat -c %Y "$LASTVERIFY") )) -ge $(( MAXAGE * 86400 )) ]; then
-        raise "Cannot verify backups: repo unreachable, and no successful check in >= $MAXAGE days."
-      else
-        printf '%s  repo unreachable (transient — within grace)\n' "$(date -Is)" > "$STATUS"
+        ${alertHelper} raise snapshot-age "Cannot verify backups: repo unreachable, and no successful check in >= $MAXAGE days."
       fi
     fi
   '';
 
-  # ── user: surface the alert file in the live desktop session ───────────────
-  notifyScript = pkgs.writeShellScript "restic-staleness-notify" ''
+  # 2. Can we actually restore? Pick a semi-random small file and verify bytes.
+  restoreTest = pkgs.writeShellScript "restic-restore-test" ''
+    set -u
+    PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.gnugrep pkgs.restic ]}
+    export RESTIC_REPOSITORY="${repo}"
+    export RESTIC_PASSWORD_FILE="${pwPath}"
+    export RESTIC_CACHE_DIR="/var/cache/restic-staleness"
+    CAP=${toString cfg.restoreTestMaxFileBytes}
+    LIST=$(mktemp); TARGET="${stateDir}/restore-test"
+    rm -rf "$TARGET"; mkdir -p "$TARGET"
+
+    # Bounded candidate list: regular files, 0 < size <= CAP, from the backup
+    # paths. head closes the pipe early so `restic ls` stops (bounded time).
+    # NOTE: selection is biased toward the traversal-early part of the tree;
+    # good enough to rotate files, not a uniform sample. See restic.md.
+    restic -o sftp.command=${sshCmd} ls -l latest ${lib.escapeShellArgs rcfg.paths} 2>/dev/null \
+      | while read -r mode uid gid size rest; do
+          case "$mode" in -*) ;; *) continue ;; esac
+          case "$size" in ""|*[!0-9]*) continue ;; esac
+          [ "$size" -gt 0 ] && [ "$size" -le "$CAP" ] || continue
+          p="''${rest#* }"; p="''${p#* }"
+          printf '%s\t%s\n' "$size" "$p"
+        done | head -n ${toString cfg.restoreTestCandidateLimit} > "$LIST"
+
+    n=$(wc -l < "$LIST")
+    if [ "$n" -eq 0 ]; then
+      # Couldn't list (repo unreachable / empty): don't false-alarm — the
+      # snapshot-age check owns the "repo down too long" alert.
+      rm -f "$LIST"; rmdir "$TARGET" 2>/dev/null || true
+      exit 0
+    fi
+
+    idx=$(( RANDOM % n + 1 ))
+    line=$(sed -n "''${idx}p" "$LIST")
+    expected=''${line%%	*}; file=''${line#*	}
+    rm -f "$LIST"
+
+    if restic -o sftp.command=${sshCmd} restore latest --include "$file" --target "$TARGET" >/dev/null 2>&1 \
+       && got=$(stat -c %s "$TARGET$file" 2>/dev/null) && [ "$got" = "$expected" ]; then
+      ${alertHelper} clear restore-test
+    else
+      ${alertHelper} raise restore-test "Restore test FAILED for ONE RANDOMLY-CHOSEN file: $file (expected $expected bytes, got ''${got:-none}). This tested a single random file — it may be a one-off (that file/blob) rather than total loss. Confirm before flipping out: re-run 'systemctl start restic-restore-test' or do a manual restore (see restic.md). Treat as a real, systemic problem only if it keeps failing on different files."
+    fi
+    rm -rf "$TARGET"
+  '';
+
+  # User: surface all active alerts in the live desktop session.
+  notify = pkgs.writeShellScript "restic-staleness-notify" ''
     set -u
     [ "$(${pkgs.coreutils}/bin/id -un)" = "${cfg.user}" ] || exit 0
-    ALERT="${stateDir}/alert"
-    if [ -s "$ALERT" ]; then
-      # -r: fixed id so repeats replace rather than stack. critical+(-t 0): persists.
-      ${pkgs.dunst}/bin/dunstify -a "Backup Monitor" -u critical -t 0 -r 71717 \
-        -i dialog-warning "⚠ Backups not verified" "$(${pkgs.coreutils}/bin/cat "$ALERT")" || true
-    fi
+    msgs=$(${pkgs.coreutils}/bin/cat ${stateDir}/alerts/* 2>/dev/null || true)
+    [ -z "$msgs" ] && exit 0
+    ${pkgs.dunst}/bin/dunstify -a "Backup Monitor" -u critical -t 0 -r 71717 \
+      -i dialog-warning "⚠ Backup check failed" "$msgs" || true
   '';
 in
 {
   options.mySystem.resticStalenessAlert = {
-    enable = lib.mkEnableOption "alert (persistent desktop + ntfy) when the real restic repo has no recent snapshot";
+    enable = lib.mkEnableOption "real restic backup monitoring (snapshot-age + restore test) with persistent desktop + ntfy alerts";
 
     user = lib.mkOption {
       type = lib.types.str; default = "robie";
@@ -124,7 +167,19 @@ in
     };
     maxAgeDays = lib.mkOption {
       type = lib.types.int; default = 3;
-      description = "Alert if the newest snapshot in the repo is at least this many days old (or unverifiable this long).";
+      description = "Alert if the newest snapshot is at least this many days old (or unverifiable this long).";
+    };
+    restoreTestOnCalendar = lib.mkOption {
+      type = lib.types.str; default = "Sun 11:00";
+      description = "systemd OnCalendar for the weekly restore test.";
+    };
+    restoreTestMaxFileBytes = lib.mkOption {
+      type = lib.types.int; default = 52428800;  # 50 MiB
+      description = "Only pick restore-test candidate files at or under this size.";
+    };
+    restoreTestCandidateLimit = lib.mkOption {
+      type = lib.types.int; default = 5000;
+      description = "Cap the candidate file list (bounds `restic ls` time).";
     };
     ntfyServer = lib.mkOption {
       type = lib.types.str; default = "https://ntfy.vimba-stairs.ts.net";
@@ -139,38 +194,39 @@ in
   config = lib.mkIf cfg.enable {
     systemd.tmpfiles.rules = [
       "d ${stateDir} 0755 root root -"
-      "f ${stateDir}/last-verify 0644 root root -"   # seed: grace before first check
+      "d ${stateDir}/alerts 0755 root root -"
+      "f ${stateDir}/last-verify 0644 root root -"     # seed: grace before first check
       "d /var/cache/restic-staleness 0700 root root -"
     ];
 
-    # Root: the authoritative repo query.
     systemd.services.restic-snapshot-check = {
       description = "Check the real restic repo for a recent snapshot";
-      serviceConfig = { Type = "oneshot"; ExecStart = "${checkScript}"; };
+      serviceConfig = { Type = "oneshot"; ExecStart = "${snapshotCheck}"; };
     };
     systemd.timers.restic-snapshot-check = {
       description = "Periodic real restic snapshot-age check";
       wantedBy = [ "timers.target" ];
-      timerConfig = {
-        OnBootSec        = "10min";
-        OnUnitActiveSec  = "6h";
-        Persistent       = true;
-      };
+      timerConfig = { OnBootSec = "10min"; OnUnitActiveSec = "6h"; Persistent = true; };
     };
 
-    # User: show the result in the live session, when logged in.
+    systemd.services.restic-restore-test = {
+      description = "Weekly restic restore test (random file, verify bytes)";
+      serviceConfig = { Type = "oneshot"; ExecStart = "${restoreTest}"; };
+    };
+    systemd.timers.restic-restore-test = {
+      description = "Weekly restic restore test";
+      wantedBy = [ "timers.target" ];
+      timerConfig = { OnCalendar = cfg.restoreTestOnCalendar; Persistent = true; RandomizedDelaySec = "30min"; };
+    };
+
     systemd.user.services.restic-staleness-notify = {
-      description = "Surface restic staleness alert on the desktop";
-      serviceConfig = { Type = "oneshot"; ExecStart = "${notifyScript}"; };
+      description = "Surface restic backup alerts on the desktop";
+      serviceConfig = { Type = "oneshot"; ExecStart = "${notify}"; };
     };
     systemd.user.timers.restic-staleness-notify = {
-      description = "Periodic desktop check of restic staleness state";
+      description = "Periodic desktop check of restic backup alerts";
       wantedBy = [ "timers.target" ];
-      timerConfig = {
-        OnStartupSec    = "3min";
-        OnUnitActiveSec = "1h";
-        Persistent      = true;
-      };
+      timerConfig = { OnStartupSec = "3min"; OnUnitActiveSec = "1h"; Persistent = true; };
     };
   };
 }
