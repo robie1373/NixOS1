@@ -34,10 +34,11 @@ let
   dns1    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG7QRVt1c+o7HR1OQBqcvrRY4T4fLksAKbPCmGJjC8hE";
   dns2    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK5FZLBveMFgzXA/xYHGgMRu9urFqf+H7Q43jilwF/n0";
   nixsrv1 = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJX6AZgzVx5nVNG8AujqQ6Knchc79NrowlUaYH1fPLIZ";
+  observ  = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINQnS795H+GiGzkNsoWrcfyMD7BLcZMO/gheMgcBKAEO";
 
   # All servers that use tailscale-autoconnect.nix must be listed here.
   # Re-key after adding each new server: cd secrets && nix run github:ryantm/agenix -- -r
-  tailscaleServers = [ admin ntfy omada langlab dns1 dns2 nixsrv1 ];
+  tailscaleServers = [ admin ntfy omada langlab dns1 dns2 nixsrv1 observ ];
 in
 {
   # ntfy admin password — local user database (pre-Kanidm migration)
