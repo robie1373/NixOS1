@@ -15,6 +15,7 @@
 {
   imports = [
     inputs.agenix.nixosModules.default
+    ../_features/observability-agent.nix
   ];
 
   # ── Boot ────────────────────────────────────────────────────────────────────
@@ -64,6 +65,12 @@
   users.users.root.openssh.authorizedKeys.keys = [
     "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKD+F2AoDhUcKLXji5jOmPI/XduaADEs2cxAF1w/HSnr"
   ];
+
+  # ── Observability agent ──────────────────────────────────────────────────────
+  # node-exporter + Alloy log shipping to the observ visibility host. Enabled
+  # fleet-wide so every lab server ships data automatically; dormant on a host
+  # until its next rebuild. Degrades gracefully if observ is down (chaos-monkey).
+  mySystem.observabilityAgent.enable = true;
 
   # ── Tailscale ────────────────────────────────────────────────────────────────
   # Enabled on all lab servers for mesh connectivity and Director access.
