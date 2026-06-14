@@ -147,14 +147,24 @@ let
     rm -rf "$TARGET"
   '';
 
-  # User: surface all active alerts in the live desktop session.
+  # User: surface all active alerts in the live desktop session. Idempotent —
+  # shows once per distinct alert state (a marker in the per-user runtime dir
+  # prevents re-popping what's already displayed, so a short timer can't spam and
+  # a manual dismiss is respected). Reads whatever is in alerts/ regardless of how
+  # it got there, so it never depends on catching a dir-change transition.
   notify = pkgs.writeShellScript "restic-staleness-notify" ''
     set -u
-    [ "$(${pkgs.coreutils}/bin/id -un)" = "${cfg.user}" ] || exit 0
-    msgs=$(${pkgs.coreutils}/bin/cat ${stateDir}/alerts/* 2>/dev/null || true)
-    [ -z "$msgs" ] && exit 0
-    ${pkgs.dunst}/bin/dunstify -a "Backup Monitor" -u critical -t 0 -r 71717 \
+    PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.dunst ]}
+    [ "$(id -un)" = "${cfg.user}" ] || exit 0
+    marker="/run/user/$(id -u)/restic-staleness-shown"
+    msgs=$(cat ${stateDir}/alerts/* 2>/dev/null || true)
+    if [ -z "$msgs" ]; then
+      rm -f "$marker"; exit 0   # healthy: forget; leave any popup for manual dismiss
+    fi
+    [ -f "$marker" ] && [ "$(cat "$marker")" = "$msgs" ] && exit 0   # already showing this
+    dunstify -a "Backup Monitor" -u critical -t 0 -r 71717 \
       -i dialog-warning "⚠ Backup check failed" "$msgs" || true
+    printf '%s' "$msgs" > "$marker"
   '';
 in
 {
@@ -226,7 +236,9 @@ in
     systemd.user.timers.restic-staleness-notify = {
       description = "Periodic desktop check of restic backup alerts";
       wantedBy = [ "timers.target" ];
-      timerConfig = { OnStartupSec = "3min"; OnUnitActiveSec = "1h"; Persistent = true; };
+      # Short interval: the idempotent notifier won't re-pop unchanged alerts, so
+      # this just bounds worst-case latency to ~5 min without spamming.
+      timerConfig = { OnStartupSec = "30s"; OnUnitActiveSec = "5min"; Persistent = true; };
     };
 
     # Event-driven trigger: fire the notifier the instant a check writes/clears an
