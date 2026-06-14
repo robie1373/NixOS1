@@ -102,6 +102,11 @@ let
   '';
 
   # 2. Can we actually restore? Pick a semi-random small file and verify bytes.
+  # NB: no `sed`/`awk` here — selection is pure coreutils (head|tail + bash param
+  # expansion) so the script can't break on a missing-binary PATH (it did once:
+  # `sed: command not found` made it fail blind, 2026-06-14). Logs PASS/FAIL to the
+  # journal (so a failed filename is recoverable) and writes a success message that
+  # the user notifier shows as an auto-expiring popup.
   restoreTest = pkgs.writeShellScript "restic-restore-test" ''
     set -u
     PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.gnugrep pkgs.restic ]}
@@ -109,7 +114,7 @@ let
     export RESTIC_PASSWORD_FILE="${pwPath}"
     export RESTIC_CACHE_DIR="/var/cache/restic-staleness"
     CAP=${toString cfg.restoreTestMaxFileBytes}
-    LIST=$(mktemp); TARGET="${stateDir}/restore-test"
+    LIST=$(mktemp); TARGET="${stateDir}/restore-test"; OK="${stateDir}/restore-ok"
     rm -rf "$TARGET"; mkdir -p "$TARGET"
 
     # Bounded candidate list: regular files, 0 < size <= CAP, from the backup
@@ -129,19 +134,30 @@ let
     if [ "$n" -eq 0 ]; then
       # Couldn't list (repo unreachable / empty): don't false-alarm — the
       # snapshot-age check owns the "repo down too long" alert.
+      echo "restore-test: no candidates listed (repo unreachable/empty) — skipping, no alarm"
       rm -f "$LIST"; rmdir "$TARGET" 2>/dev/null || true
       exit 0
     fi
 
     idx=$(( RANDOM % n + 1 ))
-    line=$(sed -n "''${idx}p" "$LIST")
+    line=$(head -n "$idx" "$LIST" | tail -n 1)
     expected=''${line%%	*}; file=''${line#*	}
     rm -f "$LIST"
 
+    if [ -z "$file" ] || [ -z "$expected" ]; then
+      # Internal/selection error — NOT a backup failure. Don't raise the scary alert.
+      echo "restore-test: INTERNAL ERROR selecting a candidate (line='$line')" >&2
+      rm -rf "$TARGET"; exit 1
+    fi
+
     if restic -o sftp.command=${sshCmd} restore latest --include "$file" --target "$TARGET" >/dev/null 2>&1 \
        && got=$(stat -c %s "$TARGET$file" 2>/dev/null) && [ "$got" = "$expected" ]; then
+      echo "restore-test: PASS — restored $file ($got bytes, verified)"
       ${alertHelper} clear restore-test
+      printf 'Restored %s (%s bytes verified) — %s\n' "$file" "$got" "$(date '+%a %H:%M')" > "$OK"
     else
+      echo "restore-test: FAIL — $file (expected $expected bytes, got ''${got:-none})" >&2
+      rm -f "$OK"
       ${alertHelper} raise restore-test "Restore test FAILED for ONE RANDOMLY-CHOSEN file: $file (expected $expected bytes, got ''${got:-none}). This tested a single random file — it may be a one-off (that file/blob) rather than total loss. Confirm before flipping out: re-run 'systemctl start restic-restore-test' or do a manual restore (see restic.md). Treat as a real, systemic problem only if it keeps failing on different files."
     fi
     rm -rf "$TARGET"
@@ -156,15 +172,28 @@ let
     set -u
     PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.dunst ]}
     [ "$(id -un)" = "${cfg.user}" ] || exit 0
-    marker="/run/user/$(id -u)/restic-staleness-shown"
+    rt="/run/user/$(id -u)"
+
+    # Failures → persistent (critical, no timeout). Shown once per distinct state.
+    marker="$rt/restic-staleness-shown"
     msgs=$(cat ${stateDir}/alerts/* 2>/dev/null || true)
     if [ -z "$msgs" ]; then
-      rm -f "$marker"; exit 0   # healthy: forget; leave any popup for manual dismiss
+      rm -f "$marker"
+    elif [ ! -f "$marker" ] || [ "$(cat "$marker")" != "$msgs" ]; then
+      dunstify -a "Backup Monitor" -u critical -t 0 -r 71717 \
+        -i dialog-warning "⚠ Backup check failed" "$msgs" || true
+      printf '%s' "$msgs" > "$marker"
     fi
-    [ -f "$marker" ] && [ "$(cat "$marker")" = "$msgs" ] && exit 0   # already showing this
-    dunstify -a "Backup Monitor" -u critical -t 0 -r 71717 \
-      -i dialog-warning "⚠ Backup check failed" "$msgs" || true
-    printf '%s' "$msgs" > "$marker"
+
+    # Restore-test success → auto-expiring (normal, ~8s). Distinct replace-id so it
+    # never clobbers a failure popup. Shown once per distinct result.
+    okmarker="$rt/restic-restore-ok-shown"
+    ok=$(cat ${stateDir}/restore-ok 2>/dev/null || true)
+    if [ -n "$ok" ] && { [ ! -f "$okmarker" ] || [ "$(cat "$okmarker")" != "$ok" ]; }; then
+      dunstify -a "Backup Monitor" -u normal -t 8000 -r 71718 \
+        -i dialog-information "✅ Restore test passed" "$ok" || true
+      printf '%s' "$ok" > "$okmarker"
+    fi
   '';
 in
 {
@@ -206,6 +235,7 @@ in
       "d ${stateDir} 0755 root root -"
       "d ${stateDir}/alerts 0755 root root -"
       "f ${stateDir}/last-verify 0644 root root -"     # seed: grace before first check
+      "f ${stateDir}/restore-ok 0644 root root -"      # seed: restore-test success msg
       "d /var/cache/restic-staleness 0700 root root -"
     ];
 
@@ -246,9 +276,12 @@ in
     # The hourly timer above remains a backstop. The alerts dir is 0755, so the
     # user manager can inotify-watch it.
     systemd.user.paths.restic-staleness-notify = {
-      description = "Watch restic alerts dir; surface changes immediately";
+      description = "Watch restic alerts dir + success file; surface changes immediately";
       wantedBy = [ "paths.target" ];
-      pathConfig = { PathModified = "${stateDir}/alerts"; };
+      # Watch the alerts dir (create/delete of failure alerts) AND the restore-ok
+      # file directly (PathModified on a file catches in-place writes, unlike on a
+      # dir). The 5-min timer is the backstop.
+      pathConfig = { PathModified = [ "${stateDir}/alerts" "${stateDir}/restore-ok" ]; };
     };
   };
 }
