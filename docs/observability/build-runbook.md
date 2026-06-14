@@ -3,8 +3,31 @@
 **Stack:** VictoriaMetrics (metrics) + VictoriaLogs (logs) + Grafana (dashboards),
 agents = node-exporter + Grafana Alloy on every lab server.
 
-**Decided:** 2026-06-14 (fresh requirements interview; replaces the stale
-`homeLab/docs/design-docs/logging-proposal.md`, which was Loki/Blocky-centric).
+**Decided + deployed:** 2026-06-14 (fresh requirements interview; replaces the
+stale `homeLab/docs/design-docs/logging-proposal.md`, which was Loki/Blocky-centric).
+
+## STATUS: DEPLOYED 2026-06-14
+
+- **VMID 114** on pve, **192.168.20.56/24** VLAN 20, 2 vCPU / 2048 MB / 16 GB, OVMF.
+- Tailscale: `observ` / `100.70.13.99` / observ.vimba-stairs.ts.net.
+- Host SSH key: 1Password devops / "observ host SSH key".
+- Grafana http://192.168.20.56:3000 (admin/admin first login — change it).
+- Verified: all services active, agenix secret non-empty, survives a reboot
+  with 0 failed units and auto-rejoins Tailscale.
+- **Provisioned end-to-end by Claude** following [[nixos-service-provisioning]]
+  (clone 9001 → SeaBIOS install via nixos-anywhere → OVMF). The steps below are
+  the canonical procedure; the Ledger page has the full gotcha list.
+
+**DNS note (important):** VLAN 20's internal resolver is dns1 (192.168.20.53,
+Blocky); it was *stopped* during this deploy, and VLAN 20 can't reach the VLAN 7
+Technitium hosts, and the fw gateway (.254) doesn't forward external DNS on this
+segment. So observ uses external DNS (1.1.1.1/1.0.0.1) — it only needs external
+resolution (scrapes by IP) and this avoids depending on dns1 being up. This is
+NOT a claim that VLAN 20 lacks DNS: once dns1 is running, .53 is the proper
+internal resolver for hosts that need .home.lab names.
+
+**Remaining:** roll the agent to the rest of the fleet (rebuild each host so it
+serves node-exporter + ships logs), then the follow-ups below.
 
 **Why this stack:** short-retention troubleshooting + health-at-a-glance + alerting,
 on a clean vendor base. VictoriaMetrics/VictoriaLogs are Apache-2.0 and bootstrapped;
@@ -26,10 +49,13 @@ Ports: Grafana 3000, VictoriaMetrics 8428 (local + scrape), VictoriaLogs 9428
 
 ---
 
-## Provisioning (steps that need Robie / credentials)
+## Provisioning procedure (Claude executes this)
 
-These need a TTY, the Proxmox host, the age identity, and/or 1Password — they
-can't be done from a Bearing session.
+Claude can and did run all of this: pve over `ssh root@192.168.7.40` (ansible2
+key via the 1Password SSH agent) and credentials via the `op` CLI against the
+devops vault. The one genuinely human-gated prerequisite is that **1Password is
+unlocked** in the session (the op CLI auth prompt + the SSH agent both depend on
+it). Recorded actuals for observ are in the STATUS block above.
 
 ### 1. Create the VM on pve
 - VMID of your choosing, 2 vCPU, 2048 MB, 16 GB virtio disk, UEFI (OVMF), VLAN 20 tag.
