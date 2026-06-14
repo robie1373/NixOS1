@@ -228,5 +228,15 @@ in
       wantedBy = [ "timers.target" ];
       timerConfig = { OnStartupSec = "3min"; OnUnitActiveSec = "1h"; Persistent = true; };
     };
+
+    # Event-driven trigger: fire the notifier the instant a check writes/clears an
+    # alert, so the desktop popup never races the (independently-timed) root check.
+    # The hourly timer above remains a backstop. The alerts dir is 0755, so the
+    # user manager can inotify-watch it.
+    systemd.user.paths.restic-staleness-notify = {
+      description = "Watch restic alerts dir; surface changes immediately";
+      wantedBy = [ "paths.target" ];
+      pathConfig = { PathModified = "${stateDir}/alerts"; };
+    };
   };
 }
