@@ -36,7 +36,11 @@
     prefixLength = 24;
   }];
   networking.defaultGateway = "192.168.20.254";
-  networking.nameservers = [ "192.168.20.53" "192.168.20.254" ];
+  # VLAN 20 is firewalled off from the VLAN 7 Technitium resolvers, and the fw
+  # gateway does not forward external DNS on this segment — so a VLAN 20 host
+  # must resolve via external DNS (same as langlab). Internal lookups aren't
+  # needed here; the stack scrapes by IP.
+  networking.nameservers = [ "1.1.1.1" "1.0.0.1" ];
 
   # ── SSH ─────────────────────────────────────────────────────────────────────
   users.users.root.openssh.authorizedKeys.keys = [
