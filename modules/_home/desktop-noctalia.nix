@@ -7,14 +7,13 @@
   # Spawned by niri via spawn-at-startup; not managed by systemd (deprecated).
   # ════════════════════════════════════════════════════════════════════════
   # Noctalia owns its own config files — no settings/colors managed here.
-  # Nix manages only the package; noctalia writes settings.json and colors.json
-  # itself. Changes survive nh os switch without being overwritten.
+  # Nix manages only the package; noctalia writes its config itself.
   #
-  # NOTE (2026-06-13): noctalia is PINNED to v4 in flake.lock (override-input) —
-  # v5.0.0 is a ground-up rewrite that renames this option to `programs.noctalia`
-  # and the binary to `noctalia`. Migrate deliberately; until then keep v4 + this
-  # option name. See ~/ledger2/nixos-noctalia.md.
-  programs.noctalia-shell.enable = true;
+  # NOTE (2026-06-14): migrated to noctalia v5 (native Wayland/GL rewrite). Option
+  # renamed programs.noctalia-shell -> programs.noctalia; binary renamed
+  # noctalia-shell -> noctalia (see niri spawn). v5 won't read v4 config — expect
+  # to reconfigure the bar via its settings menu.
+  programs.noctalia.enable = true;
 
   # ════════════════════════════════════════════════════════════════════════
   # GTK THEME
