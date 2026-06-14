@@ -22,10 +22,17 @@ in {
     enable = true;
 
     settings = {
-      background = {
-        path = "/home/robie/nixos-config/media/redwoods.png";
-        fit  = "Cover";
-      };
+      # Background DISABLED 2026-06-13 — regreet 0.4.0 loads the background via
+      # GtkMediaFile, and GTK4 4.22 routes that through GStreamer (gst-plugins-bad
+      # 1.26.11) even for a static PNG, which fatally aborts → greeter crash-loop →
+      # no graphical login (diagnosed from the coredump backtrace:
+      # gtk_media_file_new_for_filename → gtk_gst_media_file_open → gst_play_main →
+      # g_log_abort). Re-enable when the upstream GTK4/GStreamer media regression is
+      # fixed, or once regreet loads static images as textures again.
+      # background = {
+      #   path = "/home/robie/nixos-config/media/redwoods.png";
+      #   fit  = "Cover";
+      # };
 
       GTK = {
         application_prefer_dark_theme = lib.mkForce true;

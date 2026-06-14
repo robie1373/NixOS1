@@ -9,6 +9,11 @@
   # Noctalia owns its own config files — no settings/colors managed here.
   # Nix manages only the package; noctalia writes settings.json and colors.json
   # itself. Changes survive nh os switch without being overwritten.
+  #
+  # NOTE (2026-06-13): noctalia is PINNED to v4 in flake.lock (override-input) —
+  # v5.0.0 is a ground-up rewrite that renames this option to `programs.noctalia`
+  # and the binary to `noctalia`. Migrate deliberately; until then keep v4 + this
+  # option name. See ~/ledger2/nixos-noctalia.md.
   programs.noctalia-shell.enable = true;
 
   # ════════════════════════════════════════════════════════════════════════
