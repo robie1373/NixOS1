@@ -36,10 +36,13 @@
     prefixLength = 24;
   }];
   networking.defaultGateway = "192.168.20.254";
-  # VLAN 20 is firewalled off from the VLAN 7 Technitium resolvers, and the fw
-  # gateway does not forward external DNS on this segment — so a VLAN 20 host
-  # must resolve via external DNS (same as langlab). Internal lookups aren't
-  # needed here; the stack scrapes by IP.
+  # External DNS by choice, not necessity. The VLAN 20 internal resolver is dns1
+  # (192.168.20.53, Blocky); VLAN 20 can't reach the VLAN 7 Technitium hosts, and
+  # the fw gateway (.254) doesn't itself forward external DNS here. observ only
+  # needs external resolution (it scrapes by IP, no .home.lab lookups), so it uses
+  # Cloudflare directly and avoids a hard dependency on dns1 being up — dns1 was
+  # stopped during the initial deploy. Hosts that need internal names should point
+  # at dns1 (.53) with an external fallback.
   networking.nameservers = [ "1.1.1.1" "1.0.0.1" ];
 
   # ── SSH ─────────────────────────────────────────────────────────────────────
