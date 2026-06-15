@@ -8,7 +8,14 @@ stale `homeLab/docs/design-docs/logging-proposal.md`, which was Loki/Blocky-cent
 
 ## STATUS: DEPLOYED 2026-06-14
 
-- **VMID 114** on pve, **192.168.20.56/24** VLAN 20, 2 vCPU / 2048 MB / 16 GB, OVMF.
+- **VMID 114** on pve, **192.168.20.56/24** VLAN 20, 2 vCPU / 2048 MB / **20 GB**, OVMF.
+
+**Gotcha — clone inherits the template's 4 GB disk.** `qm clone 9001 --full` copies the
+template disk size (~4 GB), *not* whatever you intend. observ filled its root after a
+few redeploys and Grafana crash-looped with `No space left on device`. Fix:
+`ssh root@pve "qm resize 114 virtio0 20G"`, reboot (server-common's `boot.growPartition`
+grows the *partition*), then **`resize2fs /dev/vda2`** — growPartition does NOT grow the
+ext4 filesystem itself. Do the resize during provisioning, before the disk fills.
 - Tailscale: `observ` / `100.70.13.99` / observ.vimba-stairs.ts.net.
 - Host SSH key: 1Password devops / "observ host SSH key".
 - Grafana http://192.168.20.56:3000 (admin/admin first login — change it).
