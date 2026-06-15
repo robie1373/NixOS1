@@ -111,7 +111,9 @@ in
       # Create via agenix — see docs/observability/build-runbook.md.
       environmentFile = config.age.secrets.pve-exporter-token.path;
     };
-    age.secrets = lib.mkIf cfg.pveExporter.enable {
+    age.secrets = {
+      grafana-admin-pass.file = ../../secrets/grafana-admin-pass.age;
+    } // lib.optionalAttrs cfg.pveExporter.enable {
       pve-exporter-token.file = ../../secrets/pve-exporter-token.age;
     };
 
@@ -141,8 +143,10 @@ in
           if cfg.secretKeyFile != null
           then "$__file{${toString cfg.secretKeyFile}}"
           else "$__file{/var/lib/grafana-secret/secret_key}";
-        # v1: admin/admin on first login, change in UI. Wire an agenix
-        # grafana-admin-pass secret as a hardening follow-up.
+        # Admin password from agenix (1Password devops/"grafana - homelab"),
+        # so it's durable across redeploys. Grafana resets the admin user's
+        # password to this value on startup.
+        security.admin_password = "$__file{${config.age.secrets.grafana-admin-pass.path}}";
       };
       provision.datasources.settings = {
         apiVersion = 1;

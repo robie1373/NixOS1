@@ -45,6 +45,12 @@ in
   # After Kanidm is deployed, migrate ntfy auth to LDAP and remove this secret.
   "ntfy-admin-password.age".publicKeys = [ admin ntfy ];
 
+  # Grafana admin password (observ visibility host). Makes the admin login
+  # durable across redeploys — otherwise the UI-set password lives on the
+  # disposable disk and resets to the module default on reinstall.
+  # Source: 1Password devops/"grafana - homelab".
+  "grafana-admin-pass.age".publicKeys = [ admin observ ];
+
   # Tailscale reusable auth key — shared across all lab servers.
   # Source: 1Password devops/"Tailscale Auth Key" — must be a reusable key.
   # To create/re-encrypt: nix run github:ryantm/agenix -- -e secrets/tailscale-auth-key.age
