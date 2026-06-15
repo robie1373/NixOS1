@@ -112,7 +112,13 @@ in
       environmentFile = config.age.secrets.pve-exporter-token.path;
     };
     age.secrets = {
-      grafana-admin-pass.file = ../../secrets/grafana-admin-pass.age;
+      # Owned by grafana so the service can read it ($__file). agenix defaults
+      # to root:root 0400, which Grafana (user grafana) can't read.
+      grafana-admin-pass = {
+        file = ../../secrets/grafana-admin-pass.age;
+        owner = "grafana";
+        group = "grafana";
+      };
     } // lib.optionalAttrs cfg.pveExporter.enable {
       pve-exporter-token.file = ../../secrets/pve-exporter-token.age;
     };
