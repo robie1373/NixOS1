@@ -118,6 +118,9 @@ in
     # ── Dashboards ─────────────────────────────────────────────────────────────
     services.grafana = {
       enable = true;
+      # VictoriaLogs datasource plugin (signed, from nixpkgs) so logs are
+      # queryable in Grafana Explore alongside metrics — job #3, forensics.
+      declarativePlugins = [ pkgs.grafanaPlugins.victoriametrics-logs-datasource ];
       settings = {
         server = {
           http_addr = "0.0.0.0";
@@ -151,9 +154,12 @@ in
             url = "http://127.0.0.1:8428";
             isDefault = true;
           }
-          # VictoriaLogs datasource needs the victorialogs-datasource plugin —
-          # add it as the immediate follow-up (see runbook). The built-in Loki
-          # type only partially fits VictoriaLogs' query API.
+          {
+            name = "VictoriaLogs";
+            type = "victoriametrics-logs-datasource";
+            access = "proxy";
+            url = "http://127.0.0.1:9428";
+          }
         ];
       };
     };
