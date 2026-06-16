@@ -197,7 +197,11 @@ in
       '';
     };
 
-    # Grafana UI + VictoriaLogs ingest reachable on the lab network.
-    networking.firewall.allowedTCPPorts = [ 3000 9428 ];
+    # Grafana UI (3000) + VictoriaLogs ingest (9428) + VictoriaMetrics (8428,
+    # for remote_write push from off-VLAN hosts like pve/pve2 that can't be
+    # pulled across the firewall — see [[tailscale]]/[[visibility-stack]] transport).
+    # NOTE: 8428 exposes the full VM HTTP API to the lab net; acceptable on the
+    # internal VLAN. Harden later with vmauth or a source-scoped rule if needed.
+    networking.firewall.allowedTCPPorts = [ 3000 8428 9428 ];
   };
 }
