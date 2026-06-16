@@ -45,6 +45,14 @@
             xwayland-satellite {
               path "${pkgs.xwayland-satellite}/bin/xwayland-satellite"
             }
+
+            // Pre-sized floating terminal (spawned via Mod+T). foot tags itself
+            // with --app-id=floatterm and sizes itself to 110x15 chars; this rule
+            // just forces it onto the floating layer (always above tiled windows).
+            window-rule {
+                match app-id="floatterm"
+                open-floating true
+            }
           '';
 
           binds = {
@@ -60,6 +68,13 @@
             "Mod+U".close-window           = _: {};
             "Mod+F".fullscreen-window      = _: {};
             "Mod+V".toggle-window-floating = _: {};
+
+            # Keyboard resize (works on floating + tiled). Mouse equivalent:
+            # Mod+right-drag to resize, Mod+left-drag to move.
+            "Mod+Minus".set-window-width        = "-10%";
+            "Mod+Equal".set-window-width        = "+10%";
+            "Mod+Shift+Minus".set-window-height = "-10%";
+            "Mod+Shift+Equal".set-window-height = "+10%";
 
             # Focus — vim-style column/window navigation
             "Mod+H".focus-column-left  = _: {};
@@ -94,6 +109,11 @@
 
             # Bearing session in a foot terminal
             "Mod+B".spawn = [ "${selfpkgs.foot}/bin/foot" "--" "bash" "-c" "cd ~/work && claude bearing; exec bash" ];
+
+            # Pre-sized floating terminal (110 cols x 15 rows) — floats above the
+            # tiled browser via the floatterm window-rule. Move browser+terminal to
+            # the same workspace; terminal stays on top even when the browser is focused.
+            "Mod+T".spawn = [ "${selfpkgs.foot}/bin/foot" "--app-id=floatterm" "--window-size-chars=110x15" ];
 
             # Elite Dangerous: request docking (fivenix only — no-op on other hosts)
             # Compositor handles this hotkey without stealing focus from ED; ydotool
