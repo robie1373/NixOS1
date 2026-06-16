@@ -103,6 +103,17 @@
       };
     };
 
+    # Don't start blocky until the network is actually reachable. Without this,
+    # on a cold boot blocky races the default route: bootstrap DNS can't reach
+    # 1.1.1.1/8.8.8.8, every blocklist download fails, and `strategy=failOnError`
+    # takes DNS down. Ordering after network-online.target closes the race while
+    # keeping the deliberate fail-visible strategy. See ledger blocky.md
+    # "Open issue (2026-06-14)".
+    systemd.services.blocky = {
+      after = [ "network-online.target" ];
+      wants = [ "network-online.target" ];
+    };
+
     networking.firewall.allowedTCPPorts = [ 53 4000 ];
     networking.firewall.allowedUDPPorts = [ 53 ];
   };
