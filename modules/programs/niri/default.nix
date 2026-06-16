@@ -104,8 +104,11 @@
             # Screenshot — region select, copy to clipboard
             "Print".spawn-sh = ''${pkgs.grim}/bin/grim -g "$(${pkgs.slurp}/bin/slurp)" - | ${pkgs.wl-clipboard}/bin/wl-copy'';
 
-            # Keybind cheatsheet popup
-            "Mod+Slash".spawn = [ "${pkgs.wlr-which-key}/bin/wlr-which-key" ];
+            # Keybind cheatsheet — niri's built-in hotkey overlay, auto-generated
+            # from the actual binds below so it never drifts out of sync (replaces
+            # the hand-maintained wlr-which-key menu). Mod+? on the US layout is
+            # Mod+Shift+Slash: shifted keys are spelled Shift + the unshifted key.
+            "Mod+Shift+Slash".show-hotkey-overlay = _: {};
 
             # Bearing session in a foot terminal
             "Mod+B".spawn = [ "${selfpkgs.foot}/bin/foot" "--" "bash" "-c" "cd ~/work && claude bearing; exec bash" ];
