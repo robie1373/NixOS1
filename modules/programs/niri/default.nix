@@ -25,6 +25,14 @@
 
           layout = {
             gaps = 8;
+            # Snap targets for switch-preset-column-width (Mod+R). Cycling these
+            # is also the "reset to a sane width" fix after a window's column
+            # width drifts (e.g. resized while floating, then unfloated).
+            preset-column-widths = [
+              { proportion = 1.0 / 3.0; }
+              { proportion = 0.5; }
+              { proportion = 2.0 / 3.0; }
+            ];
             "focus-ring" = {
               width = 2;
               "active-color"   = "#c6a0f6";  # Catppuccin Macchiato mauve
@@ -75,6 +83,13 @@
             "Mod+Equal".set-window-width        = "+10%";
             "Mod+Shift+Minus".set-window-height = "-10%";
             "Mod+Shift+Equal".set-window-height = "+10%";
+
+            # Snap column width to the next preset (⅓ → ½ → ⅔ → …). Use this to
+            # reset a window whose width has drifted back to a clean fraction.
+            "Mod+R".switch-preset-column-width = _: {};
+            # Hard reset: half the screen + automatic height.
+            "Mod+Shift+R".set-column-width = "50%";
+            "Mod+Ctrl+R".reset-window-height = _: {};
 
             # Focus — vim-style column/window navigation
             "Mod+H".focus-column-left  = _: {};
