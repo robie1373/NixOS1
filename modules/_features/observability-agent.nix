@@ -54,19 +54,37 @@ in
     services.alloy = {
       enable = true;
       configPath = pkgs.writeText "alloy-config.alloy" ''
-        // Tag every line with this host's name.
-        loki.relabel "add_host" {
+        // Stamp the hostname and lift a few bounded journal metadata fields into
+        // queryable labels (VictoriaLogs stream fields). The journal source
+        // exposes each field as __journal__<field>; note the underscore count:
+        // a leading underscore on the journal field becomes a double underscore
+        // (_SYSTEMD_UNIT -> __journal__systemd_unit, _TRANSPORT -> __journal__transport),
+        // no leading underscore stays single (PRIORITY -> __journal_priority).
+        // Deliberately bounded/low-cardinality; everything unbounded stays in _msg.
+        loki.relabel "journal_labels" {
           forward_to = []
           rule {
             target_label = "host"
             replacement  = "${config.networking.hostName}"
+          }
+          rule {
+            source_labels = ["__journal__systemd_unit"]
+            target_label  = "unit"
+          }
+          rule {
+            source_labels = ["__journal_priority"]
+            target_label  = "priority"
+          }
+          rule {
+            source_labels = ["__journal__transport"]
+            target_label  = "transport"
           }
         }
 
         // Read the systemd journal and forward to the writer.
         loki.source.journal "journal" {
           forward_to    = [loki.write.default.receiver]
-          relabel_rules = loki.relabel.add_host.rules
+          relabel_rules = loki.relabel.journal_labels.rules
           labels        = { job = "systemd-journal" }
         }
 
