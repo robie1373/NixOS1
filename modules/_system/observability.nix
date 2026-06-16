@@ -18,16 +18,18 @@
 let
   cfg = config.mySystem.observability;
 
-  # Lab hosts running node-exporter (VLAN 20). Comment a line to drop a target;
-  # a down target shows as up=0 in VictoriaMetrics, which is itself useful signal.
+  # Lab hosts running node-exporter, pulled over VLAN 20. Each carries a `host`
+  # label so metrics line up with the logs (Alloy stamps `host`) and with the
+  # pushed hosts (pve/pve2 set host via vmagent external_labels). Comment a line
+  # to drop a target; a down target shows as up=0, which is itself useful signal.
   nodeTargets = [
-    "192.168.20.56:9100"  # observ (self)
-    "192.168.20.10:9100"  # ntfy
-    "192.168.20.11:9100"  # langlab
-    "192.168.20.50:9100"  # omada
-    "192.168.20.53:9100"  # dns1
-    "192.168.20.55:9100"  # nixsrv1
-    # "192.168.20.54:9100"  # dns2 — never completed; enable once deployed
+    { host = "observ";  addr = "192.168.20.56:9100"; }
+    { host = "ntfy";    addr = "192.168.20.10:9100"; }
+    { host = "langlab"; addr = "192.168.20.11:9100"; }
+    { host = "omada";   addr = "192.168.20.50:9100"; }
+    { host = "dns1";    addr = "192.168.20.53:9100"; }
+    { host = "nixsrv1"; addr = "192.168.20.55:9100"; }
+    # { host = "dns2"; addr = "192.168.20.54:9100"; }  # never completed; enable once deployed
   ];
 
   # PVE scrape job (only when the exporter is enabled). Standard pve-exporter
@@ -91,7 +93,10 @@ in
           }
           {
             job_name = "node";
-            static_configs = [{ targets = nodeTargets; }];
+            static_configs = map (t: {
+              targets = [ t.addr ];
+              labels = { host = t.host; };
+            }) nodeTargets;
           }
         ] ++ pveScrape;
       };
