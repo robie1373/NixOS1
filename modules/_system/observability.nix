@@ -28,7 +28,7 @@ let
     { host = "langlab"; addr = "192.168.20.11:9100"; }
     { host = "omada";   addr = "192.168.20.50:9100"; }
     { host = "dns1";    addr = "192.168.20.53:9100"; }
-    { host = "nixsrv1"; addr = "192.168.20.55:9100"; }
+    # { host = "nixsrv1"; addr = "192.168.20.55:9100"; }  # NOT deployed (KDE/installer, no reservation, 2026-06-18) — phantom up=0; re-enable when nixsrv1 is a real server. See [[homelab]].
     # { host = "dns2"; addr = "192.168.20.54:9100"; }  # never completed; enable once deployed
   ];
 
