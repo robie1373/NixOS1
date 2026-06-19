@@ -51,6 +51,15 @@ in
   # Source: 1Password devops/"grafana - homelab".
   "grafana-admin-pass.age".publicKeys = [ admin observ ];
 
+  # snmp_exporter config for the Omada fabric (switch + EAP773 APs) — the WHOLE
+  # snmp.yml with the community baked in. (snmp_exporter 0.30.1's env-var expansion
+  # doesn't substitute the community, so we can't keep it in an EnvironmentFile;
+  # the config is delivered whole instead.) Decrypted file is consumed via
+  # configurationPath and read by the exporter's DynamicUser, so it's mode 0444.
+  # Regenerate from modules/_system/snmp.yml — see that file's header.
+  # Source community: 1Password devops/"Omada SNMP community string".
+  "snmp-config.age".publicKeys = [ admin observ ];
+
   # Tailscale reusable auth key — shared across all lab servers.
   # Source: 1Password devops/"Tailscale Auth Key" — must be a reusable key.
   # To create/re-encrypt: nix run github:ryantm/agenix -- -e secrets/tailscale-auth-key.age

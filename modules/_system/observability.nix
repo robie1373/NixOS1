@@ -46,6 +46,37 @@ let
       { target_label = "__address__"; replacement = "127.0.0.1:9221"; }
     ];
   }];
+
+  # SNMP scrape jobs for the Omada fabric (switch + EAP773 APs). snmp_exporter
+  # runs on loopback (:9116). Standard snmp_exporter relabel: pass the device IP
+  # as ?target=, send the request to the local exporter, keep the device IP as
+  # the instance label. The `host` label matches the fleet convention so device
+  # metrics join the $host dashboard variable. Switch has no PoE MIB, so just
+  # if_mib+system; APs add the TP-Link `eap` module (client counts).
+  snmpRelabel = [
+    { source_labels = [ "__address__" ]; target_label = "__param_target"; }
+    { source_labels = [ "__param_target" ]; target_label = "instance"; }
+    { target_label = "__address__"; replacement = "127.0.0.1:9116"; }
+  ];
+  snmpScrape = [
+    {
+      job_name = "snmp-switch";
+      metrics_path = "/snmp";
+      params = { auth = [ "omada_v2" ]; module = [ "if_mib" "system" ]; };
+      static_configs = [{ targets = [ "192.168.20.145" ]; labels = { host = "coreswitch"; }; }];
+      relabel_configs = snmpRelabel;
+    }
+    {
+      job_name = "snmp-ap";
+      metrics_path = "/snmp";
+      params = { auth = [ "omada_v2" ]; module = [ "eap" "system" "if_mib" ]; };
+      static_configs = [
+        { targets = [ "192.168.20.180" ]; labels = { host = "ap-lowerlevel"; }; }
+        { targets = [ "192.168.20.182" ]; labels = { host = "ap-mainfloor"; }; }
+      ];
+      relabel_configs = snmpRelabel;
+    }
+  ];
 in
 {
   options.mySystem.observability = {
@@ -98,14 +129,52 @@ in
               labels = { host = t.host; };
             }) nodeTargets;
           }
-        ] ++ pveScrape;
+        ] ++ pveScrape ++ snmpScrape;
       };
     };
 
     # ── Log store ──────────────────────────────────────────────────────────────
     services.victorialogs = {
       enable = true;
-      extraOptions = [ "-retentionPeriod=${cfg.retention}" ];
+      extraOptions = [
+        "-retentionPeriod=${cfg.retention}"
+        # Native syslog listener for the Omada fabric (switch + APs push here
+        # directly; controller-independent). Listens on UNPRIVILEGED udp/1514 — the
+        # well-known 514 is redirected here by the firewall (below). VictoriaLogs is a
+        # hardened non-root DynamicUser and can't bind <1024: granting it
+        # CAP_NET_BIND_SERVICE via the unit did NOT work (the cap shows in the unit but
+        # the udp/514 bind still returns EACCES; the service's SystemCallFilter sandbox
+        # appears to strip the ambient cap before exec — root cause not isolated). Using
+        # an unprivileged port + a 514→1514 redirect sidesteps the privileged-port
+        # problem entirely and, deliberately, also catches FUTURE log sources that can
+        # only emit to the well-known 514 (Robie's call — the redirect is the durable seam).
+        #
+        # Device logs carry the device-sent `hostname` (CoreSwitch / LowerLevel-AP1 / …),
+        # a normal queryable field — NOT the journald/Alloy `host`. useLocalTimestamp
+        # guards against bad device clocks. PRI severity here is the device's own
+        # (filter on `severity`), not the journald 0–7 `priority`.
+        # (streamFields to promote `hostname` to a stream label was dropped: the
+        #  victorialogs module double-quotes the JSON-array value and VL rejects it;
+        #  hostname is fully queryable as a plain field regardless.)
+        "-syslog.listenAddr.udp=:1514"
+        "-syslog.useLocalTimestamp.udp=true"
+      ];
+    };
+
+    # ── Network fabric (Omada switch + APs) — SNMP metrics exporter ─────────────
+    # Polls the switch + APs via SNMPv2c and exposes Prometheus metrics on loopback
+    # (:9116, scraped by the snmpScrape jobs above — no firewall port needed). The
+    # config is delivered whole via agenix (snmp-config.age = modules/_system/snmp.yml
+    # with the community baked in) because snmp_exporter 0.30.1's runtime env-var
+    # expansion does NOT substitute the community (verified 2026-06-19). configurationPath
+    # points at the decrypted runtime path; enableConfigCheck is off because that path
+    # doesn't exist at build time (the build-time --dry-run can't read it).
+    services.prometheus.exporters.snmp = {
+      enable = true;
+      listenAddress = "127.0.0.1";
+      port = 9116;
+      enableConfigCheck = false;
+      configurationPath = config.age.secrets.snmp-config.path;
     };
 
     # ── Proxmox exporter (optional) ────────────────────────────────────────────
@@ -123,6 +192,15 @@ in
         file = ../../secrets/grafana-admin-pass.age;
         owner = "grafana";
         group = "grafana";
+      };
+      # Whole snmp_exporter config (community baked in). Read by the exporter's
+      # DynamicUser (snmp-exporter) at runtime via configurationPath; that user
+      # doesn't exist at agenix-activation time, so make it world-readable (0444)
+      # rather than chown. Acceptable: a read-only SNMP community on the mgmt VLAN,
+      # on a single-purpose monitoring VM.
+      snmp-config = {
+        file = ../../secrets/snmp-config.age;
+        mode = "0444";
       };
     } // lib.optionalAttrs cfg.pveExporter.enable {
       pve-exporter-token.file = ../../secrets/pve-exporter-token.age;
@@ -208,5 +286,21 @@ in
     # NOTE: 8428 exposes the full VM HTTP API to the lab net; acceptable on the
     # internal VLAN. Harden later with vmauth or a source-scoped rule if needed.
     networking.firewall.allowedTCPPorts = [ 3000 8428 9428 ];
+    # Syslog lands on udp/1514 (post-redirect — see below). Devices send to 514;
+    # the nat PREROUTING redirect rewrites the dport to 1514 before the filter INPUT
+    # check, so it's 1514 that must be allowed here, not 514.
+    networking.firewall.allowedUDPPorts = [ 1514 ];
+
+    # Redirect the well-known syslog port udp/514 → udp/1514 so any sender (the Omada
+    # devices, and future log sources that can only emit to 514) reaches VictoriaLogs
+    # while it binds an unprivileged port as a hardened non-root service. The redirect
+    # runs in-kernel (nat PREROUTING) and preserves the source IP. IPv4 only — the lab
+    # mgmt fabric is v4. (observ uses the default iptables-based scripted firewall.)
+    networking.firewall.extraCommands = ''
+      iptables -t nat -A PREROUTING -p udp --dport 514 -j REDIRECT --to-ports 1514
+    '';
+    networking.firewall.extraStopCommands = ''
+      iptables -t nat -D PREROUTING -p udp --dport 514 -j REDIRECT --to-ports 1514 2>/dev/null || true
+    '';
   };
 }
