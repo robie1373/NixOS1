@@ -247,6 +247,14 @@ in
       };
       provision.datasources.settings = {
         apiVersion = 1;
+        # Drop the pre-existing (auto-UID) datasources first so they're recreated with
+        # the pinned UIDs below. Grafana refuses to change the uid of an existing
+        # provisioned datasource ("data source not found" → crash-loop) without this.
+        # Harmless to keep: runs each start, delete-then-recreate is idempotent.
+        deleteDatasources = [
+          { name = "VictoriaMetrics"; orgId = 1; }
+          { name = "VictoriaLogs"; orgId = 1; }
+        ];
         datasources = [
           {
             name = "VictoriaMetrics";
@@ -254,12 +262,41 @@ in
             access = "proxy";
             url = "http://127.0.0.1:8428";
             isDefault = true;
+            # Pinned UID — the provisioned dashboards (below) reference it. Without a
+            # fixed UID, a fresh Grafana assigns a random one and the dashboards would
+            # point at nothing after a reimage.
+            uid = "victoriametrics";
           }
           {
             name = "VictoriaLogs";
             type = "victoriametrics-logs-datasource";
             access = "proxy";
             url = "http://127.0.0.1:9428";
+            uid = "victorialogs";
+          }
+        ];
+      };
+
+      # Dashboards as code — JSON checked into grafana-dashboards/, provisioned into
+      # the existing "homeLab" folder (pinned by UID so a fresh Grafana reuses it).
+      # Reimage-proof: survives a full host rebuild, not just nixos-rebuild. Exported
+      # from the hand-built originals 2026-06-19 with datasource refs rewritten to the
+      # pinned UIDs above. allowUiUpdates keeps UI editing usable — but UI edits live in
+      # the DB and revert to this JSON on reimage, so re-export to keep them durable.
+      provision.dashboards.settings = {
+        apiVersion = 1;
+        providers = [
+          {
+            name = "homelab";
+            type = "file";
+            folder = "homeLab";
+            folderUid = "cfpjeo6fx4hs0f";
+            allowUiUpdates = true;
+            updateIntervalSeconds = 30;
+            options = {
+              path = ./grafana-dashboards;
+              foldersFromFilesStructure = false;
+            };
           }
         ];
       };
