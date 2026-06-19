@@ -158,6 +158,14 @@ in
         #  hostname is fully queryable as a plain field regardless.)
         "-syslog.listenAddr.udp=:1514"
         "-syslog.useLocalTimestamp.udp=true"
+        # Adds a `remote_ip` field with the sender's address. NOTE (2026-06-19): the
+        # syslog is RELAYED BY THE OMADA CONTROLLER (remote_ip is always 192.168.20.50,
+        # app_name=omada-homeLab), NOT sent device-direct — so this is the controller,
+        # not the switch/AP. Per-device identity is only in the `_msg` body
+        # ([switch:CoreSwitch:MAC] …). Kept as a source breadcrumb. (Unlike SNMP metrics,
+        # which ARE device-direct/controller-independent, device logs depend on the
+        # controller being up — an Omada-SDN limitation, see ledger visibility-stack.md.)
+        "-syslog.useRemoteIP.udp=true"
       ];
     };
 
