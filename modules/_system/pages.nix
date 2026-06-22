@@ -1,22 +1,26 @@
 # modules/_system/pages.nix
 #
-# Static web host. Serves a directory of self-contained HTML files over plain
-# HTTP on the LAN. No backend, no proxy, no app — deliberately. This host exists
-# to serve static pages and nothing else; resist the urge to bolt services onto
-# it (that muddies a single-purpose box — the whole reason it was stood up).
+# Static web HOST — infrastructure only. This module stands up nginx to serve a
+# directory of static files over plain HTTP on the LAN, and nothing else. It
+# deliberately carries NO content: nixos-config owns the webserver, never the
+# pages it serves.
 #
-# Design decisions (see ledger inbox/distributed-bearing-architecture.md →
-# "Decision 2026-06-22"):
-#   - LAN-first, plain HTTP/80. Content is non-sensitive (running plans); there is
-#     no auth and nothing worth a TLS dependency. Reachable at http://<host-ip>.
+# Content lives off-repo on the NAS (~/nas/web/pages/) and is pushed to this
+# host's local disk at `serveRoot` by `~/nas/web/deploy-pages` (rsync). Keeping
+# content out of the flake is the whole point: a future Quartz-rendered view of
+# the Ledger ships through the SAME push pipeline, so the Ledger is never baked
+# into nixos-config and never reaches GitHub. See ledger [[pages]] and
+# inbox/distributed-bearing-architecture.md.
+#
+# Design decisions:
+#   - LAN-first, plain HTTP/80. Content is non-sensitive (running plans); there
+#     is no auth and nothing worth a TLS dependency. Reachable at http://<ip>.
 #     Tailscale still runs (server-common) for SSH/management — but nothing here
-#     DEPENDS on Tailscale being up (chaos-monkey). A Tailscale HTTPS vhost can be
-#     added later as a bonus path, mirroring modules/_system/ntfy.nix, if wanted.
-#   - Content is baked into the Nix store from `contentRoot`, so a redeploy
-#     reproduces the site exactly — no mutable /var/www to back up or lose.
-#     To add a page: drop the file in the host's www/ dir and rebuild.
-#   - Future: this is the intended home for a Quartz-rendered, browsable view of
-#     the Ledger (markdown stays canonical; HTML is a generated build artifact).
+#     DEPENDS on Tailscale. A Tailscale HTTPS vhost can be added later if wanted.
+#   - serveRoot is a plain local directory populated out-of-band, NOT a Nix-store
+#     path. Deploy copies to LOCAL disk, so serving has no NAS runtime dependency
+#     (NAS down != site down — chaos-monkey). After a host wipe, serveRoot is
+#     empty (branded 404s) until the next deploy: content is lost, not a service.
 
 { config, lib, pkgs, ... }:
 
@@ -27,11 +31,13 @@ in
   options.mySystem.pages = {
     enable = lib.mkEnableOption "static page web host (plain HTTP, LAN-first)";
 
-    contentRoot = lib.mkOption {
-      type = lib.types.path;
+    serveRoot = lib.mkOption {
+      type = lib.types.str;
+      default = "/var/www/pages";
       description = ''
-        Directory of static files served at the web root. Copied into the Nix
-        store at build time, so the served content is reproducible on redeploy.
+        Local directory nginx serves at the web root. Populated out-of-band by
+        the deploy script (~/nas/web/deploy-pages) — NOT baked from the repo.
+        Created empty by tmpfiles so nginx starts cleanly before the first deploy.
       '';
     };
 
@@ -49,6 +55,13 @@ in
 
   config = lib.mkIf cfg.enable {
 
+    # Ensure the serve root exists (world-readable) even before the first deploy,
+    # so nginx starts cleanly and an unprovisioned host shows the branded 404
+    # rather than failing. Content is delivered separately by deploy-pages.
+    systemd.tmpfiles.rules = [
+      "d ${cfg.serveRoot} 0755 root root - -"
+    ];
+
     services.nginx = {
       enable = true;
       recommendedOptimisation = true;
@@ -58,7 +71,7 @@ in
       # known host (an unknown *path*) shows the branded 404, not nginx default.
       virtualHosts."pages-content" = {
         serverName = lib.concatStringsSep " " cfg.serverNames;
-        root = cfg.contentRoot;
+        root = cfg.serveRoot;
         locations."/" = {
           index = "index.html";
         };
@@ -76,7 +89,7 @@ in
       virtualHosts."pages-catchall" = {
         default = true;
         serverName = "_";
-        root = cfg.contentRoot;
+        root = cfg.serveRoot;
         locations."/" = {
           extraConfig = "return 404;";
         };

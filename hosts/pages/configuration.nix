@@ -7,9 +7,11 @@
 # Placed on pve2 (not pve) per the capacity check in the provisioning runbook:
 # pve runs hot (~3.6 GiB free), pve2 had ~8.5 GiB free at provisioning time.
 #
-# Serves self-contained HTML from ./www over plain HTTP on the LAN.
-# Reachable at http://192.168.20.57. Losing this host loses static pages, not
-# services — safe to redeploy; content is reproduced from the repo.
+# Serves self-contained HTML over plain HTTP on the LAN. Reachable at
+# http://192.168.20.57. Content is NOT in this repo — it lives on the NAS
+# (~/nas/web/pages/) and is pushed to /var/www/pages by ~/nas/web/deploy-pages.
+# Losing this host loses static pages, not services — redeploy the host, then
+# re-run deploy-pages to repopulate the content.
 
 { inputs, ... }:
 
@@ -39,8 +41,9 @@
   networking.nameservers = [ "1.1.1.1" "1.0.0.1" ];
 
   # ── Static site ────────────────────────────────────────────────────────────
+  # Infra only — nginx serves /var/www/pages (default serveRoot). Content is
+  # pushed out-of-band from the NAS; nothing is baked from this repo.
   mySystem.pages.enable = true;
-  mySystem.pages.contentRoot = ./www;
   # Serve content for the hostname and the LAN IP; any other Host (e.g. an
   # unmapped *.home.lab caught by the dns1 catch-all) falls to the branded 404.
   mySystem.pages.serverNames = [ "pages.home.lab" "192.168.20.57" ];
