@@ -109,5 +109,7 @@
     disko
     nixos-anywhere
     unzip
+    jq      # JSON wrangling — Claude reaches for it constantly (API output, metrics queries)
+    python3 # quick scripting / parsing; assumed present by enough tooling to be worth having
   ];
 }
