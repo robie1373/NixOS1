@@ -13,10 +13,10 @@
 #   ./scripts/update-fleet.sh fivenix ntfy           # rebuild specific hosts only
 #   ./scripts/update-fleet.sh --no-update fivenix    # combo
 #
-# Auth order for each remote host:
-#   1. SSH to Tailscale hostname — uses whatever is in the SSH agent (1Password)
-#   2. SSH to Tailscale hostname — key loaded explicitly from 1Password via `op read`
-#   3. SSH to fallback LAN IP  — with OP key (fivenix only; VLAN 20 unreachable without TS)
+# Auth order for each remote host (Tailscale removed 2026-06-22 — fleet reaches hosts
+# over the wired LAN via home.lab names; Tailscale is no longer load-bearing here):
+#   1. SSH to the LAN target (home.lab name / IP) — uses whatever is in the SSH agent (1Password)
+#   2. SSH to the LAN target — key loaded explicitly from 1Password via `op read`
 #
 # Before first run:
 #   - Verify OP_SSH_KEY_REF below matches your actual 1Password item.
@@ -40,29 +40,28 @@ DISK_THRESHOLD_MIB="${DISK_THRESHOLD_MIB:-2048}"
 REBOOT_TIMEOUT="${REBOOT_TIMEOUT:-180}"
 
 # ── Host definitions ──────────────────────────────────────────────────────────
-# All remote hosts are on Tailscale (vimba-stairs.ts.net).
-# VLAN 20 hosts (ntfy, langlab, omada) are not directly reachable from flipper
-# without Tailscale — no LAN fallback for those.
+# Remote hosts are reached over the wired LAN by their home.lab names (resolved by
+# dns1/Blocky). VLAN 20 hosts (ntfy, langlab, omada) ARE directly reachable from
+# flipper over the LAN (verified 2026-06-22). fivenix has no home.lab record yet —
+# use its LAN IP; it's the dual-boot rig, only reachable when booted to NixOS.
 
-declare -A SSH_TARGET    # primary: Tailscale MagicDNS
-declare -A SSH_FALLBACK  # fallback: LAN IP (only for hosts reachable without Tailscale)
+declare -A SSH_TARGET    # LAN target: home.lab name or IP
 declare -A SSH_FLAGS     # extra nixos-rebuild flags per host
 
-SSH_TARGET[fivenix]="robie@fivenix.vimba-stairs.ts.net"
-SSH_FALLBACK[fivenix]="robie@192.168.7.137"
+SSH_TARGET[fivenix]="robie@192.168.7.137"
 SSH_FLAGS[fivenix]="--sudo --ask-sudo-password"
 
-SSH_TARGET[ntfy]="root@ntfy.vimba-stairs.ts.net"
+SSH_TARGET[ntfy]="root@ntfy.home.lab"
 SSH_FLAGS[ntfy]=""
 
-SSH_TARGET[langlab]="root@langlab.vimba-stairs.ts.net"
+SSH_TARGET[langlab]="root@langlab.home.lab"
 SSH_FLAGS[langlab]=""
 
-SSH_TARGET[omada]="root@omada.vimba-stairs.ts.net"
+SSH_TARGET[omada]="root@omada.home.lab"
 SSH_FLAGS[omada]=""
 
 # nixos1: local QEMU/KVM VM — SSH target unknown; uncomment when known.
-# SSH_TARGET[nixos1]="root@nixos1.vimba-stairs.ts.net"
+# SSH_TARGET[nixos1]="root@nixos1.home.lab"
 # SSH_FLAGS[nixos1]=""
 
 REMOTE_HOSTS=(fivenix ntfy langlab omada)
@@ -147,41 +146,23 @@ op_keyfile() {
 resolve_ssh() {
   local name="$1"
   local primary="${SSH_TARGET[$name]}"
-  local fallback="${SSH_FALLBACK[$name]:-}"
 
   TARGET=""
   NIX_SSH_EXTRA="-o StrictHostKeyChecking=no"
 
-  # 1. Tailscale — agent (1Password) auth
+  # 1. LAN — agent (1Password) auth
   if ssh_connects -- "$primary"; then
-    info "Connected via Tailscale (agent auth)"
+    info "Connected via LAN (agent auth)"
     TARGET="$primary"
     return 0
   fi
 
-  # 2. Tailscale — explicit 1Password key
+  # 2. LAN — explicit 1Password key
   local keyfile
   if keyfile=$(op_keyfile 2>/dev/null); then
     if ssh_connects -i "$keyfile" -- "$primary"; then
-      info "Connected via Tailscale (1Password key)"
+      info "Connected via LAN (1Password key)"
       TARGET="$primary"
-      NIX_SSH_EXTRA="-o StrictHostKeyChecking=no -i $keyfile"
-      return 0
-    fi
-  fi
-
-  # 3. LAN fallback (agent auth) — only for hosts with a fallback defined
-  if [[ -n "$fallback" ]]; then
-    if ssh_connects -- "$fallback"; then
-      info "Connected via LAN fallback (agent auth)"
-      TARGET="$fallback"
-      return 0
-    fi
-
-    # 4. LAN fallback — explicit 1Password key
-    if [[ -n "${keyfile:-}" ]] && ssh_connects -i "$keyfile" -- "$fallback"; then
-      info "Connected via LAN fallback (1Password key)"
-      TARGET="$fallback"
       NIX_SSH_EXTRA="-o StrictHostKeyChecking=no -i $keyfile"
       return 0
     fi
