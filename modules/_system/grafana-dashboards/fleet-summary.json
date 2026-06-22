@@ -197,6 +197,7 @@
           },
           "decimals": 0,
           "displayName": "${__field.labels.host}",
+          "unit": "bytes",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -206,7 +207,7 @@
               },
               {
                 "color": "red",
-                "value": 1
+                "value": 268435456
               }
             ]
           }
@@ -244,13 +245,13 @@
             "uid": "victoriametrics"
           },
           "editorMode": "code",
-          "expr": "node_memory_SwapTotal_bytes{job=\"node\"}",
+          "expr": "node_memory_SwapTotal_bytes{job=\"node\"} - node_memory_SwapFree_bytes{job=\"node\"}",
           "legendFormat": "__auto",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Swaping",
+      "title": "Swap used",
       "type": "stat"
     },
     {
