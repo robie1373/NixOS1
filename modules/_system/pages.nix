@@ -35,12 +35,14 @@ in
       '';
     };
 
-    serverName = lib.mkOption {
-      type = lib.types.str;
-      default = "_";
+    serverNames = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ "pages.home.lab" ];
       description = ''
-        nginx server_name. Default "_" is the catch-all default vhost, so the
-        site answers on the host's LAN IP regardless of Host header.
+        Host header(s) that serve the site content. Everything else — including
+        an unmapped *.home.lab caught by the DNS catch-all (home.lab -> this host)
+        — falls to the default vhost and gets the branded 404, never a search
+        engine. Include the LAN IP here too if you want http://<ip> to serve content.
       '';
     };
   };
@@ -52,12 +54,38 @@ in
       recommendedOptimisation = true;
       recommendedGzipSettings = true;
 
-      virtualHosts.${cfg.serverName} = {
-        default = true;
+      # Content vhost — serves the site for its real hostname(s). A 404 on a
+      # known host (an unknown *path*) shows the branded 404, not nginx default.
+      virtualHosts."pages-content" = {
+        serverName = lib.concatStringsSep " " cfg.serverNames;
         root = cfg.contentRoot;
         locations."/" = {
           index = "index.html";
         };
+        locations."= /404.html" = {
+          extraConfig = "internal;";
+        };
+        extraConfig = ''
+          error_page 404 /404.html;
+        '';
+      };
+
+      # Default catch-all — any other Host (e.g. an unmapped *.home.lab that the
+      # DNS catch-all resolves to this host) gets our branded 404. The goal:
+      # "my page or my 404", never a search engine.
+      virtualHosts."pages-catchall" = {
+        default = true;
+        serverName = "_";
+        root = cfg.contentRoot;
+        locations."/" = {
+          extraConfig = "return 404;";
+        };
+        locations."= /404.html" = {
+          extraConfig = "internal;";
+        };
+        extraConfig = ''
+          error_page 404 /404.html;
+        '';
       };
     };
 

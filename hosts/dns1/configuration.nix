@@ -61,6 +61,8 @@
       "dns2.home.lab"    = "192.168.20.54";
       "dns3.home.lab"    = "192.168.20.55";
       "nixsrv1.home.lab" = "192.168.20.55";
+      "observ.home.lab"  = "192.168.20.56";
+      "pages.home.lab"   = "192.168.20.57";
       # NAS
       "nas.home.lab"     = "192.168.20.12";
       # Legacy Ubuntu services (VLAN 10 — update IPs as services migrate to VLAN 20)
@@ -68,6 +70,16 @@
       "director.home.lab" = "192.168.7.58";
       "nginx.home.lab"    = "192.168.7.59";
       "habla.home.lab"    = "192.168.7.55";
+      # Infrastructure (VLAN 10)
+      "home-assistant.home.lab" = "192.168.7.56";
+      "printer.home.lab"        = "192.168.7.104";
+
+      # Catch-all — Blocky resolves subdomains of a mapping, so this maps every
+      # UNMAPPED *.home.lab (and bare home.lab) to the pages host, whose default
+      # vhost returns a branded 404. Explicit entries above are more specific and
+      # win. Net effect: any home.lab name is either a real service or *our* 404 —
+      # never a search engine. (Verified 2026-06-22: sub.nas.home.lab -> nas IP.)
+      "home.lab" = "192.168.20.57";
     };
   };
 

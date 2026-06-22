@@ -41,6 +41,9 @@
   # ── Static site ────────────────────────────────────────────────────────────
   mySystem.pages.enable = true;
   mySystem.pages.contentRoot = ./www;
+  # Serve content for the hostname and the LAN IP; any other Host (e.g. an
+  # unmapped *.home.lab caught by the dns1 catch-all) falls to the branded 404.
+  mySystem.pages.serverNames = [ "pages.home.lab" "192.168.20.57" ];
 
   system.stateVersion = "25.05";
 }
