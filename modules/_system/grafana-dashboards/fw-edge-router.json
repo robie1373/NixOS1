@@ -1,0 +1,1067 @@
+{
+  "description": "fw (OPNsense edge router): health, WAN + per-VLAN interfaces, system (FreeBSD metric names), and syslog incl. DHCP / gateway / IDS. Metrics pulled via os-node_exporter, logs via remote syslog.",
+  "id": null,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "title": "Health",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "options": {
+                "0": {
+                  "color": "red",
+                  "index": 0,
+                  "text": "DOWN"
+                },
+                "1": {
+                  "color": "green",
+                  "index": 1,
+                  "text": "UP"
+                }
+              },
+              "type": "value"
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "up{host=\"fw\"}",
+          "instant": true,
+          "legendFormat": "fw up",
+          "refId": "A"
+        }
+      ],
+      "title": "fw up",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "id": 3,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "time()-node_boot_time_seconds{host=\"fw\"}",
+          "instant": true,
+          "legendFormat": "Uptime",
+          "refId": "A"
+        }
+      ],
+      "title": "Uptime",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 1
+      },
+      "id": 4,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "100*(1-avg(rate(node_cpu_seconds_total{host=\"fw\",mode=\"idle\"}[5m])))",
+          "instant": true,
+          "legendFormat": "CPU busy",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU busy",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 1
+      },
+      "id": 5,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "node_load1{host=\"fw\"}",
+          "instant": true,
+          "legendFormat": "Load 1m",
+          "refId": "A"
+        }
+      ],
+      "title": "Load 1m",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.8
+              },
+              {
+                "color": "red",
+                "value": 0.9
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 1
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "1-(sum(node_memory_free_bytes{host=\"fw\"}+node_memory_inactive_bytes{host=\"fw\"}+node_memory_cache_bytes{host=\"fw\"}+node_memory_laundry_bytes{host=\"fw\"})/node_memory_size_bytes{host=\"fw\"})",
+          "instant": true,
+          "legendFormat": "Mem used",
+          "refId": "A"
+        }
+      ],
+      "title": "Mem used",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 0.8
+              },
+              {
+                "color": "red",
+                "value": 0.9
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "id": 7,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "textMode": "value_and_name"
+      },
+      "targets": [
+        {
+          "expr": "1-node_filesystem_avail_bytes{host=\"fw\",mountpoint=\"/\"}/node_filesystem_size_bytes{host=\"fw\",mountpoint=\"/\"}",
+          "instant": true,
+          "legendFormat": "Root disk",
+          "refId": "A"
+        }
+      ],
+      "title": "Root disk",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "id": 8,
+      "title": "WAN uplink (igc0)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "bps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "id": 9,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(node_network_receive_bytes_total{host=\"fw\",device=\"igc0\"}[5m])*8",
+          "legendFormat": "in",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(node_network_transmit_bytes_total{host=\"fw\",device=\"igc0\"}[5m])*8",
+          "legendFormat": "out",
+          "refId": "B"
+        }
+      ],
+      "title": "WAN throughput",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 0
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(node_network_receive_errs_total{host=\"fw\",device=\"igc0\"}[5m])",
+          "legendFormat": "rx errs",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(node_network_transmit_errs_total{host=\"fw\",device=\"igc0\"}[5m])",
+          "legendFormat": "tx errs",
+          "refId": "B"
+        },
+        {
+          "expr": "rate(node_network_receive_drop_total{host=\"fw\",device=\"igc0\"}[5m])",
+          "legendFormat": "rx drop",
+          "refId": "C"
+        },
+        {
+          "expr": "rate(node_network_transmit_drop_total{host=\"fw\",device=\"igc0\"}[5m])",
+          "legendFormat": "tx drop",
+          "refId": "D"
+        }
+      ],
+      "title": "WAN errors & drops (/s)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "id": 11,
+      "title": "LAN / VLAN interfaces (ix0 = trunk, vlan01-05 = VLANs 10-50)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "bps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 15
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(node_network_receive_bytes_total{host=\"fw\",device=~\"ix0|vlan.*\"}[5m])*8",
+          "legendFormat": "{{device}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Throughput In by interface",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "bps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 15
+      },
+      "id": 13,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(node_network_transmit_bytes_total{host=\"fw\",device=~\"ix0|vlan.*\"}[5m])*8",
+          "legendFormat": "{{device}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Throughput Out by interface",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 0
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "rate(node_network_receive_errs_total{host=\"fw\"}[5m])+rate(node_network_transmit_errs_total{host=\"fw\"}[5m])",
+          "legendFormat": "{{device}} errs",
+          "refId": "A"
+        },
+        {
+          "expr": "rate(node_network_receive_drop_total{host=\"fw\"}[5m])+rate(node_network_transmit_drop_total{host=\"fw\"}[5m])",
+          "legendFormat": "{{device}} drops",
+          "refId": "B"
+        }
+      ],
+      "title": "Interface errors & drops (/s)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 31
+      },
+      "id": 15,
+      "title": "System",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 32
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "avg by (mode)(rate(node_cpu_seconds_total{host=\"fw\"}[5m]))*100",
+          "legendFormat": "{{mode}}",
+          "refId": "A"
+        }
+      ],
+      "title": "CPU by mode",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 32
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "node_load1{host=\"fw\"}",
+          "legendFormat": "1m",
+          "refId": "A"
+        },
+        {
+          "expr": "node_load5{host=\"fw\"}",
+          "legendFormat": "5m",
+          "refId": "B"
+        },
+        {
+          "expr": "node_load15{host=\"fw\"}",
+          "legendFormat": "15m",
+          "refId": "C"
+        }
+      ],
+      "title": "Load average",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 30,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            }
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 40
+      },
+      "id": 18,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "{__name__=~\"node_memory_(active|wired|inactive|cache|laundry|free)_bytes\",host=\"fw\"}",
+          "legendFormat": "{{__name__}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Memory",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "decbytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 40
+      },
+      "id": 19,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "node_memory_swap_used_bytes{host=\"fw\"}",
+          "legendFormat": "swap used",
+          "refId": "A"
+        }
+      ],
+      "title": "Swap used",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "victoriametrics"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 48
+      },
+      "id": 20,
+      "options": {
+        "legend": {
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "expr": "1-node_filesystem_avail_bytes{host=\"fw\"}/node_filesystem_size_bytes{host=\"fw\"}",
+          "legendFormat": "{{mountpoint}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Filesystem used",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 55
+      },
+      "id": 21,
+      "title": "Logs - fw syslog (hostname=fw.home.lab)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "victoriametrics-logs-datasource",
+        "uid": "victorialogs"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 56
+      },
+      "id": 22,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "expr": "hostname:=\"fw.home.lab\" severity:<5",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Errors & warnings (severity < 5)",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "victoriametrics-logs-datasource",
+        "uid": "victorialogs"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 66
+      },
+      "id": 23,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "expr": "hostname:=\"fw.home.lab\" app_name:=\"dnsmasq-dhcp\"",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "DHCP activity (dnsmasq-dhcp)",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "victoriametrics-logs-datasource",
+        "uid": "victorialogs"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 66
+      },
+      "id": 24,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "expr": "hostname:=\"fw.home.lab\" app_name:~\"suricata\"",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "IDS / Suricata alerts",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "victoriametrics-logs-datasource",
+        "uid": "victorialogs"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 0,
+        "y": 75
+      },
+      "id": 25,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "expr": "hostname:=\"fw.home.lab\" app_name:~\"dpinger\"",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "Gateway (dpinger) events",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "victoriametrics-logs-datasource",
+        "uid": "victorialogs"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 12,
+        "x": 12,
+        "y": 75
+      },
+      "id": 26,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "expr": "hostname:=\"fw.home.lab\"",
+          "queryType": "instant",
+          "refId": "A"
+        }
+      ],
+      "title": "All fw logs",
+      "type": "logs"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "homelab",
+    "fw",
+    "opnsense",
+    "router",
+    "network"
+  ],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timezone": "browser",
+  "title": "fw - Edge Router (OPNsense)",
+  "uid": "fw-edge-router",
+  "version": 1
+}
