@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Comeback — A Chi Running Return-to-Base</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#23302b; --muted:#5c6b62; --line:#e4e7e2; --paper:#fff; --cream:#f8f6f0;
+    --pine:#2f6f5a; --clay:#bd5b3a;
+    --p0:#6f8f6a; --p0t:#eef3ea;
+    --p1:#3f8b5f; --p1t:#ebf4ee;
+    --p2:#1f8a7a; --p2t:#e7f3f0;
+    --p3:#bd5b3a; --p3t:#f7ede7;
+    --x:#4a6b7c;  --xt:#ebf1f4;
+  }
+  *{box-sizing:border-box;}
+  html{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ margin:0; background:var(--cream); color:var(--ink);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+    font-size:14px; line-height:1.55; }
+  .sheet{ max-width:840px; margin:0 auto; padding:36px 46px 64px; background:var(--paper); }
+  h1,h2,h3,h4,.serif{ font-family:'Fraunces','Iowan Old Style',Georgia,serif; }
+
+  /* hero */
+  .hero{ border-radius:18px; padding:40px 42px 36px; color:#fff; position:relative; overflow:hidden;
+    background:linear-gradient(135deg,#244e40 0%,#357a5f 60%,#4f8f5e 100%); }
+  .hero::after{ content:""; position:absolute; right:-70px; bottom:-90px; width:280px; height:280px;
+    border-radius:50%; background:rgba(255,255,255,.07); }
+  .hero .eyebrow{ text-transform:uppercase; letter-spacing:.22em; font-size:11px; font-weight:600; opacity:.85; }
+  .hero h1{ margin:.14em 0 .14em; font-size:46px; font-weight:600; line-height:1.0; letter-spacing:-.015em; }
+  .hero .sub{ font-size:16px; max-width:54ch; opacity:.95; }
+  .mantra{ margin-top:20px; font-family:'Fraunces',serif; font-style:italic; font-size:17px; opacity:.95; }
+
+  /* section scaffolding */
+  .kicker{ text-transform:uppercase; letter-spacing:.18em; font-size:11px; font-weight:700; color:var(--pine); }
+  h2.sec{ font-size:25px; font-weight:600; margin:6px 0 12px; letter-spacing:-.01em; }
+  section{ margin-top:34px; }
+  .lead{ color:var(--muted); }
+  p{ margin:.5em 0; }
+
+  /* callouts */
+  .callout{ border-radius:14px; padding:18px 22px; margin:18px 0; border:1px solid var(--line); background:#fff; }
+  .callout.driver{ border-color:#d8e6dd; background:linear-gradient(180deg,#f1f7f2,#fff); }
+  .callout.driver h3{ color:var(--pine); }
+  .callout h3{ font-size:16px; margin:0 0 8px; font-weight:600; }
+  .callout.driver b{ color:var(--ink); }
+  .nono{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0; }
+  .nono .item{ border:1px solid var(--line); border-left:4px solid var(--clay); border-radius:10px; padding:14px 16px; background:#fff; }
+  .nono .item b{ font-weight:600; }
+  .source-note{ border:1px solid #ecd9cf; background:var(--p3t); border-radius:14px; padding:16px 20px; }
+  .source-note h3{ color:#a44b2c; margin:0 0 6px; font-size:15px; }
+
+  /* week grid */
+  table{ width:100%; border-collapse:collapse; margin:10px 0; font-size:13.5px; }
+  th,td{ text-align:left; padding:9px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th{ font-family:'Fraunces',serif; font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); border-bottom:2px solid var(--line); }
+  td .d{ font-family:'Fraunces',serif; font-weight:600; color:var(--pine); white-space:nowrap; }
+  tr.rest td .d{ color:var(--muted); }
+  .tag{ display:inline-block; font-size:11px; font-weight:600; padding:2px 8px; border-radius:999px; }
+  .tag.run{ background:var(--p1t); color:#2f6f4c; }
+  .tag.bw{ background:var(--xt); color:#3c5a69; }
+  .tag.bike{ background:var(--xt); color:#3c5a69; }
+  .tag.row{ background:var(--xt); color:#3c5a69; }
+  .tag.rest{ background:#f0efe9; color:var(--muted); }
+
+  /* phases */
+  .phase{ margin-top:30px; }
+  .phase-head{ display:flex; align-items:baseline; gap:12px; padding-bottom:8px; border-bottom:2px solid; margin-bottom:14px; }
+  .phase-head .num{ font-family:'Fraunces',serif; font-size:13px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; }
+  .phase-head h3{ margin:0; font-size:22px; font-weight:600; }
+  .phase-head .wks{ margin-left:auto; color:var(--muted); font-size:13px; }
+  .p0 .phase-head{border-color:var(--p0);} .p0 .num,.p0 h3{color:#56794f;}
+  .p1 .phase-head{border-color:var(--p1);} .p1 .num,.p1 h3{color:#2f6f4c;}
+  .p2 .phase-head{border-color:var(--p2);} .p2 .num,.p2 h3{color:#16766a;}
+  .p3 .phase-head{border-color:var(--p3);} .p3 .num,.p3 h3{color:#a44b2c;}
+  .phase .goal{ color:var(--muted); font-size:13.5px; margin:-4px 0 12px; }
+  .focusline{ font-size:13.5px; margin:10px 0 0; }
+  .focusline b{ font-weight:600; }
+
+  /* drills */
+  .drills{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .drill{ border:1px solid var(--line); border-radius:14px; padding:16px 18px; background:#fff; break-inside:avoid; }
+  .drill .h{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .drill .n{ width:26px;height:26px;flex:none;border-radius:50%; background:var(--pine); color:#fff;
+    font-family:'Fraunces',serif; font-weight:600; font-size:13px; display:flex;align-items:center;justify-content:center; }
+  .drill h4{ margin:0; font-size:15.5px; font-weight:600; }
+  .drill .lede{ font-size:12.5px; color:var(--muted); font-style:italic; margin:-2px 0 8px 36px; }
+  .drill ul{ margin:0; padding-left:18px; } .drill li{ margin:4px 0; }
+
+  /* generic panels */
+  .panel{ border:1px solid var(--line); border-radius:14px; padding:18px 20px; background:#fff; }
+  .panel.tint0{ background:var(--p0t); border-color:#dde8d7; }
+  .panel h3{ font-size:16px; margin:0 0 10px; font-weight:600; }
+  .panel ul{ margin:0; padding-left:18px; } .panel li{ margin:5px 0; }
+  .twocol{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .cad-box{ border:1px dashed var(--p0); border-radius:12px; padding:12px 16px; background:#fff; margin-top:12px; font-size:13.5px; }
+  .cad-box b{color:#56794f;}
+
+  .xgrid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .xpanel{ border:1px solid var(--line); border-left:4px solid var(--x); border-radius:12px; padding:16px 18px; background:#fff; }
+  .xpanel h4{ margin:0 0 8px; font-size:15px; font-weight:600; }
+  .xpanel ul{ margin:0; padding-left:18px; } .xpanel li{ margin:4px 0; }
+
+  .dash{ border:1px solid #ecd9cf; background:var(--p3t); border-radius:14px; padding:16px 22px; }
+  .dash h3{ color:#a44b2c; margin:0 0 8px; }
+  .dash ul{ margin:0; padding-left:18px; } .dash li{ margin:5px 0; }
+
+  /* reading guide */
+  .rg h4{ font-family:'Fraunces',serif; font-size:16px; margin:18px 0 6px; }
+  .readfirst{ border:1px solid #d8e6dd; background:#f1f7f2; border-radius:12px; padding:14px 18px; margin:10px 0; font-size:13.5px; }
+  .readfirst b{ color:var(--pine); }
+  td.secref b{ font-weight:600; }
+
+  .footer{ margin-top:42px; text-align:center; color:var(--muted); }
+  .footer .big{ font-family:'Fraunces',serif; font-style:italic; font-size:21px; color:var(--ink); }
+  .footer .src{ font-size:11px; margin-top:10px; }
+
+  @media (max-width:680px){ .drills,.twocol,.xgrid,.nono{ grid-template-columns:1fr; } .sheet{ padding:22px; } }
+
+  /* print */
+  @page{ size:Letter; margin:14mm; }
+  @media print{
+    body{ background:#fff; font-size:11pt; }
+    .sheet{ max-width:none; margin:0; padding:0; }
+    section.brk{ break-before:page; page-break-before:always; }
+    .drill,.panel,.xpanel,.callout,.dash,.source-note,.week-tbl,.readfirst,.nono .item{ break-inside:avoid; page-break-inside:avoid; }
+    tr,td,th{ break-inside:avoid; }
+    a{ color:inherit; text-decoration:none; }
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="eyebrow">Chi Running · Return-to-Base · Minimal Footwear</div>
+    <h1>The Comeback</h1>
+    <p class="sub">A deliberate rebuild back onto the trail — time-based, easy, and built around one stubborn fact: the engine comes back faster than the tissue. So the first month's whole job is patience. Form first. Distance second. Speed, eventually, on its own.</p>
+    <div class="mantra">&ldquo;Form before distance, distance before speed. The restraint <em>is</em> the training.&rdquo;</div>
+  </header>
+
+  <!-- THE DRIVER -->
+  <section>
+    <div class="kicker">Why it's built this way</div>
+    <h2 class="sec">The one fact that drives everything</h2>
+    <div class="callout driver">
+      <h3>Cardio returns faster than tissue.</h3>
+      <p>A former trail racer gets the engine and the movement pattern back quickly — but connective tissue (calves, Achilles, feet, tendons) lags weeks behind. In minimal shoes with a Chi midfoot landing, that load lands squarely on the calf/Achilles complex. The feet are already minimal-adapted from daily wear, which helps — but <b>walking load is not running load.</b> The entire job of the first month is letting tissue catch up to lungs that will feel strong and want to chase. <b>The restraint is the training.</b></p>
+      <p>This is also why the cross-training fits: bike and rowing are <b>zero-impact</b> — they build the aerobic engine without loading the bottleneck. Strength builds the resilience the tissue needs. None of it shortcuts the gradual running progression, but all of it supports it.</p>
+    </div>
+
+    <div class="kicker" style="margin-top:14px;">The two things that aren't negotiable</div>
+    <div class="nono">
+      <div class="item"><b>Easy = nasal-breathing / full-conversation pace.</b> If you can't talk in sentences, you're going too fast. No exceptions for the first 8 weeks.</div>
+      <div class="item"><b>High cadence when running</b> — ~85–90 footfalls <em>per foot</em>/min (170–180 total). Short, quick, light steps. The single biggest impact-reducer there is. Metronome or a 170–180&nbsp;BPM playlist.</div>
+    </div>
+    <p class="lead">Everything is <b>time-based, not distance-based</b>. One <b>form focus per week</b> — only ever think about one thing at a time.</p>
+  </section>
+
+  <!-- THE WEEK -->
+  <section class="brk">
+    <div class="kicker">The shape of a week</div>
+    <h2 class="sec">3 runs + 3 cross-training + 1 rest</h2>
+    <p class="lead">The cross-training is a <b>mixture of rowing, stationary bike, and bodyweight (YAYOG)</b> — a default below, but <b>rotatable</b>: swap freely so it stays fun. The one rule that isn't flexible: <b>don't stack leg-heavy strength right before a run</b>, and keep the rest day real.</p>
+    <table class="week-tbl">
+      <tr><th>Day</th><th>Default</th><th>Notes</th></tr>
+      <tr><td><span class="d">Day 1</span></td><td><span class="tag run">Run</span> — week's form focus</td><td>Easy. Follows the rest day — freshest run.</td></tr>
+      <tr><td><span class="d">Day 2</span></td><td><span class="tag bw">Bodyweight (YAYOG)</span></td><td>Full body; light on legs early so Day 4's run stays clean.</td></tr>
+      <tr><td><span class="d">Day 3</span></td><td><span class="tag bike">Stationary bike</span></td><td>Easy aerobic early; intervals only from Phase 2+.</td></tr>
+      <tr><td><span class="d">Day 4</span></td><td><span class="tag run">Run</span></td><td>Easy.</td></tr>
+      <tr><td><span class="d">Day 5</span></td><td><span class="tag row">Rowing</span></td><td>Easy aerobic; keep it easy in weeks with a longer Day 6 run.</td></tr>
+      <tr><td><span class="d">Day 6</span></td><td><span class="tag run">Run</span> — the longer one, later phases</td><td>Easy.</td></tr>
+      <tr class="rest"><td><span class="d">Day 7</span></td><td><span class="tag rest">Full rest</span></td><td>Or gentle mobility/core if it feels good. Not required.</td></tr>
+    </table>
+    <div class="callout">
+      <h3>Intensity follows the same &ldquo;gears later&rdquo; logic as the running</h3>
+      <ul style="margin:0;padding-left:18px;">
+        <li><b>Phases 0–1 (wks 1–5):</b> <em>everything</em> easy. Bike/row at conversational Z2. YAYOG at Basic/Ladder level — build movement proficiency, don't chase failure. Don't let cross-training fatigue compete with the tissue-adaptation window.</li>
+        <li><b>Phases 2–3 (wks 6+):</b> intensity allowed on cross-days — bike/row intervals, YAYOG Stappers/Tabatas/Circuits — but keep the hard ones <em>off</em> the days bracketing your key runs.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- CALENDAR -->
+  <section class="brk">
+    <div class="kicker">The running calendar</div>
+    <h2 class="sec">Four phases, no rush</h2>
+
+    <div class="phase p0">
+      <div class="phase-head"><span class="num">Phase 0</span><h3>Form Foundation</h3><span class="wks">Weeks 1–2</span></div>
+      <p class="goal">Install posture + cadence, wake the tissue gently. The run days are mostly ChiWalking technique — same form skeleton, near-zero impact — with short running tastes.</p>
+      <table>
+        <tr><th>Run day</th><th>Session</th></tr>
+        <tr><td><span class="d">Day 1</span></td><td><b>ChiWalk</b> 25 min — full ChiWalking technique (the column, the lean, pick up the feet). Do the <b>wall lean drill</b> before heading out.</td></tr>
+        <tr><td><span class="d">Day 4</span></td><td><b>ChiWalk + tastes</b> 25 min, 4–6 × 30 sec light running when springy. Metronome (170–180) <em>only for the run bits</em>.</td></tr>
+        <tr><td><span class="d">Day 6</span></td><td><b>ChiWalk + tastes</b> 30 min, 6–8 × 30 sec light running.</td></tr>
+      </table>
+      <p class="focusline"><b>Week 1 focus:</b> Posture (the column) &nbsp;·&nbsp; <b>Week 2 focus:</b> The Lean (fall from the ankles)</p>
+    </div>
+
+    <div class="phase p1">
+      <div class="phase-head"><span class="num">Phase 1</span><h3>Run/Walk Build</h3><span class="wks">Weeks 3–5</span></div>
+      <p class="goal">Run grows, walk shrinks. The walk is active recovery + a ChiWalking form reset, not survival. Each run day: 5 min ChiWalk warmup → intervals → 5 min ChiWalk cooldown.</p>
+      <table>
+        <tr><th>Week</th><th>Focus</th><th>Interval set (repeat ~20–24 min)</th></tr>
+        <tr><td><span class="d">Wk 3</span></td><td><b>Cadence</b> (lock 170–180 running)</td><td>Run 1 min / walk 2 min × 7</td></tr>
+        <tr><td><span class="d">Wk 4</span></td><td><b>Relaxed lower legs</b> (land midfoot under center, peel the foot up)</td><td>Run 2 min / walk 1.5 min × 6</td></tr>
+        <tr><td><span class="d">Wk 5</span></td><td><b>Arm swing</b> (elbows ~90°, swing back, loose shoulders)</td><td>Run 3 min / walk 1 min × 5</td></tr>
+      </table>
+    </div>
+
+    <div class="phase p2">
+      <div class="phase-head"><span class="num">Phase 2</span><h3>Continuous Easy</h3><span class="wks">Weeks 6–8</span></div>
+      <p class="goal">Close the walk breaks. Still strictly easy, still high cadence.</p>
+      <table>
+        <tr><th>Week</th><th>Focus</th><th>Sessions (3 run days)</th></tr>
+        <tr><td><span class="d">Wk 6</span></td><td><b>Body sensing</b> (scan head-to-toe for tension)</td><td>Run 5 min / walk 1 min × 4</td></tr>
+        <tr><td><span class="d">Wk 7</span></td><td><b>The lean revisited</b> (use it to shift gears, not push)</td><td>Run 8 min / walk 1 min × 3</td></tr>
+        <tr><td><span class="d">Wk 8</span></td><td>Pull it together</td><td>One continuous 20–25 min easy run + two Wk-7 sessions</td></tr>
+      </table>
+    </div>
+
+    <div class="phase p3">
+      <div class="phase-head"><span class="num">Phase 3</span><h3>Consolidate &amp; Play</h3><span class="wks">Weeks 9+</span></div>
+      <p class="goal">Now it gets to be what you actually love.</p>
+      <ul>
+        <li>3 runs/week: two easy 25–30 min + one longer <b>weekend easy run</b> (start ~35 min, grow ~5 min/week, cap growth at ~10%/week).</li>
+        <li><b>Reintroduce trail</b> deliberately — easy terrain first. Uneven ground is where Chi form pays off and where the fun is.</li>
+        <li>Chi <b>gears</b>: occasional 20–30 sec where the lean increases a touch for speed — <em>never</em> by pushing, only by leaning more. Play, don't train.</li>
+        <li>Sustainable base. A 5-mile trail run becomes a target from here — zero rush.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- DRILLS -->
+  <section class="brk">
+    <div class="kicker">Starting over — full detail</div>
+    <h2 class="sec">The drills</h2>
+    <div class="drills">
+
+      <div class="drill">
+        <div class="h"><span class="n">1</span><h4>The Column (Posture)</h4></div>
+        <div class="lede">The foundation everything hangs on.</div>
+        <ul>
+          <li>Feet hip-width. Lengthen through the crown — a string lifting the top of the head (&ldquo;needle and thread&rdquo;).</li>
+          <li><b>Level the pelvis</b>: gently engage the lower abs to take the arch out of the low back. The move most people miss.</li>
+          <li>Stack ankle → hip → shoulder → ear. Soften (don't lock) the knees.</li>
+          <li>Re-find it constantly — every walk break is a reset.</li>
+        </ul>
+      </div>
+
+      <div class="drill">
+        <div class="h"><span class="n">2</span><h4>The Wall Lean Drill</h4></div>
+        <div class="lede">Letting gravity, not muscle, move you.</div>
+        <ul>
+          <li>Arm's length from a wall, hands flat on it.</li>
+          <li>Hold the column rigid — a straight board ankles to crown. <b>No bend at the waist.</b></li>
+          <li>Pivot from the <b>ankles</b> and tip toward the wall; catch with the hands.</li>
+          <li>Feel where you'd &ldquo;fall&rdquo; — that's your lean. Then try it walking, no wall.</li>
+        </ul>
+      </div>
+
+      <div class="drill">
+        <div class="h"><span class="n">3</span><h4>Cadence Work</h4></div>
+        <ul>
+          <li><b>Running</b> cadence: metronome 85–90/foot (170–180 total). Count one foot for 20 sec ×3.</li>
+          <li>Steps stay <b>short and quick</b>, landing under you — not reaching out front.</li>
+          <li>Higher cadence shortens stride and lightens landing automatically — most protective thing for the calves/Achilles early.</li>
+        </ul>
+      </div>
+
+      <div class="drill">
+        <div class="h"><span class="n">4</span><h4>Relaxed Lower Legs</h4></div>
+        <div class="lede">The soft, quiet landing. (&ldquo;Run on sand.&rdquo;)</div>
+        <ul>
+          <li>Lower legs <b>passive/lazy</b>. Foot lands midfoot, flat &amp; soft, <b>under</b> your center.</li>
+          <li><b>Peel the foot up</b> behind you — &ldquo;lift the heel,&rdquo; not &ldquo;push the ground.&rdquo;</li>
+          <li>A quiet landing (barely audible) is the tell you've got it.</li>
+        </ul>
+      </div>
+
+      <div class="drill">
+        <div class="h"><span class="n">5</span><h4>Arm Swing</h4></div>
+        <ul>
+          <li>Elbows ~90°, fairly fixed. Swing <b>front-to-back from the shoulder</b>, not across.</li>
+          <li>Hands relaxed (hold a chip without breaking it). Shoulders down and loose.</li>
+          <li>Arm swing sets &amp; protects cadence — quicker arms, quicker feet.</li>
+        </ul>
+      </div>
+
+      <div class="drill">
+        <div class="h"><span class="n">6</span><h4>The Gears / Levels</h4></div>
+        <div class="lede">Later — Phase 3.</div>
+        <ul>
+          <li><b>Speed comes from lean angle, not effort.</b> Cadence stays ~180 at every gear.</li>
+          <li>Faster: lean a little more from the ankles; let the stride open <em>behind</em> you.</li>
+          <li>Slower: reduce the lean. You never &ldquo;push&rdquo; to a faster gear.</li>
+        </ul>
+      </div>
+
+      <div class="drill">
+        <div class="h"><span class="n">7</span><h4>Body Sensing</h4></div>
+        <div class="lede">A skill woven through all of it.</div>
+        <ul>
+          <li>Continuous head-to-toe scan while moving: where am I tense? Jaw, shoulders, hands, lower legs — soften whatever grips.</li>
+          <li>The feedback loop that keeps form honest and the run easy.</li>
+        </ul>
+      </div>
+
+      <div class="drill">
+        <div class="h"><span class="n">+</span><h4>Body Looseners (warm-up)</h4></div>
+        <ul>
+          <li>Dreyer's gentle joint-mobility set before running: pelvic rotations, ankle/foot circles, arm &amp; shoulder loosening.</li>
+          <li>Worth doing the book's full sequence — see the Reading Guide for the section.</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CHIWALKING -->
+  <section class="brk">
+    <div class="kicker">The zero-impact on-ramp</div>
+    <h2 class="sec">ChiWalking</h2>
+    <p class="lead">Same foundation as ChiRunning, applied to walking: same column, same ankle-lean, same land-under-center, same relaxed lower legs. The Dreyers frame running as the gear <em>above</em> walking. Using it in Phases 0–1 grooves the form at near-zero impact while the running tissue catches up.</p>
+    <div class="twocol">
+      <div class="panel tint0">
+        <h3>The technique asks you to</h3>
+        <ul>
+          <li>maintain posture/alignment whenever walking or standing;</li>
+          <li><b>pick up your feet</b> (no shuffling);</li>
+          <li>walk with a <b>shorter stride</b> than usual;</li>
+          <li>let the spine twist and pelvis rotate;</li>
+          <li><b>extend the stride behind you</b>, not reaching forward (it comes from pelvic rotation);</li>
+          <li>relax arms and legs so they swing freely;</li>
+          <li><b>lean slightly forward, landing with feet directly under your center of gravity.</b></li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Cadence vs. stride — the key difference</h3>
+        <ul>
+          <li><b>Walking:</b> keep stride a constant, comfortable length; change speed by changing <b>cadence</b>. Speed up by bending the arms more and swinging faster.</li>
+          <li><b>Running:</b> keep <b>cadence</b> near-constant (~180); change speed by changing the lean (stride).</li>
+        </ul>
+        <div class="cad-box">This is <b>why the 170–180 metronome is for running only</b> — matching your walking steps to it would force an unnatural shuffle.</div>
+        <div class="cad-box" style="border-color:var(--clay);"><b style="color:#a44b2c;">Achilles cue:</b> feel <em>no burning on the back of the heel</em> — that burn means you're overstretching the Achilles. Your canary, in Dreyer's own words.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CROSS TRAINING -->
+  <section class="brk">
+    <div class="kicker">3 days a week</div>
+    <h2 class="sec">Cross-Training</h2>
+    <p class="lead">Bodyweight strength (YAYOG) + zero-impact aerobic (bike, rowing). Placement &amp; intensity rules live in <b>The shape of a week</b>. Specifics:</p>
+    <div class="xgrid">
+      <div class="xpanel">
+        <h4>Bodyweight — You Are Your Own Gym</h4>
+        <ul>
+          <li><b>Start with the Basic Program for Beginners (Ch 12)</b> — a periodized 10-week, 20–30 min, ~4–5×/week structure; use the one weekly slot (Day 2) plus optional rest-day core.</li>
+          <li>111 exercises in four categories: <b>Push, Pull, Legs &amp; Glutes, Core</b> (Ch 11). Balance push + pull + core, <em>light</em> legs early.</li>
+          <li>Formats, easy → hard: <b>Ladders</b> (low-intensity, build proficiency, avoid failure — <b>start here</b>) → <b>Circuits</b> (45 on/30 off) → <b>Stappers / Interval Sets / Tabatas</b> (high-intensity, <b>Phase 2+</b>, never the day before a key run).</li>
+          <li>Lauren's instruction matches the running ethos: build proficiency and a base before pushing intensity.</li>
+        </ul>
+      </div>
+      <div class="xpanel">
+        <h4>Stationary Bike &amp; Rowing</h4>
+        <ul>
+          <li><b>Phases 0–1:</b> easy, conversational Z2 only, 20–30 min. Engine-building that spares the calf/Achilles entirely — the smartest cardio for your bottleneck.</li>
+          <li><b>Phases 2+:</b> add intervals (e.g. hard 1 min / easy 2 min), kept off the days around longer runs.</li>
+          <li>Rowing doubles as posture work — the catch/finish reward the same tall, hinged-from-the-hips alignment Chi asks for. Long lower back, drive with the legs.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="source-note" style="margin-top:16px;">
+      <h3>Source note: anti-cardio argument noted and set aside</h3>
+      <p style="margin:0;"><em>You Are Your Own Gym</em> (Ch 4) argues steady-state cardio is a waste of time and pushes high-intensity intervals instead. <b>Noted and deliberately set aside</b> — that argument follows from Lauren's fat-loss/efficiency goal, which isn't the objective here. We use his <b>exercises and Ladders progression for strength and tissue resilience</b>, not his cardio thesis. Bike/row stay as the low-impact engine; running is the sport-specific goal. No tension to resolve — different tools for different jobs.</p>
+    </div>
+  </section>
+
+  <!-- READING THE BODY -->
+  <section>
+    <div class="kicker">Self-monitoring</div>
+    <h2 class="sec">Reading the body</h2>
+    <div class="dash">
+      <ul>
+        <li><b>Calf/Achilles is the canary.</b> Mild day-after tightness = normal adaptation. Sharp pain, morning stiffness that won't warm out, or anything that changes the gait → take 2–3 extra rest days and <b>do not advance the week.</b> Tendons heal slower than muscle.</li>
+        <li><b>Soreness rule:</b> loosens in the first 5 min of walking → go. Worsens as you move → stop, walk home.</li>
+        <li><b>The specific trap:</b> the week the lungs feel great and you want to skip two phases. That's exactly when the tissue isn't ready. Hold the line.</li>
+        <li><b>Overtraining signs</b> (YAYOG's list): stalled progress, chronic fatigue, dropping motivation, frequent niggles, and an <b>elevated resting heart rate</b> (measured first thing in the morning). With 6 active days, watch these — cut cross-training intensity first, <em>never</em> the rest day.</li>
+        <li><b>Repeat any week</b> that doesn't feel easy. The calendar is a guide, not a contract.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- READING GUIDE -->
+  <section class="brk rg">
+    <div class="kicker">By section, in your own copies</div>
+    <h2 class="sec">Reading guide</h2>
+    <p class="lead">Editions: <em>ChiRunning</em> 2009 Revised (Touchstone); <em>ChiWalking</em> 2009 (Simon &amp; Schuster); <em>You Are Your Own Gym</em> (Mark Lauren). All de-DRMed in Calibre; ChiRunning + ChiWalking also on the X4. These are <b>section names from each copy's table of contents</b> — ebooks navigate by chapter, so this is what you'll actually tap to.</p>
+
+    <h4 style="color:#2f6f4c;">ChiRunning</h4>
+    <table>
+      <tr><th>Drill / Concept</th><th>Chapter → Section</th></tr>
+      <tr><td>The Column / Posture</td><td class="secref">Ch 4 → <b>Posture</b> · Ch 2 → <b>Needle in Cotton: Alignment and Relaxation</b></td></tr>
+      <tr><td>The Lean</td><td class="secref">Ch 4 → <b>The Lean: Gravity-Assisted Running</b> · Ch 1 → <b>Cooperating with Two Forces</b></td></tr>
+      <tr><td>Cadence</td><td class="secref">Ch 4 → <b>Gears, Cadence, and Stride Length</b></td></tr>
+      <tr><td>Relaxed lower legs / soft landing</td><td class="secref">Ch 4 → <b>Lower Body Form Focuses</b> · Ch 3 → <b>Relaxation: The Path of Least Resistance</b></td></tr>
+      <tr><td>Midfoot strike (minimal shoes)</td><td class="secref">Intro to New Edition → <b>The Midfoot Strike</b></td></tr>
+      <tr><td>Arm swing</td><td class="secref">Ch 4 → <b>Upper Body Form Focuses</b></td></tr>
+      <tr><td>The Gears / Levels</td><td class="secref">Ch 4 → <b>Gears, Cadence, and Stride Length</b></td></tr>
+      <tr><td>Body Sensing</td><td class="secref">Ch 3 → <b>Body Sensing: High-Speed Access</b></td></tr>
+      <tr><td>Body Looseners (warm-up)</td><td class="secref">Ch 8 → <b>Transitioning into a Run</b> → <b>Preparing Your Body</b></td></tr>
+      <tr><td>Form → distance → speed</td><td class="secref">Ch 6 → <b>Form, Distance, and Speed: The Three Development Stages</b></td></tr>
+    </table>
+    <div class="readfirst"><b>Read these first:</b> Ch 5 → <b>Learning Program for Beginning Runners</b> + <b>Ten Lessons for Learning the ChiRunning Technique</b> (the book's own on-ramp — run it in parallel with this calendar); Ch 9 → <b>The Difference Between Productive and Nonproductive Discomfort</b> (the authoritative self-monitoring read — <em>before</em> a twinge, not during); Ch 7 → <b>Trail Running: A Healthy Addiction</b> (for Phase 3).</div>
+
+    <h4 style="color:#16766a;">ChiWalking</h4>
+    <table>
+      <tr><th>Concept</th><th>Chapter → Section</th></tr>
+      <tr><td>The technique (all of it)</td><td class="secref">Ch 4 → <b>The ChiWalking Technique</b></td></tr>
+      <tr><td>Alignment / posture</td><td class="secref">Ch 4 → <b>Step 1: Get Aligned</b></td></tr>
+      <tr><td>Cadence vs. stride (walking logic)</td><td class="secref">Ch 4 → <b>The Importance of Cadence and Stride Length</b></td></tr>
+      <tr><td>Warm-up / cooldown</td><td class="secref">Ch 5 → <b>Transitioning Into / Out of Your Walk</b></td></tr>
+      <tr><td>Building a walking program</td><td class="secref">Ch 7 → <b>Creating Your ChiWalking Program</b></td></tr>
+      <tr><td>Trail / off-road</td><td class="secref">Ch 8 → <b>Hiking: Welcome to Off-road Walking</b></td></tr>
+    </table>
+
+    <h4 style="color:#a44b2c;">You Are Your Own Gym</h4>
+    <table>
+      <tr><th>Topic</th><th>Chapter</th></tr>
+      <tr><td>The 111 exercises (Push/Pull/Legs &amp; Glutes/Core)</td><td class="secref">Ch 11 → <b>The Exercises</b></td></tr>
+      <tr><td>Workout formats (Ladders, Circuits, Stappers, Tabatas…)</td><td class="secref">Ch 11 (Training Tools) + Ch 12</td></tr>
+      <tr><td>The 10-week programs (start: <b>Basic for Beginners</b>)</td><td class="secref">Ch 12 → <b>The Program</b></td></tr>
+      <tr><td>Why bodyweight</td><td class="secref">Ch 3 → <b>Why Bodyweight Exercises?</b></td></tr>
+      <tr><td>The anti-cardio argument (know the bias)</td><td class="secref">Ch 4 → <b>Why Strength Training? (or Why Cardio Is a Waste of Your Time)</b></td></tr>
+    </table>
+  </section>
+
+  <footer class="footer">
+    <p class="big">Form. Distance. Speed. — in that order, and no other.</p>
+    <p>The trail will still be there. Build the runner who can enjoy it.</p>
+    <p class="src">Built on ChiRunning &amp; ChiWalking (Danny &amp; Katherine Dreyer) and You Are Your Own Gym (Mark Lauren). No tracking, by choice — this runs on feel.</p>
+  </footer>
+
+</div>
+</body>
+</html>
