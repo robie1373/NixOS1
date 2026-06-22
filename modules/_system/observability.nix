@@ -29,6 +29,11 @@ let
     { host = "omada";   addr = "192.168.20.50:9100"; }
     { host = "dns1";    addr = "192.168.20.53:9100"; }
     { host = "pages";   addr = "192.168.20.57:9100"; }
+    # fw is the edge router (OPNsense/FreeBSD), pulled on its VLAN-20 leg (.254).
+    # Needs os-node_exporter on fw AND a LAB-interface allow rule for observ→.254:9100
+    # (fw blocks lab→RFC1918 by default, same as the explicit :53 pass). Shows up=0
+    # until both are in place. Logs come via syslog (udp/514→1514), not this scrape.
+    { host = "fw";      addr = "192.168.20.254:9100"; }
     # { host = "nixsrv1"; addr = "192.168.20.55:9100"; }  # NOT deployed (KDE/installer, no reservation, 2026-06-18) — phantom up=0; re-enable when nixsrv1 is a real server. See [[homelab]].
     # { host = "dns2"; addr = "192.168.20.54:9100"; }  # never completed; enable once deployed
   ];
