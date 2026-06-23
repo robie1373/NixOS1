@@ -204,9 +204,21 @@ to toggle the IM state. Clear `TriggerKeys` in fcitx5 config (it's unused).
 
 It does not exist in xkeyboard-config. Using it silently does nothing.
 
-### 4. Do not set `GTK_IM_MODULE` on Wayland
+### 4. Use `fcitx5.waylandFrontend`, don't just omit `GTK_IM_MODULE`
 
 fcitx5 on Wayland uses the native text-input-v3 protocol. Setting `GTK_IM_MODULE=fcitx`
-conflicts with this and causes fcitx5's own Wayland Diagnose to warn. GTK4 and
-Wayland-native apps use the Wayland IM protocol directly. Only `QT_IM_MODULE` and
-`XMODIFIERS` are needed for Qt5 and XWayland apps respectively.
+conflicts with this and causes fcitx5's own Wayland Diagnose to warn.
+
+**Gotcha (found 2026-06-23):** omitting `GTK_IM_MODULE` from your own
+`environment.sessionVariables` is *not* enough. The NixOS `i18n.inputMethod`
+fcitx5 module exports `GTK_IM_MODULE` **and** `QT_IM_MODULE` itself, via
+`environment.variables`, whenever `waylandFrontend = false` (the default) — see
+`nixos/modules/i18n/input-method/fcitx5.nix`, the `lib.optionalAttrs
+(!cfg.waylandFrontend)` block. You can't unset what the module sets by leaving it
+out of your config.
+
+The fix is to set `i18n.inputMethod.fcitx5.waylandFrontend = true;`. The module
+then skips both vars and fcitx uses the Wayland frontend. Re-add `QT_IM_MODULE =
+"fcitx"` and `XMODIFIERS = "@im=fcitx"` explicitly in `sessionVariables` for
+Qt5/XWayland apps; leave `GTK_IM_MODULE` unset. Verify after a rebuild with
+`grep IM_MODULE /etc/set-environment` — `GTK_IM_MODULE` should be absent.
