@@ -4,6 +4,11 @@
     enable = true;
     type   = "fcitx5";
     fcitx5 = {
+      # Use the native Wayland text-input-v3 frontend. This stops the NixOS
+      # module from exporting GTK_IM_MODULE/QT_IM_MODULE (it only sets them when
+      # waylandFrontend = false), which is what fcitx5's Wayland Diagnose warns
+      # about. GTK4 and Wayland-native apps talk the Wayland IM protocol directly.
+      waylandFrontend = true;
       addons = with pkgs; [
         fcitx5-hangul   # Korean IM
         fcitx5-gtk      # GTK2/3/4 IM module
