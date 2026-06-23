@@ -24,7 +24,7 @@
   };
 
   myHome.teacha = {
-    enable      = true;
+    enable      = false;
     package     = inputs.teacha.packages.${pkgs.stdenv.hostPlatform.system}.teacha-daemon;
     pollSeconds = 120;
   };
