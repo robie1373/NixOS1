@@ -48,8 +48,12 @@ REBOOT_TIMEOUT="${REBOOT_TIMEOUT:-180}"
 declare -A SSH_TARGET    # LAN target: home.lab name or IP
 declare -A SSH_FLAGS     # extra nixos-rebuild flags per host
 
-SSH_TARGET[fivenix]="robie@192.168.7.137"
-SSH_FLAGS[fivenix]="--sudo --ask-sudo-password"
+# fivenix: Windows-only until further notice (2026-06-23). Was the dual-boot
+# rig; its NixOS install is not in service. Re-enable here + in REMOTE_HOSTS
+# when it's booting NixOS again. Needs --sudo --ask-sudo-password (robie user,
+# interactive — can't be driven non-interactively).
+# SSH_TARGET[fivenix]="robie@192.168.7.137"
+# SSH_FLAGS[fivenix]="--sudo --ask-sudo-password"
 
 SSH_TARGET[ntfy]="root@ntfy.home.lab"
 SSH_FLAGS[ntfy]=""
@@ -64,7 +68,7 @@ SSH_FLAGS[omada]=""
 # SSH_TARGET[nixos1]="root@nixos1.home.lab"
 # SSH_FLAGS[nixos1]=""
 
-REMOTE_HOSTS=(fivenix ntfy langlab omada)
+REMOTE_HOSTS=(ntfy langlab omada)   # fivenix Windows-only — see above
 
 # ── Arg parsing ───────────────────────────────────────────────────────────────
 
