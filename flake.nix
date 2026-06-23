@@ -41,7 +41,14 @@
 
     # nix-wrapper-modules: wraps programs as standalone derivations with embedded config.
     # Used in Phase 1 migration to replace home-manager program modules.
-    nix-wrapper-modules.url = "github:BirdeeHub/nix-wrapper-modules";
+    nix-wrapper-modules = {
+      url = "github:BirdeeHub/nix-wrapper-modules";
+      # Without this follows, nix-wrapper-modules drags in its own
+      # nixpkgs-unstable and becomes the lock node *named* `nixpkgs`, which
+      # every other input's `follows = "nixpkgs"` then binds to — splitting the
+      # fleet across two nixpkgs branches. Follow root's nixos-unstable instead.
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     # LangLab source — pinned here so the server VM always runs a known version.
     # Update with: nix flake update langlab
