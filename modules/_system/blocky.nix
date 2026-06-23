@@ -20,6 +20,20 @@
       default     = {};
       description = "hostname → IP map for local DNS entries (home.lab zone)";
     };
+
+    dohPort = lib.mkOption {
+      type        = lib.types.nullOr lib.types.port;
+      default     = null;
+      example     = 8443;
+      description = ''
+        If set, enable Blocky's DoH (HTTPS) listener on this TCP port and open
+        the firewall for it. certFile/keyFile are intentionally left empty so
+        Blocky self-signs — the public, client-certificate (mTLS) TLS is
+        terminated by an external nginx edge that reverse-proxies /dns-query
+        here; this internal hop only needs transport encryption. Null = no DoH
+        listener (default). Roaming-DoH endpoint design: dns.nixnook.com.
+      '';
+    };
   };
 
   config = lib.mkIf config.mySystem.blocky.enable {
@@ -96,8 +110,15 @@
         log.level = "warn";
 
         # ── Port / IP version ───────────────────────────────────────────
-        ports.dns  = 53;
-        ports.http = 4000;
+        ports = {
+          dns  = 53;
+          http = 4000;
+        } // lib.optionalAttrs (config.mySystem.blocky.dohPort != null) {
+          # DoH listener for the roaming endpoint. Self-signed (certFile/keyFile
+          # empty) — the public client-cert TLS is terminated by the nginx edge;
+          # this hop is internal. See ledger roaming-doh-design.
+          https = ":${toString config.mySystem.blocky.dohPort}";
+        };
         # Force IPv4 only — VMs on VLAN 20 have no IPv6 routing
         connectIPVersion = "v4";
       };
@@ -114,7 +135,8 @@
       wants = [ "network-online.target" ];
     };
 
-    networking.firewall.allowedTCPPorts = [ 53 4000 ];
+    networking.firewall.allowedTCPPorts =
+      [ 53 4000 ] ++ lib.optional (config.mySystem.blocky.dohPort != null) config.mySystem.blocky.dohPort;
     networking.firewall.allowedUDPPorts = [ 53 ];
   };
 }

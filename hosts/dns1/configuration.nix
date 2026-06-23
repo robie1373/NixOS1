@@ -49,6 +49,10 @@
   # ── DNS service ───────────────────────────────────────────────────────────
   mySystem.blocky = {
     enable = true;
+    # DoH listener (self-signed, internal) behind the nginx mTLS edge for the
+    # roaming endpoint dns.nixnook.com. Reachable only on VLAN 20 until the edge
+    # is built; harmless to enable early. See ledger roaming-doh-design.
+    dohPort = 8443;
     localDns = {
       # Hypervisors
       "pve.home.lab"  = "192.168.7.40";
