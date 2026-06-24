@@ -6,7 +6,20 @@
     modules = [
       # Overlay: adds pkgs.qmd from the upstream qmd flake (tracked as a flake input,
       # so nix flake update keeps it current automatically).
-      { nixpkgs.overlays = [ (_: _: { qmd = inputs.qmd.packages.x86_64-linux.default; }) ]; }
+      #
+      # The upstream flake's wrapper hard-sets LD_LIBRARY_PATH to sqlite only and
+      # omits libstdc++. node-llama-cpp's prebuilt CPU binary links against
+      # libstdc++.so.6, and qmd runs under bun (which, unlike node, does not carry
+      # libstdc++ in its own process image), so embedding/search die with a
+      # misleading NoBinaryFoundError. Append gcc's cc.lib to the wrapper so the
+      # prebuilt CPU backend loads. See ~/ledger2/qmd.md for the full diagnosis.
+      { nixpkgs.overlays = [ (final: _: {
+        qmd = inputs.qmd.packages.x86_64-linux.default.overrideAttrs (old: {
+          postFixup = (old.postFixup or "") + ''
+            sed -i "s|^\(export LD_LIBRARY_PATH='[^']*\)'|\1:${final.stdenv.cc.cc.lib}/lib'|" $out/bin/qmd
+          '';
+        });
+      }) ]; }
       ../../../hosts/flipper/configuration.nix
       ../../_features/common.nix
       ../../_features/tailscale-watchdog.nix
