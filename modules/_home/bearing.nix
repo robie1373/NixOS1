@@ -525,12 +525,20 @@ in {
 
     systemd.user.services.qmd-update = {
       Unit = {
-        Description = "QMD — re-index markdown collections";
+        Description = "QMD — re-index markdown collections and refresh embeddings";
         After       = [ "default.target" ];
       };
       Service = {
         Type      = "oneshot";
-        ExecStart = "${pkgs.qmd}/bin/qmd update";
+        # `qmd update` refreshes the BM25/keyword index but does NOT embed — it
+        # only prints a reminder to run `qmd embed`. Embed second so semantic
+        # (vsearch/query) results stay current too. Both are incremental: update
+        # only touches changed files, embed only vectors hashes that lack them.
+        # oneshot runs these sequentially and aborts if update fails.
+        ExecStart = [
+          "${pkgs.qmd}/bin/qmd update"
+          "${pkgs.qmd}/bin/qmd embed"
+        ];
       };
     };
     systemd.user.timers.qmd-update = {
