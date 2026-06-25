@@ -39,11 +39,6 @@ let
         BODY="How's it going? Worth a quick recalibration."
         URGENCY="low"
         ;;
-      korean)
-        TITLE="Korean lesson"
-        BODY="Past you decided to study every day. Today's lesson is waiting."
-        URGENCY="normal"
-        ;;
       custom)
         TITLE="''${2:-The Bearing}"
         BODY="''${3:-Check in.}"
@@ -77,8 +72,6 @@ let
           TITLE="Morning Bearing"; MSG="Time to take a bearing."; PRI="default"; TAGS="compass" ;;
         checkin)
           TITLE="Check-in"; MSG="Worth a quick recalibration."; PRI="low"; TAGS="clock" ;;
-        korean)
-          TITLE="Korean lesson"; MSG="Today's lesson is waiting."; PRI="default"; TAGS="books" ;;
         *)
           TITLE="The Bearing"; MSG="Check in."; PRI="default"; TAGS="bell" ;;
       esac
@@ -214,13 +207,11 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
   '';
 
   # bearing-status: offline status card — no AI, no network.
-  # Reads OBLIGATIONS.md, DELEGATIONS.md, and study-robie.log and prints
-  # a compact summary to stdout.
+  # Reads OBLIGATIONS.md and DELEGATIONS.md and prints a compact summary to stdout.
   bearingStatus = pkgs.writeShellScriptBin "bearing-status" ''
     TODAY=$(date +%Y-%m-%d)
     TOMORROW=$(date -d "tomorrow" +%Y-%m-%d)
     WORK="${cfg.workDir}"
-    LANG_LOG="$HOME/languages/study-robie.log"
 
     printf "══════════════════════════════════════\n"
     printf "  %s\n" "$(date '+%A, %B %-d %Y')"
@@ -274,40 +265,8 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
     done)
     [ -n "$RECUR" ] && printf "%s\n" "$RECUR" || printf "  (all up to date)\n"
 
-    # ── Korean ────────────────────────────────────────────────────────────
-    printf "\n▸ KOREAN\n"
-    if [ -f "$LANG_LOG" ]; then
-      KOREAN_DATES=$(grep $'\tkorean\t' "$LANG_LOG" \
-        | awk -F'\t' '{split($1,a,"T"); print a[1]}' | sort -u)
-      TOTAL_DAYS=$(printf "%s\n" "$KOREAN_DATES" | grep -c '.')
-      LAST_DATE=$(printf "%s\n" "$KOREAN_DATES" | tail -1)
-
-      # Streak: count consecutive days ending at most recent studied day
-      # (today if done today, yesterday if not yet done today — preserves
-      # the "at-risk" streak so it shows before you do the day's lesson)
-      STREAK=0
-      if [ -n "$LAST_DATE" ]; then
-        TODAY_EPOCH=$(date +%s)
-        LAST_EPOCH=$(date -d "$LAST_DATE" +%s)
-        DAYS_SINCE=$(( (TODAY_EPOCH - LAST_EPOCH) / 86400 ))
-        if [ "$DAYS_SINCE" -le 1 ]; then
-          CHECK=$(date -d "$LAST_DATE" +%s)
-          while true; do
-            CHECK_DATE=$(date -d "@''${CHECK}" +%Y-%m-%d)
-            if printf "%s\n" "$KOREAN_DATES" | grep -qx "$CHECK_DATE"; then
-              STREAK=$((STREAK + 1))
-              CHECK=$((CHECK - 86400))
-            else
-              break
-            fi
-          done
-        fi
-      fi
-      printf "  Last: %s  |  Streak: %s days  |  Total: %s unique days\n" \
-        "$LAST_DATE" "$STREAK" "$TOTAL_DAYS"
-    else
-      printf "  (no study log found)\n"
-    fi
+    # Korean streak/study block removed 2026-06-25 — Korean is now just an
+    # interest, not a tracked daily obligation. No more streaks or study-day counts.
 
     # ── Next up (DELEGATIONS.md Outbox — priority "next" or "pri 1") ──────
     printf "\n▸ NEXT UP\n"
