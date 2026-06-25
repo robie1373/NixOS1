@@ -62,7 +62,8 @@ let
       "$TITLE" "$BODY"
   '';
 
-  # bearing-checkin: called by systemd timers. Fires desktop (dunst) and phone (ntfy) notifications.
+  # bearing-checkin: manual notification command (no longer timer-driven as of the
+  # 2026-06-25 pull-model switch). Fires desktop (dunst) and phone (ntfy) notifications.
   # ntfy topic is read from ~/work/.ntfy-topic at runtime — populate with:
   #   op read 'op://devops/temp ntfy topic bearing/password' > ~/work/.ntfy-topic
   # Silently skips ntfy if the file is missing.
@@ -364,22 +365,10 @@ in {
       };
     };
 
+    # schedule.briefing / .morning / .checkin removed with the move to a pull model
+    # (2026-06-25): no more pre-gather or notification timers. Only the autonomous
+    # maintenance jobs (lint, ingest) remain scheduled.
     schedule = {
-      briefing = lib.mkOption {
-        type    = lib.types.str;
-        default = "06:30";
-        description = "Time for morning briefing pre-gather (runs claude --print headlessly)";
-      };
-      morning = lib.mkOption {
-        type    = lib.types.str;
-        default = "08:00";
-        description = "Time for morning check-in notification";
-      };
-      checkin = lib.mkOption {
-        type    = lib.types.str;
-        default = "13:00";
-        description = "Time for midday check-in notification";
-      };
       lint = lib.mkOption {
         type    = lib.types.str;
         default = "16:00";
@@ -405,83 +394,18 @@ in {
 
     # ── Systemd timer + service units ──────────────────────────────────────
 
-    systemd.user.services.bearing-briefing = {
-      Unit = {
-        Description = "The Bearing — morning briefing pre-gather";
-        After       = [ "network-online.target" ];
-      };
-      Service = {
-        Type        = "oneshot";
-        ExecStart   = "${bearingBriefing}/bin/bearing-briefing";
-        Environment = [ "SSH_AUTH_SOCK=" ];  # prevent 1Password prompts in unattended context
-      };
-    };
-    systemd.user.timers.bearing-briefing = {
-      Unit.Description = "The Bearing — morning briefing pre-gather timer";
-      Timer = {
-        OnCalendar = "Mon-Sun ${cfg.schedule.briefing}";
-        Persistent = true;
-      };
-      Install.WantedBy = [ "timers.target" ];
-    };
-
-    systemd.user.services.bearing-activity = {
-      Unit = {
-        Description = "The Bearing — git activity pre-gather";
-        After       = [ "default.target" ];
-      };
-      Service = {
-        Type        = "oneshot";
-        ExecStart   = "${bearingActivity}/bin/bearing-activity";
-        Environment = [ "SSH_AUTH_SOCK=" ];  # git log is local; no 1Password prompts
-      };
-    };
-    systemd.user.timers.bearing-activity = {
-      Unit.Description = "The Bearing — git activity pre-gather timer";
-      Timer = {
-        OnCalendar = "Mon-Sun ${cfg.schedule.briefing}";
-        Persistent = true;
-      };
-      Install.WantedBy = [ "timers.target" ];
-    };
-
-    systemd.user.services.bearing-morning = {
-      Unit = {
-        Description = "The Bearing — morning check-in";
-        After       = [ "graphical-session.target" ];
-      };
-      Service = {
-        Type      = "oneshot";
-        ExecStart = "${bearingCheckin}/bin/bearing-checkin morning";
-      };
-    };
-    systemd.user.timers.bearing-morning = {
-      Unit.Description = "The Bearing — morning check-in timer";
-      Timer = {
-        OnCalendar = "Mon-Sun ${cfg.schedule.morning}";
-        Persistent = true;
-      };
-      Install.WantedBy = [ "timers.target" ];
-    };
-
-    systemd.user.services.bearing-checkin = {
-      Unit = {
-        Description = "The Bearing — midday check-in";
-        After       = [ "graphical-session.target" ];
-      };
-      Service = {
-        Type      = "oneshot";
-        ExecStart = "${bearingCheckin}/bin/bearing-checkin checkin";
-      };
-    };
-    systemd.user.timers.bearing-checkin = {
-      Unit.Description = "The Bearing — midday check-in timer";
-      Timer = {
-        OnCalendar = "Mon-Sun ${cfg.schedule.checkin}";
-        Persistent = true;
-      };
-      Install.WantedBy = [ "timers.target" ];
-    };
+    # NOTE: The Bearing moved from a push model to a pull model (2026-06-25).
+    # Removed scheduled units:
+    #   - bearing-morning / bearing-checkin notification timers — Robie now starts
+    #     sessions on demand (`bearing` command / Super+B / dunst click-to-open)
+    #     rather than being prompted on a schedule.
+    #   - bearing-briefing / bearing-activity pre-gather timers — pre-gathering at a
+    #     fixed morning hour only paid off when sessions reliably happened in the
+    #     morning. In the pull model the briefing/activity are gathered LAZILY at the
+    #     first session of the day (the interactive session does the WebSearch/
+    #     git-log gather itself).
+    # The bearing-checkin, bearing-notify, bearing-briefing and bearing-activity
+    # scripts remain on PATH as manual commands (e.g. "pre-gather now") if wanted.
 
     systemd.user.services.bearing-lint = {
       Unit = {
