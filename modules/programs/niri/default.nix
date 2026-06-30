@@ -61,6 +61,13 @@
                 match app-id="floatterm"
                 open-floating true
             }
+
+            // Tablet-mode exit button (flipper only — yad window from tablet-exit-button).
+            // Float it so it stays touch-reachable above whatever's running in tablet mode.
+            window-rule {
+                match app-id="yad"
+                open-floating true
+            }
           '';
 
           binds = {
@@ -156,6 +163,12 @@
 
             # Mic toggle — Super+M since F9 generates no OS events on this ASUS BIOS
             "Mod+M" = _: { props."allow-when-locked" = true; content."spawn-sh" = "mic-toggle"; };
+
+            # Convertible: enter/leave portrait tablet mode (flipper only; no-op
+            # elsewhere — tablet-toggle is installed only on flipper). Press while
+            # the keyboard still works to ENTER; exit is via the on-screen touch
+            # button, since the keyboard is disabled in tablet mode.
+            "Mod+Shift+T".spawn-sh = "tablet-toggle";
           };
         };
       };

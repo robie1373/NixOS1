@@ -3,6 +3,7 @@
 {
   imports = [
     ./hardware-configuration.nix
+    ./tablet.nix
     ../../modules/_features/net-speed.nix
   ];
 
