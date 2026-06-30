@@ -4,7 +4,8 @@
 # Replaces Technitium on dns1/dns2/nixsrv1.
 #
 # No web UI — all config is declarative here.
-# Adding a new local DNS entry: edit localDns map, run `colmena apply --on dns1,dns2,nixsrv1`.
+# Adding a new local DNS entry: edit localDns map, then deploy with
+# `scripts/update-fleet.sh dns1 dns2` (or `nixos-rebuild switch --flake .#dns1 --target-host root@dns1.home.lab`).
 #
 # Blocklists refresh every 4h. On first start, Blocky fetches all lists before
 # serving queries — takes ~30s with these list sizes. This is normal.

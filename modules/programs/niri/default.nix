@@ -63,10 +63,13 @@
             }
 
             // Tablet-mode exit button (flipper only — yad window from tablet-exit-button).
-            // Float it so it stays touch-reachable above whatever's running in tablet mode.
+            // Float it so it stays touch-reachable above whatever's running in tablet
+            // mode. Match both possible app-ids: GTK may report "yad" or the
+            // --class/--name "tablet-exit" depending on version.
             window-rule {
-                match app-id="yad"
+                match app-id="yad|tablet-exit"
                 open-floating true
+                default-floating-position x=16 y=16 relative-to="top-right"
             }
           '';
 

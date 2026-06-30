@@ -74,11 +74,14 @@ let
     text = ''
       # Blocks until the user touches the button (or closes the window), then exits
       # tablet mode. yad is a direct child, so the wait is reliable.
-      yad --class=tablet-exit --title="Tablet Mode" \
-          --text="Tablet mode active — keyboard &amp; touchpad off" \
-          --button="⟲   Exit Tablet Mode:0" \
-          --no-escape --sticky --skip-taskbar --undecorated \
-          --width=460 --height=180 >/dev/null 2>&1 || true
+      # Compact corner panel — small enough to stay out of the content area, but a
+      # full-width button gives a reliable touch target. niri parks it top-right
+      # (window-rule default-floating-position).
+      yad --class=tablet-exit --name=tablet-exit --title="Tablet Mode" \
+          --text="Tablet mode" \
+          --button="⟲  Exit Tablet:0" \
+          --buttons-layout=center --no-escape --sticky --skip-taskbar --undecorated \
+          --borders=6 --width=240 --height=96 >/dev/null 2>&1 || true
       tablet-mode-off
     '';
   };
