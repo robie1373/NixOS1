@@ -63,6 +63,14 @@ let
         kill "$(cat "$STATE/wvkbd.pid")" 2>/dev/null || true
       fi
 
+      # Belt and braces: no matter what the pid bookkeeping says, no evdev grab or
+      # OSK may survive tablet-mode-off. evtest and wvkbd have no other use on this
+      # machine, so killing every instance is safe. This is the backstop that makes
+      # a repeat of the 2026-07-01 stuck-keyboard incident impossible even if the
+      # state files are wrong.
+      pkill -f "evtest --grab" 2>/dev/null || true
+      pkill -f "wvkbd-mobintl" 2>/dev/null || true
+
       # Restore landscape.
       niri msg output eDP-1 transform normal || true
 
@@ -96,7 +104,12 @@ let
     runtimeInputs = baseInputs ++ [ pkgs.evtest pkgs.wvkbd ];
     text = ''
       STATE="''${XDG_RUNTIME_DIR:-/tmp}/tablet-mode"
-      if [ -d "$STATE" ]; then
+      # Atomic mkdir doubles as mutex + "already in tablet mode" check. A plain
+      # [ -d ] guard raced: two taps of the bar button in quick succession both
+      # passed the check, and the second instance truncated the first's grab.pids —
+      # orphaning live evdev grabs that exit could no longer find (this locked up
+      # the keyboard on 2026-07-01 and needed a power-button reboot).
+      if ! mkdir "$STATE" 2>/dev/null; then
         notify-send "Tablet mode" "Already in tablet mode." || true
         exit 0
       fi
@@ -119,10 +132,9 @@ let
       if ! pgrep -x noctalia >/dev/null 2>&1; then
         notify-send "Tablet mode" "noctalia not running — refusing to disable inputs (no exit button)." || true
         echo "noctalia not running; not disabling inputs" >&2
+        rmdir "$STATE" 2>/dev/null || true
         exit 1
       fi
-
-      mkdir -p "$STATE"
 
       # ── Rotate to portrait ─────────────────────────────────────────────────
       niri msg output eDP-1 transform "${portraitTransform}" || true
