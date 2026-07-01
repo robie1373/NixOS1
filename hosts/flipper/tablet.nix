@@ -68,20 +68,42 @@ let
     '';
   };
 
+  # Show/hide the on-screen keyboard. wvkbd starts hidden (--hidden) so it doesn't
+  # permanently eat the screen; SIGUSR2 shows it, SIGUSR1 hides it. We track the
+  # current state with a flag file so a single button toggles.
+  tablet-osk-toggle = pkgs.writeShellApplication {
+    name = "tablet-osk-toggle";
+    runtimeInputs = [ pkgs.coreutils pkgs.procps ];
+    text = ''
+      STATE="''${XDG_RUNTIME_DIR:-/tmp}/tablet-mode"
+      [ -f "$STATE/wvkbd.pid" ] || exit 0
+      pid=$(cat "$STATE/wvkbd.pid")
+      if [ -f "$STATE/osk.shown" ]; then
+        kill -USR1 "$pid" 2>/dev/null || true   # hide
+        rm -f "$STATE/osk.shown"
+      else
+        kill -USR2 "$pid" 2>/dev/null || true   # show
+        touch "$STATE/osk.shown"
+      fi
+    '';
+  };
+
   tablet-exit-button = pkgs.writeShellApplication {
     name = "tablet-exit-button";
-    runtimeInputs = [ pkgs.yad tablet-mode-off ];
+    runtimeInputs = [ pkgs.yad tablet-osk-toggle tablet-mode-off ];
     text = ''
-      # Blocks until the user touches the button (or closes the window), then exits
-      # tablet mode. yad is a direct child, so the wait is reliable.
-      # Compact corner panel — small enough to stay out of the content area, but a
-      # full-width button gives a reliable touch target. niri parks it top-right
-      # (window-rule default-floating-position).
+      # Blocks until the user touches Exit (or closes the window), then exits tablet
+      # mode. yad is a direct child, so the wait is reliable. Compact corner panel —
+      # niri parks it top-right (window-rule default-floating-position). Two buttons:
+      #   ⌨ Keyboard — summon/dismiss the OSK (a command button: yad runs it and the
+      #                panel stays open, because the response is a command not a number).
+      #   ⟲ Exit     — response code 0 closes yad, which triggers tablet-mode-off.
       yad --class=tablet-exit --name=tablet-exit --title="Tablet Mode" \
           --text="Tablet mode" \
-          --button="⟲  Exit Tablet:0" \
+          --button="⌨   Keyboard:${tablet-osk-toggle}/bin/tablet-osk-toggle" \
+          --button="⟲   Exit:0" \
           --buttons-layout=center --no-escape --sticky --skip-taskbar --undecorated \
-          --borders=6 --width=240 --height=96 >/dev/null 2>&1 || true
+          --borders=6 --width=320 --height=100 >/dev/null 2>&1 || true
       tablet-mode-off
     '';
   };
@@ -126,8 +148,8 @@ let
       # ── Rotate to portrait ─────────────────────────────────────────────────
       niri msg output eDP-1 transform "${portraitTransform}" || true
 
-      # ── On-screen keyboard ─────────────────────────────────────────────────
-      wvkbd-mobintl >/dev/null 2>&1 &
+      # ── On-screen keyboard (starts hidden; summon via the panel's Keyboard button) ─
+      wvkbd-mobintl --hidden >/dev/null 2>&1 &
       echo "$!" > "$STATE/wvkbd.pid"
 
       # ── Disable keyboard + touchpad (exclusive evdev grab) ─────────────────
