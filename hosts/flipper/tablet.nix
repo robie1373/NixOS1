@@ -5,20 +5,29 @@
 # has not been upstreamed (see ledger flipper.md / flipper-tablet.md) — so there
 # is no automatic rotation or fold detection. This is a *manual* toggle.
 #
-# Design notes (why it works where the Hyprland-era version didn't):
+# Design notes:
 #   * Rotation uses `niri msg output … transform` (runtime, temporary). niri 26.04
 #     has no `set-output-transform` action; this subcommand is the replacement.
 #   * Keyboard + touchpad are disabled with an exclusive evdev grab (evtest --grab),
 #     NOT `hyprctl dispatch disabledevice` (a no-op under niri). robie is in the
 #     `input` group, so the grab needs no root. The touchscreen + stylus (ILIT2901)
 #     are deliberately left live as the primary escape hatch.
-#   * NEVER-STUCK GUARANTEE: the on-screen exit button is launched and verified
-#     BEFORE any input is disabled. If it fails to start, the script aborts with the
-#     keyboard/touchpad still working. The exit trigger is touch-only (a floating yad
-#     button) — it is never bound to the keyboard it just disabled.
+#   * The exit control is a noctalia bar button running `tablet-toggle`. This must
+#     be a *layer-shell* surface: niri intercepts touch on floating windows for
+#     window move/resize gestures and does not deliver taps to the client, so a
+#     floating yad button was untappable by touch. The noctalia bar is layer-shell
+#     (like wvkbd, whose keys take touch fine), so its buttons are touch-reliable.
+#     Add the buttons via noctalia Settings → Bar (custom_button widgets):
+#        command = "tablet-toggle"      glyph e.g. device-tablet
+#        command = "tablet-osk-toggle"  glyph e.g. keyboard
+#   * NEVER-STUCK GUARANTEE: inputs are only disabled if noctalia is running (the
+#     bar carries the exit button). If noctalia isn't up, tablet-mode-on aborts
+#     without grabbing. Backstops regardless: the touchscreen stays live, the OSK's
+#     Enter reaches the focused surface (virtual keyboard, not grabbed), and
+#     `tablet-mode-off` is reachable over SSH.
 #
-# Entry: Mod+Shift+T (bound in modules/programs/niri/default.nix), run while the
-# keyboard still works. Exit: touch the on-screen button, or `tablet-mode-off` over SSH.
+# Entry: the noctalia bar button, or Mod+Shift+T (while the keyboard still works).
+# Exit:  the same bar button, or `tablet-mode-off` over SSH.
 { pkgs, ... }:
 let
   # Kernel input device names (compositor-independent; from /sys/class/input/*/device/name).
@@ -27,7 +36,7 @@ let
   touchpadName = "ASCP1205:00 093A:3020 Touchpad";
 
   # Portrait transform. niri "90" matches the Hyprland-era transform 1 (90°).
-  # If the screen rotates the wrong way for how you hold it, change to "270".
+  # Confirmed correct orientation on hardware 2026-06-30. ("270" would be the other way.)
   portraitTransform = "90";
 
   baseInputs = with pkgs; [ niri coreutils procps libnotify ];
@@ -37,8 +46,8 @@ let
     runtimeInputs = baseInputs;
     text = ''
       STATE="''${XDG_RUNTIME_DIR:-/tmp}/tablet-mode"
-      # Idempotent: if we're not in tablet mode, do nothing. This makes it safe to
-      # call from the exit-button watcher, the toggle, and SSH all at once.
+      # Idempotent: if we're not in tablet mode, do nothing. Safe to call from the
+      # bar button, the toggle, and SSH concurrently.
       [ -d "$STATE" ] || exit 0
 
       # Re-enable keyboard + touchpad: killing the grab holders closes their fds,
@@ -54,12 +63,6 @@ let
         kill "$(cat "$STATE/wvkbd.pid")" 2>/dev/null || true
       fi
 
-      # Stop the exit button (harmless if it's the parent that called us — we get
-      # orphaned to init and finish cleanup).
-      if [ -f "$STATE/button.pid" ]; then
-        kill "$(cat "$STATE/button.pid")" 2>/dev/null || true
-      fi
-
       # Restore landscape.
       niri msg output eDP-1 transform normal || true
 
@@ -69,8 +72,8 @@ let
   };
 
   # Show/hide the on-screen keyboard. wvkbd starts hidden (--hidden) so it doesn't
-  # permanently eat the screen; SIGUSR2 shows it, SIGUSR1 hides it. We track the
-  # current state with a flag file so a single button toggles.
+  # permanently eat the screen; SIGUSR2 shows it, SIGUSR1 hides it. A flag file
+  # tracks state so one button toggles.
   tablet-osk-toggle = pkgs.writeShellApplication {
     name = "tablet-osk-toggle";
     runtimeInputs = [ pkgs.coreutils pkgs.procps ];
@@ -88,29 +91,9 @@ let
     '';
   };
 
-  tablet-exit-button = pkgs.writeShellApplication {
-    name = "tablet-exit-button";
-    runtimeInputs = [ pkgs.yad tablet-osk-toggle tablet-mode-off ];
-    text = ''
-      # Blocks until the user touches Exit (or closes the window), then exits tablet
-      # mode. yad is a direct child, so the wait is reliable. Compact corner panel —
-      # niri parks it top-right (window-rule default-floating-position). Two buttons:
-      #   ⌨ Keyboard — summon/dismiss the OSK (a command button: yad runs it and the
-      #                panel stays open, because the response is a command not a number).
-      #   ⟲ Exit     — response code 0 closes yad, which triggers tablet-mode-off.
-      yad --class=tablet-exit --name=tablet-exit --title="Tablet Mode" \
-          --text="Tablet mode" \
-          --button="⌨   Keyboard:${tablet-osk-toggle}/bin/tablet-osk-toggle" \
-          --button="⟲   Exit:0" \
-          --buttons-layout=center --no-escape --sticky --skip-taskbar --undecorated \
-          --borders=6 --width=320 --height=100 >/dev/null 2>&1 || true
-      tablet-mode-off
-    '';
-  };
-
   tablet-mode-on = pkgs.writeShellApplication {
     name = "tablet-mode-on";
-    runtimeInputs = baseInputs ++ [ pkgs.evtest pkgs.wvkbd tablet-exit-button ];
+    runtimeInputs = baseInputs ++ [ pkgs.evtest pkgs.wvkbd ];
     text = ''
       STATE="''${XDG_RUNTIME_DIR:-/tmp}/tablet-mode"
       if [ -d "$STATE" ]; then
@@ -131,24 +114,20 @@ let
       }
 
       # ── SAFETY GATE ────────────────────────────────────────────────────────
-      # Bring up the touch-reachable EXIT control first. If it can't launch, abort
-      # and leave the keyboard/touchpad working. Never disable inputs without a way back.
-      tablet-exit-button &
-      BTN_PID="$!"
-      sleep 0.4
-      if ! kill -0 "$BTN_PID" 2>/dev/null; then
-        notify-send "Tablet mode" "Exit control failed to launch — aborting, inputs left on." || true
-        echo "exit button failed to launch; not disabling inputs" >&2
+      # The exit control is the noctalia bar button. Never disable inputs unless
+      # noctalia (hence the bar, hence the exit button) is actually running.
+      if ! pgrep -x noctalia >/dev/null 2>&1; then
+        notify-send "Tablet mode" "noctalia not running — refusing to disable inputs (no exit button)." || true
+        echo "noctalia not running; not disabling inputs" >&2
         exit 1
       fi
 
       mkdir -p "$STATE"
-      echo "$BTN_PID" > "$STATE/button.pid"
 
       # ── Rotate to portrait ─────────────────────────────────────────────────
       niri msg output eDP-1 transform "${portraitTransform}" || true
 
-      # ── On-screen keyboard (starts hidden; summon via the panel's Keyboard button) ─
+      # ── On-screen keyboard (starts hidden; summon via the bar's Keyboard button) ─
       wvkbd-mobintl --hidden >/dev/null 2>&1 &
       echo "$!" > "$STATE/wvkbd.pid"
 
@@ -164,7 +143,7 @@ let
         fi
       done
 
-      notify-send "Tablet mode" "Portrait • keyboard/touchpad off • touch the on-screen button to exit." || true
+      notify-send "Tablet mode" "Portrait • keyboard/touchpad off • tap the bar button to exit." || true
     '';
   };
 
@@ -184,7 +163,7 @@ in {
   environment.systemPackages = [
     tablet-mode-on
     tablet-mode-off
-    tablet-exit-button
+    tablet-osk-toggle
     tablet-toggle
   ];
 }

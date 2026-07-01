@@ -62,15 +62,6 @@
                 open-floating true
             }
 
-            // Tablet-mode exit button (flipper only — yad window from tablet-exit-button).
-            // Float it so it stays touch-reachable above whatever's running in tablet
-            // mode. Match both possible app-ids: GTK may report "yad" or the
-            // --class/--name "tablet-exit" depending on version.
-            window-rule {
-                match app-id="yad|tablet-exit"
-                open-floating true
-                default-floating-position x=16 y=16 relative-to="top-right"
-            }
           '';
 
           binds = {
@@ -168,9 +159,10 @@
             "Mod+M" = _: { props."allow-when-locked" = true; content."spawn-sh" = "mic-toggle"; };
 
             # Convertible: enter/leave portrait tablet mode (flipper only; no-op
-            # elsewhere — tablet-toggle is installed only on flipper). Press while
-            # the keyboard still works to ENTER; exit is via the on-screen touch
-            # button, since the keyboard is disabled in tablet mode.
+            # elsewhere — tablet-toggle is installed only on flipper). Keyboard
+            # shortcut to ENTER (works while the keyboard is live); exit is via the
+            # noctalia bar button (layer-shell → touch works), since the keyboard is
+            # disabled in tablet mode. Same command toggles both ways.
             "Mod+Shift+T".spawn-sh = "tablet-toggle";
           };
         };
