@@ -50,8 +50,12 @@ let
       # without this lock an exit could sweep grabs + delete state while an enter was
       # still mid-spawn, orphaning whatever grab landed after the sweep (this left the
       # touchpad grabbed with no state dir on 2026-07-01).
+      # -w 5 + proceed-anyway: the EXIT path must never block indefinitely — a held
+      # lock (e.g. leaked into a long-lived process) would otherwise make tablet mode
+      # inescapable. Proceeding unserialized is safe here: the pkill backstop below
+      # kills every grab regardless of bookkeeping.
       exec 9>"''${XDG_RUNTIME_DIR:-/tmp}/tablet-mode.lock"
-      flock 9
+      flock -w 5 9 || echo "warning: lock timeout — proceeding with exit anyway" >&2
 
       # Idempotent: if we're not in tablet mode, do nothing. Safe to call from the
       # bar button, the toggle, and SSH concurrently.
@@ -111,9 +115,13 @@ let
     runtimeInputs = baseInputs ++ [ pkgs.evtest pkgs.wvkbd ];
     text = ''
       STATE="''${XDG_RUNTIME_DIR:-/tmp}/tablet-mode"
-      # Serialize against tablet-mode-off (see comment there).
+      # Serialize against tablet-mode-off (see comment there). Entry may simply give
+      # up if the lock is busy — unlike exit, refusing to enter is always safe.
       exec 9>"''${XDG_RUNTIME_DIR:-/tmp}/tablet-mode.lock"
-      flock 9
+      if ! flock -w 5 9; then
+        notify-send "Tablet mode" "Busy — try again." || true
+        exit 1
+      fi
 
       # Atomic mkdir doubles as mutex + "already in tablet mode" check. A plain
       # [ -d ] guard raced: two taps of the bar button in quick succession both
@@ -151,7 +159,11 @@ let
       niri msg output eDP-1 transform "${portraitTransform}" || true
 
       # ── On-screen keyboard (starts hidden; summon via the bar's Keyboard button) ─
-      wvkbd-mobintl --hidden >/dev/null 2>&1 &
+      # 9>&- : long-lived children must NOT inherit the lock fd — flock lives until
+      # the last fd closes, so an inherited fd 9 would keep the lock held for the
+      # lifetime of wvkbd/evtest, deadlocking tablet-mode-off against the very
+      # processes it needs to kill (locked Robie out of laptop mode on 2026-07-01).
+      wvkbd-mobintl --hidden >/dev/null 2>&1 9>&- &
       echo "$!" > "$STATE/wvkbd.pid"
 
       # ── Wait for the Mod+Shift+T chord to be physically released ───────────
@@ -176,7 +188,7 @@ let
       : > "$STATE/grab.pids"
       for name in "${keyboardName}" "${touchpadName}"; do
         if dev=$(resolve_event "$name"); then
-          evtest --grab "$dev" >/dev/null 2>&1 &
+          evtest --grab "$dev" >/dev/null 2>&1 9>&- &
           echo "$!" >> "$STATE/grab.pids"
         else
           echo "warning: input device not found: $name" >&2
