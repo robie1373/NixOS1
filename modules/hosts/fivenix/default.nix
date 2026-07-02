@@ -13,6 +13,7 @@
       ../../_features/gaming.nix
       ../../_features/vr.nix
       ../../_features/user-apps.nix
+      ../../_features/firefox.nix
       ../../_features/korean.nix
       ../../_features/restic.nix
       ../../_features/desktop-niri.nix
@@ -32,8 +33,6 @@
           inputs.nix-index-database.homeModules.nix-index
           ../../../hosts/fivenix/home.nix
           ../../_home/common.nix
-          ../../_home/desktop-noctalia.nix
-          ../../_home/firefox.nix
         ];
       }
     ];

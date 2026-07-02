@@ -4,6 +4,6 @@
 
   home.stateVersion = "25.11";
 
-  myHome.firefox.enable = true;
-
+  # HM removal in progress — firefox moved to _features/firefox.nix (Phase C).
+  # Remaining HM surface: _home/common.nix (Phase D).
 }
