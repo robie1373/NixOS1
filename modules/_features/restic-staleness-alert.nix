@@ -170,7 +170,7 @@ let
   # it got there, so it never depends on catching a dir-change transition.
   notify = pkgs.writeShellScript "restic-staleness-notify" ''
     set -u
-    PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.dunst ]}
+    PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.libnotify ]}
     [ "$(id -un)" = "${cfg.user}" ] || exit 0
     rt="/run/user/$(id -u)"
 
@@ -180,7 +180,7 @@ let
     if [ -z "$msgs" ]; then
       rm -f "$marker"
     elif [ ! -f "$marker" ] || [ "$(cat "$marker")" != "$msgs" ]; then
-      dunstify -a "Backup Monitor" -u critical -t 0 -r 71717 \
+      notify-send -a "Backup Monitor" -u critical -t 0 -r 71717 \
         -i dialog-warning "⚠ Backup check failed" "$msgs" || true
       printf '%s' "$msgs" > "$marker"
     fi
@@ -190,7 +190,7 @@ let
     okmarker="$rt/restic-restore-ok-shown"
     ok=$(cat ${stateDir}/restore-ok 2>/dev/null || true)
     if [ -n "$ok" ] && { [ ! -f "$okmarker" ] || [ "$(cat "$okmarker")" != "$ok" ]; }; then
-      dunstify -a "Backup Monitor" -u normal -t 8000 -r 71718 \
+      notify-send -a "Backup Monitor" -u normal -t 8000 -r 71718 \
         -i dialog-information "✅ Restore test passed" "$ok" || true
       printf '%s' "$ok" > "$okmarker"
     fi

@@ -12,6 +12,6 @@
   #   nodejs_22 + QMD env/PATH   -> hosts/flipper/configuration.nix
   #   pdf mime default           -> _features/user-apps.nix
   #   myHome.bearing             -> _features/bearing.nix
-  #   myHome.teacha (disabled)   -> _features/teacha.nix (mySystem.teacha, still disabled)
   #   services.poweralertd       -> hosts/flipper/configuration.nix
+  # Removed (unused; reinstatement documented in ledger teacha.md): teacha
 }

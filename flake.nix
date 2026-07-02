@@ -57,13 +57,6 @@
       flake = false;  # plain source tree, not a flake
     };
 
-    # Teacha: ambient spaced repetition daemon.
-    # Update with: nix flake update teacha
-    teacha = {
-      url = "github:robie1373/teacha";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # Noctalia: Qt6/QML desktop shell (bar, notifications, lock screen, wallpaper, launcher).
     # Not in nixpkgs; requires flake input. Cachix available for pre-built binaries.
     noctalia = {

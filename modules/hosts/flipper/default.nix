@@ -39,7 +39,6 @@
       ../../_features/korean.nix
       ../../_features/user-apps.nix
       ../../_features/bearing.nix
-      ../../_features/teacha.nix
       ../../_features/restic.nix
       ../../_features/restic-staleness-alert.nix
       inputs.home-manager.nixosModules.home-manager
