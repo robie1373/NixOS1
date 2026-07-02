@@ -39,13 +39,20 @@ let
   # Confirmed correct orientation on hardware 2026-06-30. ("270" would be the other way.)
   portraitTransform = "90";
 
-  baseInputs = with pkgs; [ niri coreutils procps libnotify ];
+  baseInputs = with pkgs; [ niri coreutils procps libnotify util-linux ];
 
   tablet-mode-off = pkgs.writeShellApplication {
     name = "tablet-mode-off";
     runtimeInputs = baseInputs;
     text = ''
       STATE="''${XDG_RUNTIME_DIR:-/tmp}/tablet-mode"
+      # Serialize against tablet-mode-on. The mkdir mutex only guards enter-vs-enter;
+      # without this lock an exit could sweep grabs + delete state while an enter was
+      # still mid-spawn, orphaning whatever grab landed after the sweep (this left the
+      # touchpad grabbed with no state dir on 2026-07-01).
+      exec 9>"''${XDG_RUNTIME_DIR:-/tmp}/tablet-mode.lock"
+      flock 9
+
       # Idempotent: if we're not in tablet mode, do nothing. Safe to call from the
       # bar button, the toggle, and SSH concurrently.
       [ -d "$STATE" ] || exit 0
@@ -104,6 +111,10 @@ let
     runtimeInputs = baseInputs ++ [ pkgs.evtest pkgs.wvkbd ];
     text = ''
       STATE="''${XDG_RUNTIME_DIR:-/tmp}/tablet-mode"
+      # Serialize against tablet-mode-off (see comment there).
+      exec 9>"''${XDG_RUNTIME_DIR:-/tmp}/tablet-mode.lock"
+      flock 9
+
       # Atomic mkdir doubles as mutex + "already in tablet mode" check. A plain
       # [ -d ] guard raced: two taps of the bar button in quick succession both
       # passed the check, and the second instance truncated the first's grab.pids —
@@ -142,6 +153,23 @@ let
       # ── On-screen keyboard (starts hidden; summon via the bar's Keyboard button) ─
       wvkbd-mobintl --hidden >/dev/null 2>&1 &
       echo "$!" > "$STATE/wvkbd.pid"
+
+      # ── Wait for the Mod+Shift+T chord to be physically released ───────────
+      # If we grab while the keys are still held, their release events go to the
+      # grab instead of niri — niri then thinks the chord is stuck down and its
+      # key-repeat re-fires the bind, toggling tablet mode in a rapid loop
+      # (observed 2026-07-01). evtest --query exits 0 when a key is up, nonzero
+      # when pressed. ~3s timeout so a stuck key can't block entry forever.
+      if kbd=$(resolve_event "${keyboardName}"); then
+        for _ in $(seq 1 60); do
+          held=0
+          for key in KEY_LEFTMETA KEY_RIGHTMETA KEY_LEFTSHIFT KEY_RIGHTSHIFT KEY_T; do
+            if ! evtest --query "$kbd" EV_KEY "$key"; then held=1; fi
+          done
+          [ "$held" -eq 0 ] && break
+          sleep 0.05
+        done
+      fi
 
       # ── Disable keyboard + touchpad (exclusive evdev grab) ─────────────────
       # Touchscreen + stylus stay live. evtest --grab holds EVIOCGRAB until killed.

@@ -163,7 +163,10 @@
             # shortcut to ENTER (works while the keyboard is live); exit is via the
             # noctalia bar button (layer-shell → touch works), since the keyboard is
             # disabled in tablet mode. Same command toggles both ways.
-            "Mod+Shift+T".spawn-sh = "tablet-toggle";
+            # repeat=false: entering grabs the keyboard, which can eat the chord's
+            # release events — with repeat on, niri would think the keys are still
+            # held and re-fire the bind in a loop (rapid toggle war, 2026-07-01).
+            "Mod+Shift+T" = _: { props.repeat = false; content."spawn-sh" = "tablet-toggle"; };
           };
         };
       };
