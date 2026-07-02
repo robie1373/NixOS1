@@ -116,24 +116,6 @@
             cmd: "playerctl next"
   '';
 
-  # ════════════════════════════════════════════════════════════════════════
-  # IPHONE — auto-mount via ifuse (triggered by udev on plug-in)
-  # ════════════════════════════════════════════════════════════════════════
-  systemd.user.services.ifuse-mount = {
-    Unit.Description = "Mount iPhone via ifuse";
-    Service = {
-      Type            = "oneshot";
-      RemainAfterExit = "yes";
-      ExecStartPre    = "${pkgs.coreutils}/bin/mkdir -p %h/mnt/iphone";
-      ExecStart       = "${pkgs.ifuse}/bin/ifuse %h/mnt/iphone";
-    };
-  };
-
-  systemd.user.services.ifuse-unmount = {
-    Unit.Description = "Unmount iPhone";
-    Service = {
-      Type      = "oneshot";
-      ExecStart = "/run/wrappers/bin/fusermount -u %h/mnt/iphone";
-    };
-  };
+  # iPhone ifuse mount/unmount units: moved to hosts/flipper/configuration.nix
+  # (next to their udev triggers) — HM removal Phase B.
 }

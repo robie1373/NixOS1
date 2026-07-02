@@ -38,6 +38,8 @@
       ../../_features/gaming.nix
       ../../_features/korean.nix
       ../../_features/user-apps.nix
+      ../../_features/bearing.nix
+      ../../_features/teacha.nix
       ../../_features/restic.nix
       ../../_features/restic-staleness-alert.nix
       inputs.home-manager.nixosModules.home-manager
@@ -50,11 +52,9 @@
           inputs.nix-index-database.homeModules.nix-index
           ../../../hosts/flipper/home.nix
           ../../_home/common.nix
-          ../../_home/bearing.nix
           ../../_home/desktop-noctalia.nix
           ../../_home/firefox.nix
           ../../_home/mpd.nix
-          ../../_home/teacha.nix
         ];
       }
     ];

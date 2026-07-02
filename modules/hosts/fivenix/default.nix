@@ -32,7 +32,6 @@
           inputs.nix-index-database.homeModules.nix-index
           ../../../hosts/fivenix/home.nix
           ../../_home/common.nix
-          ../../_home/bearing.nix
           ../../_home/desktop-noctalia.nix
           ../../_home/firefox.nix
         ];

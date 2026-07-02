@@ -1,13 +1,17 @@
-{ lib, config, pkgs, ... }:
-
+{ lib, config, pkgs, inputs, ... }:
+# Teacha ambient spaced-repetition daemon — system-level port of
+# modules/_home/teacha.nix (HM removal Phase B). Disabled by default, matching
+# the prior HM state (myHome.teacha.enable = false on flipper). Enable with:
+#   mySystem.teacha.enable = true;
 let
-  cfg = config.myHome.teacha;
+  cfg = config.mySystem.teacha;
 in {
-  options.myHome.teacha = {
+  options.mySystem.teacha = {
     enable = lib.mkEnableOption "Teacha ambient spaced repetition daemon";
 
     package = lib.mkOption {
       type        = lib.types.package;
+      default     = inputs.teacha.packages.${pkgs.stdenv.hostPlatform.system}.teacha-daemon;
       description = "The teacha-daemon package to install.";
     };
 
@@ -31,16 +35,14 @@ in {
   };
 
   config = lib.mkIf cfg.enable {
-
     # notify-send is required for the desktop channel on Linux
-    home.packages = [ pkgs.libnotify cfg.package ];
+    environment.systemPackages = [ pkgs.libnotify cfg.package ];
 
     systemd.user.services.teacha = {
-      Unit = {
-        Description = "Teacha ambient spaced repetition daemon";
-        After       = [ "graphical-session.target" ];
-      };
-      Service = {
+      description = "Teacha ambient spaced repetition daemon";
+      after       = [ "graphical-session.target" ];
+      wantedBy    = [ "graphical-session.target" ];
+      serviceConfig = {
         Type      = "simple";
         ExecStart = lib.concatStringsSep " " (
           [ "${cfg.package}/bin/teacha-daemon"
@@ -48,10 +50,9 @@ in {
             "--poll-seconds" (toString cfg.pollSeconds)
           ] ++ lib.optional (cfg.ntfyUrl != null) "--ntfy-url ${cfg.ntfyUrl}"
         );
-        Restart      = "on-failure";
-        RestartSec   = "10s";
+        Restart    = "on-failure";
+        RestartSec = "10s";
       };
-      Install.WantedBy = [ "graphical-session.target" ];
     };
   };
 }

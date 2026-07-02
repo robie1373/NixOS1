@@ -40,6 +40,7 @@
 
   # imv as default image viewer; zathura as default PDF viewer
   xdg.mime.defaultApplications = {
+    "application/pdf" = "org.pwmt.zathura.desktop";
     "image/jpeg"    = "imv.desktop";
     "image/png"     = "imv.desktop";
     "image/gif"     = "imv.desktop";

@@ -98,12 +98,17 @@
     ollama		# CLI client — server runs on fivenix (see OLLAMA_HOST below)
     calibre		# eBook manager
     libva-utils		# vainfo, for verifying hardware video decode
+    nodejs_22		# QMD runtime (npm global installs live in ~/.npm-global)
   ];
 
   # Add local scripts and apps to the path
   environment.sessionVariables.PATH = [
     "/home/robie/languages/"
+    "/home/robie/.npm-global/bin"   # npm global installs (QMD etc.) — writable prefix outside the nix store
   ];
+
+  # QMD — use Qwen3-Embedding for Korean/multilingual support
+  environment.sessionVariables.QMD_EMBED_MODEL = "hf:Qwen/Qwen3-Embedding-0.6B-GGUF/Qwen3-Embedding-0.6B-Q8_0.gguf";
 
   # Point ollama CLI at fivenix's GPU server so `ollama run` works without flags.
   environment.sessionVariables.OLLAMA_HOST = "http://192.168.7.137:11434";
@@ -134,6 +139,38 @@
     # 0xffff) and sdhci-pci's reset never completes. See docs/flipper/README.md.
     ACTION=="add", SUBSYSTEM=="pci", ENV{PCI_ID}=="17A0:9750", ATTR{d3cold_allowed}="0"
   '';
+
+  # iPhone mount/unmount user units, triggered by the udev rules above.
+  # (Moved from HM modules/_home/desktop-noctalia.nix — HM removal Phase B.)
+  systemd.user.services.ifuse-mount = {
+    description = "Mount iPhone via ifuse";
+    serviceConfig = {
+      Type            = "oneshot";
+      RemainAfterExit = "yes";
+      ExecStartPre    = "${pkgs.coreutils}/bin/mkdir -p %h/mnt/iphone";
+      ExecStart       = "${pkgs.ifuse}/bin/ifuse %h/mnt/iphone";
+    };
+  };
+  systemd.user.services.ifuse-unmount = {
+    description = "Unmount iPhone";
+    serviceConfig = {
+      Type      = "oneshot";
+      ExecStart = "/run/wrappers/bin/fusermount -u %h/mnt/iphone";
+    };
+  };
+
+  # Battery/UPS desktop notifications via upower.
+  # (Moved from HM services.poweralertd in hosts/flipper/home.nix — Phase B.)
+  systemd.user.services.poweralertd = {
+    description = "poweralertd — upower notification daemon";
+    after       = [ "graphical-session.target" ];
+    partOf      = [ "graphical-session.target" ];
+    wantedBy    = [ "graphical-session.target" ];
+    serviceConfig = {
+      ExecStart = "${pkgs.poweralertd}/bin/poweralertd";
+      Restart   = "on-failure";
+    };
+  };
 
   # Safety net: if the GL9750 still ends up in D3cold after resume (e.g. first
   # boot before the udev rule fires, or a firmware-driven transition), rebind

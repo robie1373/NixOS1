@@ -4,7 +4,19 @@ let
 in {
   # Install wrapped niri (includes filesToPatch'd niri.service pointing at the wrapper).
   # systemd.packages makes the user service visible to `systemctl --user`.
-  environment.systemPackages = [ selfpkgs.niri pkgs.xwayland-satellite ];
+  # The other wrapped desktop tools (config baked in via nix-wrapper-modules) moved
+  # here from HM home.packages — HM removal Phase B. waybar is unused under noctalia
+  # but kept installed for parity until explicitly retired.
+  environment.systemPackages = [
+    selfpkgs.niri
+    pkgs.xwayland-satellite
+    selfpkgs.foot
+    selfpkgs.rofi
+    selfpkgs.zathura
+    selfpkgs.fish
+    selfpkgs.okular
+    selfpkgs.waybar
+  ];
   systemd.packages           = [ selfpkgs.niri ];
 
   # fish is also enabled in common.nix; both setting it true is idempotent
