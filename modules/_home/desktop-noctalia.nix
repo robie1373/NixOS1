@@ -15,50 +15,10 @@
   # to reconfigure the bar via its settings menu.
   programs.noctalia.enable = true;
 
-  # ════════════════════════════════════════════════════════════════════════
-  # GTK THEME
-  # ════════════════════════════════════════════════════════════════════════
-  gtk = {
-    enable = true;
-
-    theme = {
-      # catppuccin-gtk 1.0.3 uses lowercase+plus naming convention.
-      name    = "catppuccin-macchiato-mauve-standard+rimless";
-      package = pkgs.catppuccin-gtk.override {
-        accents = [ "mauve" ];
-        size    = "standard";
-        tweaks  = [ "rimless" ];
-        variant = "macchiato";
-      };
-    };
-
-    iconTheme = {
-      name    = "Papirus-Dark";
-      package = pkgs.papirus-icon-theme;
-    };
-
-    cursorTheme = {
-      name    = "Catppuccin-Macchiato-Dark-Cursors";
-      package = pkgs.catppuccin-cursors.macchiatoDark;
-      size    = 24;
-    };
-
-    gtk3.extraConfig.gtk-application-prefer-dark-theme = 1;
-    # gtk4: libadwaita ignores gtk-application-prefer-dark-theme; use dconf instead.
-    # Silence HM 26.05 stateVersion warning; keep legacy behavior (gtk4 = gtk3 theme).
-    gtk4.theme = config.gtk.theme;
-  };
-
-  # Dark mode for libadwaita apps (GTK4). This is the correct mechanism.
-  dconf.settings."org/gnome/desktop/interface".color-scheme = "prefer-dark";
-
-  # ════════════════════════════════════════════════════════════════════════
-  # QT THEME
-  # ════════════════════════════════════════════════════════════════════════
-  qt = {
-    enable = true;
-    platformTheme.name = "gtk";
-  };
+  # GTK/Qt/dconf theming: moved to modules/_features/desktop-noctalia.nix
+  # (system-level, tmpfiles + dconf profiles) — Phase A of Home Manager removal.
+  # HM's clobber guard on gtk.css vs noctalia's login-time rewrite was failing
+  # every nixos-rebuild.
 
   # ════════════════════════════════════════════════════════════════════════
   # ADDITIONAL PACKAGES
