@@ -18,8 +18,43 @@
 
     localDns = lib.mkOption {
       type        = lib.types.attrsOf lib.types.str;
-      default     = {};
       description = "hostname → IP map for local DNS entries (home.lab zone)";
+      # Single source of truth for the home.lab zone (moved here from per-host
+      # copies 2026-07-03 after the dns1/dns2 maps drifted — dns2's copy lacked
+      # observ/pages/nas/HA/printer). Every blocky host serves this same map;
+      # override per-host only with a deliberate reason.
+      default = {
+        # Hypervisors
+        "pve.home.lab"  = "192.168.7.40";
+        "pve2.home.lab" = "192.168.7.159";
+        # NixOS lab services (VLAN 20)
+        "ntfy.home.lab"    = "192.168.20.10";
+        "langlab.home.lab" = "192.168.20.11";
+        "omada.home.lab"   = "192.168.20.50";
+        "dns1.home.lab"    = "192.168.20.53";
+        "dns2.home.lab"    = "192.168.20.54";
+        "dns3.home.lab"    = "192.168.20.55";
+        "nixsrv1.home.lab" = "192.168.20.55";
+        "observ.home.lab"  = "192.168.20.56";
+        "pages.home.lab"   = "192.168.20.57";
+        # NAS
+        "nas.home.lab"     = "192.168.20.12";
+        # Legacy Ubuntu services (VLAN 10 — update IPs as services migrate to VLAN 20)
+        "karakeep.home.lab" = "192.168.7.57";
+        "director.home.lab" = "192.168.7.58";
+        "nginx.home.lab"    = "192.168.7.59";
+        "habla.home.lab"    = "192.168.7.55";
+        # Infrastructure (VLAN 10)
+        "home-assistant.home.lab" = "192.168.7.56";
+        "printer.home.lab"        = "192.168.7.104";
+
+        # Catch-all — Blocky resolves subdomains of a mapping, so this maps every
+        # UNMAPPED *.home.lab (and bare home.lab) to the pages host, whose default
+        # vhost returns a branded 404. Explicit entries above are more specific and
+        # win. Net effect: any home.lab name is either a real service or *our* 404 —
+        # never a search engine. (Verified 2026-06-22: sub.nas.home.lab -> nas IP.)
+        "home.lab" = "192.168.20.57";
+      };
     };
 
     dohPort = lib.mkOption {
