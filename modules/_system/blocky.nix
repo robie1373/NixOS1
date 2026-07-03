@@ -67,8 +67,12 @@
               "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/pro-onlydomains.txt"
             ];
             nrd = [
-              # Hagezi NRD-7 — newly registered domains (last 7 days)
-              "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/domains/nrd7.txt"
+              # Hagezi NRD-7 — newly registered domains (last 7 days).
+              # URL updated 2026-07-03: hagezi moved NRD/DGA lists to the
+              # dedicated hagezi/nrd repo (issue #10561); old dns-blocklists
+              # URLs died 2026-07-01 and crash-looped blocky on restart
+              # (failOnError). See ledger blocky.md → NRD incident.
+              "https://raw.githubusercontent.com/hagezi/nrd/main/domains/nrd7.txt"
             ];
             fakenews = [
               # StevenBlack fakenews alternate
@@ -106,9 +110,17 @@
         };
 
         # ── Logging ─────────────────────────────────────────────────────
-        # Warn-only keeps logs manageable. Upgrade to info for debugging.
-        # Future: add queryLog.type = loki when Loki stack is deployed.
-        log.level = "warn";
+        # Per-query visibility: queryLog=console → journald → Alloy →
+        # VictoriaLogs on observ. This is the all-nixos-lab Project A gate —
+        # bad-block hunts happen in Grafana/LogsQL, replacing Technitium's UI.
+        # log.level=info is required: console query-log entries emit at info
+        # and warn suppresses them. Volume: one line per query from VLAN 20
+        # hosts; VictoriaLogs retention bounds it.
+        # (blocky 0.31 has no "loki" queryLog type — the old comment here was
+        # aspirational. Valid types: console/sqlite/csv/csv-client/dnstap/
+        # mysql/postgresql/timescale/none.)
+        log.level = "info";
+        queryLog.type = "console";
 
         # ── Port / IP version ───────────────────────────────────────────
         ports = {
