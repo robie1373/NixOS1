@@ -43,16 +43,6 @@
       ../../_features/mpd.nix
       ../../_features/restic.nix
       ../../_features/restic-staleness-alert.nix
-      inputs.home-manager.nixosModules.home-manager
-      {
-        home-manager.useGlobalPkgs         = true;
-        home-manager.useUserPackages       = true;
-        home-manager.backupFileExtension   = "backup";
-        home-manager.extraSpecialArgs      = { inherit self inputs; };
-        home-manager.users.robie.imports   = [
-          ../../../hosts/flipper/home.nix
-        ];
-      }
     ];
   };
 }
