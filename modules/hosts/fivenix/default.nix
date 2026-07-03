@@ -30,9 +30,7 @@
         home-manager.backupFileExtension = "backup";
         home-manager.extraSpecialArgs    = { inherit self inputs; };
         home-manager.users.robie.imports = [
-          inputs.nix-index-database.homeModules.nix-index
           ../../../hosts/fivenix/home.nix
-          ../../_home/common.nix
         ];
       }
     ];

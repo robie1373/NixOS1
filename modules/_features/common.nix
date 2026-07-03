@@ -2,6 +2,9 @@
 {
   imports = [
     inputs.agenix.nixosModules.default
+    # nix-index + comma at system level (HM removal Phase D — replaces the
+    # homeModules.nix-index import that lived in the HM block).
+    inputs.nix-index-database.nixosModules.nix-index
   ];
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
@@ -54,7 +57,36 @@
   };
 
   programs.fish.enable = true;
-  programs.git.enable  = true;
+
+  # Git identity in /etc/gitconfig (HM removal Phase D — was ~/.config/git/config
+  # via HM programs.git; HM cleans that file up when its module goes away).
+  programs.git = {
+    enable = true;
+    config = {
+      user = {
+        name  = "robie1373";
+        email = "robie1373@gmail.com";
+      };
+    };
+  };
+
+  # nix-index: pre-built package index for command-not-found + comma
+  # (", ffmpeg ..." runs any nixpkgs binary without installing it).
+  programs.nix-index.enable = true;
+  programs.nix-index-database.comma.enable = true;
+
+  # Shell aliases for all shells (HM removal Phase D — was home.shellAliases).
+  # NOTE: `gc` uses fish's $argv — it has only ever worked from fish; kept as-is.
+  environment.shellAliases = {
+    ll = "ls -lh";
+    la = "ls -ah";
+
+    rebuild = "nh os switch /home/robie/nixos-config";
+    build   = "nh os build /home/robie/nixos-config";
+    ntest   = "nh os test /home/robie/nixos-config";
+    gc = "sudo nix-env --delete-generations $argv[1] --profile /nix/var/nix/profiles/system && nix-env --delete-generations $argv[1] && sudo nix-collect-garbage";
+    gs = "git status";
+  };
 
   # Install neovim and make it the default editor system-wide
   programs.neovim.enable        = true;
@@ -112,5 +144,7 @@
     jq       # JSON wrangling — Claude reaches for it constantly (API output, metrics queries)
     python3  # quick scripting / parsing; assumed present by enough tooling to be worth having
     dnsutils # dig/nslookup — DNS diagnostics (verifying resolvers, home.lab, filtering)
+    git-secrets  # (HM removal Phase D — from _home/common.nix)
+    uv           # (HM removal Phase D — from _home/common.nix)
   ];
 }
