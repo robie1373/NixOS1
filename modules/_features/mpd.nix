@@ -27,8 +27,14 @@ let
     }
   '';
 
+  # Build with the spectrum visualiser compiled in — nixpkgs' default has
+  # visualizerSupport=false, which made ncmpcpp reject visualizer_type=spectrum
+  # and exit. (Discovered in Phase C user testing: ncmpcpp had been unlaunchable
+  # under HM too — same plain package, plus a stale active_column_color option
+  # that ncmpcpp 0.10 removed.)
+  ncmpcppPkg = pkgs.ncmpcpp.override { visualizerSupport = true; };
+
   ncmpcppConf = pkgs.writeText "ncmpcpp-config" ''
-    active_column_color=blue
     active_window_border=blue
     alternative_ui_separator_color=blue
     browser_display_mode=columns
@@ -62,7 +68,7 @@ let
 
   # ncmpcpp with the config baked in (same pattern as the wrapper modules).
   ncmpcppWrapped = pkgs.writeShellScriptBin "ncmpcpp" ''
-    exec ${pkgs.ncmpcpp}/bin/ncmpcpp --config ${ncmpcppConf} "$@"
+    exec ${ncmpcppPkg}/bin/ncmpcpp --config ${ncmpcppConf} "$@"
   '';
 in
 {
