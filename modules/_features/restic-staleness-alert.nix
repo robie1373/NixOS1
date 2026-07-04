@@ -109,7 +109,7 @@ let
   # the user notifier shows as an auto-expiring popup.
   restoreTest = pkgs.writeShellScript "restic-restore-test" ''
     set -u
-    PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.gnugrep pkgs.restic ]}
+    PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.gnugrep pkgs.restic pkgs.curl ]}
     export RESTIC_REPOSITORY="${repo}"
     export RESTIC_PASSWORD_FILE="${pwPath}"
     export RESTIC_CACHE_DIR="/var/cache/restic-staleness"
@@ -155,6 +155,16 @@ let
       echo "restore-test: PASS — restored $file ($got bytes, verified)"
       ${alertHelper} clear restore-test
       printf 'Restored %s (%s bytes verified) — %s\n' "$file" "$got" "$(date '+%a %H:%M')" > "$OK"
+      # Weekly positive heartbeat to the phone (Robie, 2026-07-04): success is a
+      # signal too. Ping present = backups provably restorable this week (full
+      # decrypt->fetch->verify path); Sunday ping missing = go look. Complements
+      # the failure-only ntfy alerts above; low priority so it never buzzes.
+      topic=$(cat "${cfg.ntfyTopicFile}" 2>/dev/null || true)
+      if [ -n "$topic" ]; then
+        curl -fsS -H "Title: ✅ flipper backup: weekly restore test passed" \
+          -H "Priority: min" -H "Tags: floppy_disk,white_check_mark" \
+          -d "$(cat "$OK")" "${cfg.ntfyServer}/$topic" >/dev/null 2>&1 || true
+      fi
     else
       echo "restore-test: FAIL — $file (expected $expected bytes, got ''${got:-none})" >&2
       rm -f "$OK"

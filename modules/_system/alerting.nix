@@ -69,6 +69,60 @@ let
               summary: "{{ $labels.host }} blocklist downloads failing repeatedly this hour"
   '';
 
+  # LogsQL alerting rules — evaluated by the SECOND vmalert instance below
+  # (vmalert serves exactly one datasource; this one points at VictoriaLogs).
+  vlogsRulesFile = pkgs.writeText "vmalert-vlogs-rules.yml" ''
+    groups:
+      - name: spine-probe
+        type: vlogs
+        interval: 1m
+        rules:
+          # The Wednesday positive probe (Robie, 2026-07-04): a timer digs a
+          # unique subdomain of a blocked wildcard through the fw; Blocky blocks
+          # + query-logs it; this rule sees the log line and pages 🟢. One green
+          # ping every Wednesday proves dig→fw→blocky→journald→Alloy→VL→vmalert→
+          # AM→bridge→ntfy→phone end-to-end. Contract: NO green ping on a
+          # Wednesday morning = the spine is broken somewhere — investigate.
+          - alert: SpineWeeklyProbe
+            expr: '"queryLog" "spine-probe" "response_type=BLOCKED" | stats count() as hits | filter hits:>0'
+            labels: { severity: info }
+            annotations:
+              summary: "Wednesday spine probe blocked+logged+alerted end-to-end — all green ({{$value}} hit)"
+
+      - name: ids
+        type: vlogs
+        interval: 1m
+        rules:
+          # fw suricata EVE alerts flow to VL via syslog (app_name=suricata,
+          # see visibility-stack.md). Zero events is the norm, so ANY event
+          # pages. Rudimentary by design — tune when the ruleset grows.
+          - alert: SuricataIDSEvent
+            expr: 'app_name:="suricata" | stats count() as events | filter events:>0'
+            labels: { severity: critical }
+            annotations:
+              summary: "fw IDS: suricata event(s) in the last minute — check VL app_name:=suricata ({{$value}} lines)"
+  '';
+
+  # Wednesday spine probe: dig the owned canary domain (spine-probe.canary —
+  # inline denylist entry in blocky.nix; always blocked exactly, never in real
+  # traffic; blocked answers are logged on every query so no uniqueness games)
+  # at BOTH resolvers. The vlogs rule above turns the BLOCKED query-log lines
+  # into the green ping. Digs dns1/dns2 directly, NOT via fw dnsmasq: VLAN 20 →
+  # fw:53 times out fleet-wide (finding 2026-07-04, see ledger fw.md), and the
+  # fw hop is continuously proven by live household traffic anyway — this
+  # probe's job is the blocky→log→alert→phone pipeline.
+  # Learned the hard way (2026-07-04): blocky does NOT block subdomains of
+  # plain list entries — the first canary (unique *.doubleclick.net names) was
+  # forwarded upstream, never blocked.
+  spineProbe = pkgs.writeShellScript "spine-probe" ''
+    set -u
+    for ns in 192.168.20.53 192.168.20.54; do
+      domain="spine-probe.canary"
+      ans=$(${pkgs.dnsutils}/bin/dig +short +time=5 @$ns "$domain" A | head -1)
+      echo "spine-probe: $domain @$ns -> ''${ans:-NOANSWER} (0.0.0.0 = blocked, expected)"
+    done
+  '';
+
   bridge = pkgs.writeText "am-ntfy-bridge.py" ''
     """Alertmanager webhook -> ntfy (LAN). Loopback-only, stdlib-only."""
     import json, urllib.request
@@ -88,8 +142,16 @@ let
                     name = a.get("labels", {}).get("alertname", "alert")
                     sev = a.get("labels", {}).get("severity", "warning")
                     summary = a.get("annotations", {}).get("summary", name)
-                    title = ("🔥 " if firing else "✅ resolved: ") + name
-                    prio = "high" if (firing and sev == "critical") else ("default" if firing else "min")
+                    # severity drives emoji + priority; info-class alerts are
+                    # positive/heartbeat signals (e.g. the Wednesday spine probe)
+                    # and must not look or buzz like a fire.
+                    if firing:
+                        emoji = {"critical": "🔥", "warning": "⚠️", "info": "🟢"}.get(sev, "⚠️")
+                        title = f"{emoji} {name}"
+                        prio = {"critical": "high", "warning": "default", "info": "min"}.get(sev, "default")
+                    else:
+                        title = f"✅ resolved: {name}"
+                        prio = "min"
                     req = urllib.request.Request(
                         f"{NTFY}/{topic}", data=summary.encode(),
                         headers={"Title": title.encode("utf-8").decode("latin-1"),
@@ -159,6 +221,35 @@ in
           }];
         }];
       };
+    };
+
+    # Second vmalert: LogsQL rules against VictoriaLogs (one instance per
+    # datasource — see vlogsRulesFile header). Same Alertmanager downstream.
+    systemd.services.vmalert-vlogs = {
+      description = "vmalert (VictoriaLogs datasource) — log-based alert rules";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "network.target" ];
+      serviceConfig = {
+        ExecStart = lib.concatStringsSep " " [
+          "${pkgs.victoriametrics}/bin/vmalert"
+          "-datasource.url=http://127.0.0.1:9428"
+          "-notifier.url=http://127.0.0.1:9093"
+          "-rule=${vlogsRulesFile}"
+          "-httpListenAddr=127.0.0.1:8881"
+        ];
+        Restart = "always";
+        DynamicUser = true;
+      };
+    };
+
+    systemd.services.spine-probe = {
+      description = "Weekly end-to-end spine probe (blocked-domain canary)";
+      serviceConfig = { Type = "oneshot"; ExecStart = "${spineProbe}"; };
+    };
+    systemd.timers.spine-probe = {
+      description = "Wednesday spine probe";
+      wantedBy = [ "timers.target" ];
+      timerConfig = { OnCalendar = "Wed 09:00"; Persistent = true; };
     };
 
     systemd.services.am-ntfy-bridge = {

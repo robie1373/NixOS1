@@ -113,10 +113,21 @@
               # StevenBlack fakenews alternate
               "https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews/hosts"
             ];
+            canary = [
+              # Inline list (newline forces blocky's inline detection). The
+              # alerting spine's weekly probe digs this always-blocked, never-
+              # legitimate name; the resulting BLOCKED query-log line fires the
+              # SpineWeeklyProbe vlogs rule (green phone ping). Chosen after
+              # learning blocky does NOT block subdomains of list entries
+              # (2026-07-04) — an owned exact entry beats guessing at lists.
+              ''
+                spine-probe.canary
+              ''
+            ];
           };
 
           # Apply all block categories to all clients by default
-          clientGroupsBlock.default = [ "ads-tracking" "nrd" "fakenews" ];
+          clientGroupsBlock.default = [ "ads-tracking" "nrd" "fakenews" "canary" ];
 
           # blocky 0.29 moved these under blocking.loading.*
           loading = {
