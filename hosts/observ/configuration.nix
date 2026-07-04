@@ -23,6 +23,7 @@
     inputs.disko.nixosModules.disko
     ../../modules/_system/server-common.nix
     ../../modules/_system/observability.nix
+    ../../modules/_system/alerting.nix
     ../../modules/_system/tailscale-autoconnect.nix
     ../../modules/_features/tailscale-watchdog.nix
   ];
@@ -52,6 +53,7 @@
 
   # ── Visibility stack ────────────────────────────────────────────────────────
   mySystem.observability.enable = true;
+  mySystem.alerting.enable = true;
   # pveExporter stays off until the PVE API token secret exists. Flip to true
   # and add secrets/pve-exporter-token.age to light up Proxmox metrics.
   # mySystem.observability.pveExporter.enable = true;

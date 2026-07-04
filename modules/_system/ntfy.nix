@@ -169,9 +169,30 @@ in
       mode = "0400";
     };
 
+    # ── LAN-internal plain-HTTP listener (added 2026-07-03, alerting spine) ──
+    # Internal publishers (observ's alert bridge; future lab services) must not
+    # depend on Tailscale (standing rule; TS is being decommissioned). This vhost
+    # gives them an owned LAN path: the VM's one NIC is on VLAN 20, and fw policy
+    # keeps guest/iot away from RFC1918. The phone's HTTPS/tailnet vhost above is
+    # unchanged. Topic-name obscurity remains the access model, same as before
+    # (auth-default-access = read-write) — the audience just widens from tailnet
+    # to house-LAN.
+    services.nginx.virtualHosts."ntfy-lan" = {
+      serverName = "ntfy.home.lab";
+      default = true;
+      listen = [ { addr = "0.0.0.0"; port = 80; } ];
+      locations."/" = {
+        proxyPass = "http://127.0.0.1:${toString cfg.listenPort}";
+        proxyWebsockets = true;
+        extraConfig = ''
+          proxy_read_timeout 3600;
+          proxy_send_timeout 3600;
+        '';
+      };
+    };
+
     # ── Firewall ─────────────────────────────────────────────────────────────
-    # Only HTTPS (443) exposed — HTTP (80) intentionally omitted.
-    # ntfy is Tailscale-only; these ports are only reachable on the tailnet.
-    networking.firewall.allowedTCPPorts = [ 443 ];
+    # 443 = HTTPS (tailnet vhost); 80 = LAN-internal publisher path (above).
+    networking.firewall.allowedTCPPorts = [ 443 80 ];
   };
 }

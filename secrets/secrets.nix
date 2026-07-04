@@ -46,6 +46,12 @@ in
   # After Kanidm is deployed, migrate ntfy auth to LDAP and remove this secret.
   "ntfy-admin-password.age".publicKeys = [ admin ntfy ];
 
+  # ntfy alert topic — the (secret) topic name the alerting spine on observ
+  # publishes to; same topic Robie's phone subscribes to (source of truth:
+  # /home/robie/work/.ntfy-topic on flipper). Topic obscurity is ntfy's access
+  # model, hence secret-grade handling.
+  "ntfy-alert-topic.age".publicKeys = [ admin observ ];
+
   # Grafana admin password (observ visibility host). Makes the admin login
   # durable across redeploys — otherwise the UI-set password lives on the
   # disposable disk and resets to the module default on reinstall.
