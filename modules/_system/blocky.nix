@@ -40,10 +40,9 @@
         # NAS
         "nas.home.lab"     = "192.168.20.12";
         # Legacy Ubuntu services (VLAN 10 — update IPs as services migrate to VLAN 20)
-        "karakeep.home.lab" = "192.168.7.57";
+        # karakeep/nginx/habla removed 2026-07-04 (all-nixos-lab rung 1 retirement, Opus 4.8) —
+        # hosts destroyed; names now fall through to the pages catch-all below.
         "director.home.lab" = "192.168.7.58";
-        "nginx.home.lab"    = "192.168.7.59";
-        "habla.home.lab"    = "192.168.7.55";
         # Infrastructure (VLAN 10)
         "home-assistant.home.lab" = "192.168.7.56";
         "printer.home.lab"        = "192.168.7.104";
