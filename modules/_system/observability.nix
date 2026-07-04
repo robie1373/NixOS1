@@ -38,6 +38,17 @@ let
     # { host = "nixsrv1"; addr = "192.168.20.55:9100"; }  # NOT deployed (KDE/installer, no reservation, 2026-06-18) — phantom up=0; re-enable when nixsrv1 is a real server. See [[homelab]].
   ];
 
+  # Blocky DNS resolvers — native metrics on the :4000 HTTP listener (/metrics;
+  # prometheus.enable in modules/_system/blocky.nix). Same host-label convention
+  # as the node job so DNS metrics join the $host dashboard variable.
+  blockyScrape = [{
+    job_name = "blocky";
+    static_configs = [
+      { targets = [ "192.168.20.53:4000" ]; labels = { host = "dns1"; }; }
+      { targets = [ "192.168.20.54:4000" ]; labels = { host = "dns2"; }; }
+    ];
+  }];
+
   # PVE scrape job (only when the exporter is enabled). Standard pve-exporter
   # relabel: pass each target as ?target=<node>, send the request to the local
   # exporter, keep the node address as the instance label.
@@ -135,7 +146,7 @@ in
               labels = { host = t.host; };
             }) nodeTargets;
           }
-        ] ++ pveScrape ++ snmpScrape;
+        ] ++ blockyScrape ++ pveScrape ++ snmpScrape;
       };
     };
 

@@ -143,6 +143,12 @@
           mapping = config.mySystem.blocky.localDns;
         };
 
+        # ── Metrics ─────────────────────────────────────────────────────
+        # Prometheus metrics on the existing :4000 HTTP listener (/metrics).
+        # Scraped by VictoriaMetrics on observ (job "blocky") — rate/block/cache
+        # graphs for the Technitium-retirement soak and beyond.
+        prometheus.enable = true;
+
         # ── Caching ─────────────────────────────────────────────────────
         caching = {
           minTime     = "5m";
