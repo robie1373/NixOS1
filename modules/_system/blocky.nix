@@ -121,7 +121,13 @@
           # blocky 0.29 moved these under blocking.loading.*
           loading = {
             refreshPeriod = "4h";
-            strategy      = "failOnError";
+            # fast (was failOnError, changed 2026-07-03, Robie's call): post-repoint
+            # dns1/dns2 are the ONLY upstreams and identical configs make dead-list
+            # URLs a correlated crash-loop (see ledger blocky.md, NRD incident).
+            # fast = serve immediately, load lists in background; a failed list is
+            # degraded blocking, never no-DNS. Also closes the cold-boot race.
+            # List-failure visibility moves to observ (Grafana→ntfy alerting task).
+            strategy      = "fast";
             downloads = {
               attempts  = 3;
               cooldown  = "5s";
