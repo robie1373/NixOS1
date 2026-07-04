@@ -221,8 +221,12 @@ in
       description = "Cap the candidate file list (bounds `restic ls` time).";
     };
     ntfyServer = lib.mkOption {
-      type = lib.types.str; default = "https://ntfy.vimba-stairs.ts.net";
-      description = "ntfy server base URL.";
+      # LAN path (was the tailnet URL until 2026-07-03): backup alerts are
+      # load-bearing and must not depend on Tailscale (standing rule; TS is being
+      # decommissioned). Plain HTTP by design — the LAN vhost has no cert; the
+      # payload is an alert on a topic whose NAME is the secret. See ntfy.nix.
+      type = lib.types.str; default = "http://ntfy.home.lab";
+      description = "ntfy server base URL (LAN path, deliberately not the tailnet).";
     };
     ntfyTopicFile = lib.mkOption {
       type = lib.types.str; default = "/home/robie/work/.ntfy-topic";
