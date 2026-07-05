@@ -1,5 +1,15 @@
+# fivenix — OFFLINE since 2026-07-05 (Robie): powered down until further notice.
+#
+# Its nixosConfiguration is disabled below so fleet-wide evals/builds don't spend
+# time on a desktop that isn't running (it's a heavy build — niri/noctalia/gaming/
+# VR). The host config in hosts/fivenix/, its disko, and its secrets recipients are
+# left intact. To bring fivenix back: set `online = true`.
 { inputs, self, ... }:
-{
+
+let
+  online = false;
+in
+inputs.nixpkgs.lib.optionalAttrs online {
   flake.nixosConfigurations.fivenix = inputs.nixpkgs.lib.nixosSystem {
     system = "x86_64-linux";
     specialArgs = { inherit inputs self; };
