@@ -79,6 +79,19 @@
         bridgeVLANs = [ { PVID = 10; EgressUntagged = 10; } ];
         linkConfig.RequiredForOnline = "routable";
       };
+
+      # ── Guest tap ports on br0 ──────────────────────────────────────────────
+      # microvm.nix creates each guest tap (vm-<name>) but does NOT bridge it —
+      # the host attaches it. Each guest tap is a VLAN-20 access port: PVID 20 +
+      # EgressUntagged 20 means the guest sees plain untagged L2 on VLAN 20,
+      # exactly like a Proxmox vlan-aware vmbr0 net device with "VLAN Tag = 20".
+      # RequiredForOnline=no so a guest that isn't up can't block host boot.
+      "40-vm-dns2" = {
+        matchConfig.Name = "vm-dns2";
+        networkConfig.Bridge = "br0";
+        bridgeVLANs = [ { PVID = 20; EgressUntagged = 20; } ];
+        linkConfig.RequiredForOnline = "no";
+      };
     };
   };
 
@@ -93,6 +106,16 @@
   # KVM/libvirt + Podman + microvm.host support. Guest microVM definitions
   # (microvm.vms.<name>) are added at Phase B2 step 5, one at a time.
   mySystem.hypervisor.enable = true;
+
+  # ── Guest microVMs (Phase B2 step 5) ──────────────────────────────────────────
+  # Fully-declarative microVMs: config is a NixOS module, the host builds + runs
+  # it as microvm@<name>.service. specialArgs threads the flake `inputs` through
+  # (server-common/blocky need agenix + nixpkgs rev). Order of standup at the
+  # conversion window: dns2 → pages → omada. Only dns2 authored so far.
+  microvm.vms.dns2 = {
+    specialArgs = { inherit inputs; };
+    config = import ./guests/dns2.nix;
+  };
 
   # ── Tailscale: OFF ────────────────────────────────────────────────────────────
   # Fleet-wide Tailscale is being decommissioned; a hypervisor must not depend on
