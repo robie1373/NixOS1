@@ -91,6 +91,10 @@ in
   "restic-backup-fivenix.age".publicKeys  = [ admin fivenix ];
   "restic-backup-ntfy.age".publicKeys     = [ admin ntfy ];
   "restic-backup-omada.age".publicKeys    = [ admin omada ];
+  # vhost2 backs up omada's .cfg auto-backups (host-side, all-nixos-lab rung 4).
+  # SAME credentials as omada (re-encrypted from 1Password) → same NAS repo + same
+  # svc_backup key, so no NAS-side change. Recorded 2026-07-05.
+  "restic-backup-vhost2.age".publicKeys   = [ admin vhost2 ];
   "restic-backup-langlab.age".publicKeys  = [ admin langlab ];
 
   # Restic repo passwords — one per host, used to encrypt backup data at rest.
@@ -100,5 +104,6 @@ in
   "restic-repo-password-fivenix.age".publicKeys  = [ admin fivenix ];
   "restic-repo-password-ntfy.age".publicKeys     = [ admin ntfy ];
   "restic-repo-password-omada.age".publicKeys    = [ admin omada ];
+  "restic-repo-password-vhost2.age".publicKeys   = [ admin vhost2 ];
   "restic-repo-password-langlab.age".publicKeys  = [ admin langlab ];
 }

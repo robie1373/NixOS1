@@ -22,6 +22,7 @@
     inputs.disko.nixosModules.disko
     ../../modules/_system/server-common.nix   # boot, ssh, agenix, observability agent
     ../../modules/_system/hypervisor.nix       # KVM/libvirt + Podman + microvm.host
+    ../../modules/_features/restic.nix         # host-side backup of the omada guest's .cfg exports
   ];
 
   # ── Identity ────────────────────────────────────────────────────────────────
@@ -137,6 +138,19 @@
   microvm.vms.omada = {
     specialArgs = { inherit inputs; };
     config = import ./guests/omada.nix;
+  };
+
+  # ── Host-side backup of the omada guest (option b) ────────────────────────────
+  # The omada microVM writes its scheduled Omada .cfg exports to a writable virtiofs
+  # share whose source is /var/lib/omada-backups on THIS host (see guests/omada.nix).
+  # vhost2 restics that dir with its OWN key — no key is planted in the guest. Reuses
+  # omada's existing NAS repo + svc_backup key (restic-*-vhost2.age are byte-identical
+  # re-encryptions of restic-*-omada.age from 1Password), so history is preserved and
+  # no NAS-side change was needed. Continues the omada backup lineage post-conversion.
+  mySystem.restic = {
+    enable  = true;
+    nasPath = "tank/backups/services/omada";
+    paths   = [ "/var/lib/omada-backups" ];
   };
 
   # ── Tailscale: OFF ────────────────────────────────────────────────────────────
