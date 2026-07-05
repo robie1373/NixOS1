@@ -1,0 +1,104 @@
+# hosts/vhost2/configuration.nix
+#
+# vhost2 — NixOS + microvm.nix hypervisor (all-nixos-lab rung 4).
+# Formerly pve2 (Proxmox). Converted in place; the flake is now the entire truth
+# for this host AND its guests. See ledger proxmox-to-microvm.md Phase B2.
+#
+# Hardware: Intel i5-4590 (Haswell), 16 GB, Samsung 840 PRO 238 GB SSD, UEFI.
+# Mgmt IP: 192.168.7.159/24 (untagged VLAN 10), gateway 192.168.7.1  |  name: vhost2
+#
+# Role: runs its services as declarative microVMs (D1 reprovision-never-migrate),
+# NOT on the host. Post-Project-A residents to recreate as microVMs at Phase B2
+# step 5: dns2 (VLAN 20, .20.54) -> pages (VLAN 20, .20.57) -> omada (VLAN 20).
+# Guest defs are added here one at a time, verified individually. None yet — this
+# is the B0 host skeleton.
+
+{ inputs, config, lib, pkgs, ... }:
+
+{
+  imports = [
+    ./hardware-configuration.nix
+    ./disko.nix
+    inputs.disko.nixosModules.disko
+    ../../modules/_system/server-common.nix   # boot, ssh, agenix, observability agent
+    ../../modules/_system/hypervisor.nix       # KVM/libvirt + Podman + microvm.host
+  ];
+
+  # ── Identity ────────────────────────────────────────────────────────────────
+  networking.hostName = "vhost2";
+
+  # ── Networking: VLAN-aware bridge (systemd-networkd) ─────────────────────────
+  # Replaces Proxmox's vlan-aware vmbr0. The physical NIC is a trunk from the
+  # switch (VLAN 10 untagged/native = host mgmt, VLAN 20 tagged = guests). br0
+  # carries the host IP on the native VLAN; each microVM tap is a tagged member
+  # of its VLAN. NIC matched by permanent MAC (fc:aa:14:79:e0:62 — was "nic0" on
+  # pve2) so the predictable rename under NixOS can't break the match.
+  #
+  # ⚠️ VERIFY AT INSTALL (Phase B2 step 4): br0 up, host reachable on .7.159,
+  # a VLAN-20 tap can ping a VLAN-20 peer. This bridge design is authored, not yet
+  # proven on metal.
+  #
+  # Dropped from pve2 deliberately: the Ansible-era `192.168.1.0/24 dev vmbr0`
+  # static route (legacy OPNsense LAN, IaC now torn down) and the TEMP vmbr1 OOB
+  # path on nic1 (.20.250) — both were transitional scaffolding.
+  networking.useNetworkd = true;
+  networking.useDHCP = false;
+  networking.nameservers = [ "1.1.1.1" "1.0.0.1" ];   # host uses public DNS — never
+                                                       # depends on a Blocky guest it hosts
+
+  systemd.network = {
+    enable = true;
+
+    netdevs."10-br0" = {
+      netdevConfig = { Name = "br0"; Kind = "bridge"; };
+      bridgeConfig = {
+        VLANFiltering = true;
+        DefaultPVID   = 10;      # host/native VLAN
+        STP           = false;   # single uplink, no loop
+      };
+    };
+
+    networks = {
+      # Physical uplink (trunk) enslaved to br0.
+      "20-uplink" = {
+        matchConfig.PermanentMACAddress = "fc:aa:14:79:e0:62";
+        networkConfig.Bridge = "br0";
+        # Native VLAN 10 untagged + VLAN 20 tagged (guests). Add more VIDs here as
+        # guests on other VLANs arrive.
+        bridgeVLANs = [
+          { PVID = 10; EgressUntagged = 10; }
+          { VLAN = 20; }
+        ];
+      };
+
+      # The bridge itself carries the host management IP on VLAN 10.
+      "30-br0" = {
+        matchConfig.Name = "br0";
+        address = [ "192.168.7.159/24" ];
+        routes  = [ { Gateway = "192.168.7.1"; } ];
+        bridgeVLANs = [ { PVID = 10; EgressUntagged = 10; } ];
+        linkConfig.RequiredForOnline = "routable";
+      };
+    };
+  };
+
+  # ── SSH interactive access ───────────────────────────────────────────────────
+  # server-common already installs the ansible2 automation key. Personal key added
+  # here for hands-on hypervisor work.
+  users.users.root.openssh.authorizedKeys.keys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKD+F2AoDhUcKLXji5jOmPI/XduaADEs2cxAF1w/HSnr" # ansible2
+  ];
+
+  # ── Hypervisor ────────────────────────────────────────────────────────────────
+  # KVM/libvirt + Podman + microvm.host support. Guest microVM definitions
+  # (microvm.vms.<name>) are added at Phase B2 step 5, one at a time.
+  mySystem.hypervisor.enable = true;
+
+  # ── Tailscale: OFF ────────────────────────────────────────────────────────────
+  # Fleet-wide Tailscale is being decommissioned; a hypervisor must not depend on
+  # it, and new hosts don't join the tailnet (dns2 precedent). server-common
+  # enables the service by default — force it off here. Veto if you want it on.
+  services.tailscale.enable = lib.mkForce false;
+
+  system.stateVersion = "25.05";
+}

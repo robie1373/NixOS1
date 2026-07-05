@@ -36,6 +36,10 @@ let
   nixsrv1 = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJX6AZgzVx5nVNG8AujqQ6Knchc79NrowlUaYH1fPLIZ";
   observ  = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINQnS795H+GiGzkNsoWrcfyMD7BLcZMO/gheMgcBKAEO";
   pages   = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICtcGrKW2op/gqVOUqS29Uhr7++xogRQo/fVlsaaNrof";
+  # vhost2 (formerly pve2) — NixOS+microvm hypervisor, all-nixos-lab rung 4.
+  # No agenix secrets target it yet (guests carry their own); listed so `agenix -r`
+  # includes it and future host secrets can be added. NOT in tailscaleServers.
+  vhost2  = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN9de13zdtiIsB15rigtdziSOLWbYSQuBZn6KE8ynPCq";
 
   # All servers that use tailscale-autoconnect.nix must be listed here.
   # Re-key after adding each new server: cd secrets && nix run github:ryantm/agenix -- -r

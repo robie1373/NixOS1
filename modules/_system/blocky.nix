@@ -26,7 +26,8 @@
       default = {
         # Hypervisors
         "pve.home.lab"  = "192.168.7.40";
-        "pve2.home.lab" = "192.168.7.159";
+        "pve2.home.lab" = "192.168.7.159";   # alias — keep ~1 transition month post-rung-4
+        "vhost2.home.lab" = "192.168.7.159";  # all-nixos-lab rung 4 (pve2 → vhost2)
         # NixOS lab services (VLAN 20)
         "ntfy.home.lab"    = "192.168.20.10";
         "langlab.home.lab" = "192.168.20.11";
