@@ -92,6 +92,12 @@
         bridgeVLANs = [ { PVID = 20; EgressUntagged = 20; } ];
         linkConfig.RequiredForOnline = "no";
       };
+      "40-vm-pages" = {
+        matchConfig.Name = "vm-pages";
+        networkConfig.Bridge = "br0";
+        bridgeVLANs = [ { PVID = 20; EgressUntagged = 20; } ];
+        linkConfig.RequiredForOnline = "no";
+      };
     };
   };
 
@@ -115,6 +121,10 @@
   microvm.vms.dns2 = {
     specialArgs = { inherit inputs; };
     config = import ./guests/dns2.nix;
+  };
+  microvm.vms.pages = {
+    specialArgs = { inherit inputs; };
+    config = import ./guests/pages.nix;
   };
 
   # ── Tailscale: OFF ────────────────────────────────────────────────────────────
