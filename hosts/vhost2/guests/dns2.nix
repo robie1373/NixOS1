@@ -35,7 +35,8 @@ in
   microvm = {
     hypervisor = "qemu";              # D4 — uniform hypervisor across guests
     vcpu = 1;
-    mem  = 2048;                      # matches the old 2 GB VM
+    mem  = 2560;                      # ~old 2 GB VM, but NOT exactly 2048: QEMU hangs
+                                      # at exactly 2 GB (microvm.nix issue #171)
 
     # D8 — share the host store read-only; guest keeps only a writable overlay.
     shares = [{
