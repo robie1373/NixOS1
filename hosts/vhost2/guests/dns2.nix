@@ -67,6 +67,9 @@ in
   # stub resolver points at the gateway + public fallback (same as the old VM).
   networking.nameservers = [ "192.168.20.254" "1.1.1.1" ];
 
+  # ── The resolver ──────────────────────────────────────────────────────────────
+  mySystem.blocky.enable = true;
+
   # ── microVM boot overrides ────────────────────────────────────────────────────
   # server-common assumes a disk-booting host (systemd-boot + growPartition). A
   # microVM boots a supplied kernel/initrd directly and has no ESP or growable

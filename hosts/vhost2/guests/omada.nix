@@ -41,13 +41,27 @@ in
     vcpu = 2;
     mem  = 3072;                      # matches the old 3 GB VM
 
-    # D8 — shared read-only host store.
-    shares = [{
-      source     = "/nix/store";
-      mountPoint = "/nix/.ro-store";
-      tag        = "ro-store";
-      proto      = "virtiofs";
-    }];
+    # D8 — shared read-only host store; plus a WRITABLE share for Omada's own
+    # scheduled .cfg auto-backups so they land on vhost2's real filesystem, where
+    # the HOST backs them up (option b). Only the small static .cfg exports go over
+    # virtiofs — the live MongoDB stays on the block volume above (share is safe for
+    # the exports, unsafe for the DB). Host share source /var/lib/omada-backups is
+    # auto-created by the microvm host module (tmpfiles, microvm:kvm 0775).
+    shares = [
+      {
+        source     = "/nix/store";
+        mountPoint = "/nix/.ro-store";
+        tag        = "ro-store";
+        proto      = "virtiofs";
+      }
+      {
+        source     = "/var/lib/omada-backups";
+        mountPoint = "/srv/omada-autobackup";
+        tag        = "omada-autobackup";
+        proto      = "virtiofs";
+        # writable (readOnly defaults false)
+      }
+    ];
 
     # Stateful block volume for /var/lib (Omada data + Docker graph). Raw image
     # auto-created in the guest's stateDir on the host; ext4.
@@ -77,6 +91,20 @@ in
   };
   networking.nameservers = [ "192.168.20.254" "1.1.1.1" ];
 
+  # ── The controller ────────────────────────────────────────────────────────────
+  mySystem.omada-controller.enable = true;
+
+  # Bind the writable autobackup share over the container's autobackup subdir, so
+  # Omada's scheduled .cfg exports are written straight onto the host share (which
+  # vhost2 backs up). Concatenates with the volume list in omada-controller.nix.
+  # NOTE: Omada's scheduled auto-backup is a controller UI setting (not settable
+  # via the mbentley image) — enable it once post-standup: Settings → Maintenance →
+  # Backup & Restore → Auto Backup (schedule + retention). Until then this dir is
+  # simply empty; the .cfg export is also the manual restore vehicle (spec step 1/5).
+  virtualisation.oci-containers.containers.omada-controller.volumes = [
+    "/srv/omada-autobackup:/opt/tplink/EAPController/data/autobackup"
+  ];
+
   # Force /etc/hosts so the LAN IP is the ONLY resolution for "omada" — otherwise
   # NixOS's auto 127.0.0.2 entry makes the controller advertise a loopback inform
   # URL that APs/switches can't reach. (Carried verbatim from the old omada host.)
@@ -94,13 +122,18 @@ in
 
   system.stateVersion = "25.05";
 
-  # ── PENDING DECISION: in-guest restic backups ─────────────────────────────────
-  # The old omada VM imported ../../../modules/_features/restic.nix and set
-  # mySystem.restic (nasPath tank/backups/services/omada, paths
-  # [/var/lib/omada-controller/data]). Re-enabling it here requires omada's private
-  # host key inside the microVM so agenix can decrypt restic-{backup,repo-password}-omada.
-  # Not done pending Robie's choice of mechanism (plant key in-guest / host-side
-  # backup / defer). restic.nix also needs `self` threaded into this guest's
-  # specialArgs (it takes a bare `self` arg) — added at ../configuration.nix when
-  # restic is turned on.
+  # ── Backups: option (b), host-side — chosen 2026-07-05 ────────────────────────
+  # Robie chose host-side backup over in-guest restic (keeps the guest key-less;
+  # D10 stays clean). This guest's only job for backups is the writable autobackup
+  # share above; the actual restic job runs on the vhost2 HOST (see
+  # ../configuration.nix) against /var/lib/omada-backups using vhost2's OWN key —
+  # no host key is planted in this microVM.
+  #
+  # OPEN (needs Robie): the host restic job needs credentials
+  # (restic-backup-vhost2 / restic-repo-password-vhost2 age secrets). Reusing
+  # omada's existing repo by re-encrypting its secrets to vhost2 got fussy (age
+  # couldn't decrypt with the admin key), so that's parked; the clean path is fresh
+  # creds the documented way (op write + NAS authorized_keys — both Robie-gated).
+  # Until the secrets exist, the host restic wiring is held out (agenix would fail
+  # to build referencing missing .age files).
 }
