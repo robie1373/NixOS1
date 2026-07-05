@@ -70,6 +70,11 @@ in
 
   # ── The resolver ──────────────────────────────────────────────────────────────
   mySystem.blocky.enable = true;
+  # blocky must own :53. useNetworkd (above) pulls in systemd-resolved, which grabs
+  # :53 on the loopback stub and makes blocky's 0.0.0.0:53 bind fail
+  # ("address already in use"). The old dns2 VM used scripted networking so resolved
+  # was never enabled; the microVM does, so turn it off explicitly.
+  services.resolved.enable = false;
 
   # ── microVM boot overrides ────────────────────────────────────────────────────
   # server-common assumes a disk-booting host (systemd-boot + growPartition). A
