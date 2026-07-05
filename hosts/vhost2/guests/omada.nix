@@ -97,10 +97,13 @@ in
   # Bind the writable autobackup share over the container's autobackup subdir, so
   # Omada's scheduled .cfg exports are written straight onto the host share (which
   # vhost2 backs up). Concatenates with the volume list in omada-controller.nix.
-  # NOTE: Omada's scheduled auto-backup is a controller UI setting (not settable
-  # via the mbentley image) — enable it once post-standup: Settings → Maintenance →
-  # Backup & Restore → Auto Backup (schedule + retention). Until then this dir is
-  # simply empty; the .cfg export is also the manual restore vehicle (spec step 1/5).
+  # Path VERIFIED 2026-07-05 (Opus 4.8) from the controller's bin/control.sh:
+  #   AUTOBACKUP_DIR="${DATA_DIR}/autobackup" → /opt/tplink/EAPController/data/autobackup.
+  # Auto Backup itself is a controller UI setting (enabled on the old controller
+  # 2026-07-05; it should ride the .cfg restore — verify at standup, spec B2 step 5).
+  # ⚠️ Write-perm caveat: Omada runs as uid 508; the share source is microvm:kvm 0775,
+  # so 508 = "other" = no write. If the first backup doesn't land in the share, grant
+  # 508 write on /var/lib/omada-backups (host tmpfiles) — verify at standup.
   virtualisation.oci-containers.containers.omada-controller.volumes = [
     "/srv/omada-autobackup:/opt/tplink/EAPController/data/autobackup"
   ];
