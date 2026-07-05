@@ -122,18 +122,14 @@ in
 
   system.stateVersion = "25.05";
 
-  # ── Backups: option (b), host-side — chosen 2026-07-05 ────────────────────────
-  # Robie chose host-side backup over in-guest restic (keeps the guest key-less;
-  # D10 stays clean). This guest's only job for backups is the writable autobackup
-  # share above; the actual restic job runs on the vhost2 HOST (see
-  # ../configuration.nix) against /var/lib/omada-backups using vhost2's OWN key —
-  # no host key is planted in this microVM.
+  # ── Backups: option (b), host-side ────────────────────────────────────────────
+  # Host-side backup keeps this guest key-less (D10 stays clean). The guest's only
+  # job is the writable autobackup share above; the restic job itself runs on the
+  # vhost2 HOST — a per-guest set `mySystem.restic.backups.omada` in
+  # ../configuration.nix, backing up /var/lib/omada-backups with vhost2's own key.
+  # Credentials are vhost2-scoped re-encryptions of omada's, so it reuses omada's
+  # NAS repo (history preserved). See the multi-set restic.nix.
   #
-  # OPEN (needs Robie): the host restic job needs credentials
-  # (restic-backup-vhost2 / restic-repo-password-vhost2 age secrets). Reusing
-  # omada's existing repo by re-encrypting its secrets to vhost2 got fussy (age
-  # couldn't decrypt with the admin key), so that's parked; the clean path is fresh
-  # creds the documented way (op write + NAS authorized_keys — both Robie-gated).
-  # Until the secrets exist, the host restic wiring is held out (agenix would fail
-  # to build referencing missing .age files).
+  # One manual step remains: enable Omada's scheduled auto-backup in the controller
+  # UI post-standup so the .cfg exports actually flow into the share.
 }

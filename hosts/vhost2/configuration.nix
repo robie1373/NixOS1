@@ -22,6 +22,7 @@
     inputs.disko.nixosModules.disko
     ../../modules/_system/server-common.nix   # boot, ssh, agenix, observability agent
     ../../modules/_system/hypervisor.nix       # KVM/libvirt + Podman + microvm.host
+    ../../modules/_features/restic.nix         # per-guest backup sets (multi-set API)
   ];
 
   # ── Identity ────────────────────────────────────────────────────────────────
@@ -137,6 +138,24 @@
   microvm.vms.omada = {
     specialArgs = { inherit inputs; };
     config = import ./guests/omada.nix;
+  };
+
+  # ── Per-guest backup sets ─────────────────────────────────────────────────────
+  # vhost2 is a hypervisor, so backups are keyed per hosted GUEST, not per host —
+  # each stateful guest gets its own named set → its own service repo. As guests
+  # are added, add a set here; they never share a pile.
+  #
+  # omada: the guest writes its scheduled Omada .cfg exports to a writable virtiofs
+  # share sourced at /var/lib/omada-backups on THIS host (see guests/omada.nix); we
+  # back that dir up with vhost2's own key — no key is planted in the guest. Secrets
+  # override to the vhost2-scoped copies (byte-identical re-encryptions of omada's,
+  # so it reuses omada's NAS repo → history preserved, no NAS-side change). Snapshots
+  # are tagged host=vhost2 (the honest runner); the repo path is the service owner.
+  mySystem.restic.backups.omada = {
+    nasPath            = "tank/backups/services/omada";
+    paths              = [ "/var/lib/omada-backups" ];
+    sshKeySecret       = "restic-backup-vhost2-omada";
+    repoPasswordSecret = "restic-repo-password-vhost2-omada";
   };
 
   # ── Tailscale: OFF ────────────────────────────────────────────────────────────
