@@ -248,8 +248,7 @@
   };
 
   # ── Restic backups ───────────────────────────────────────────────────────────
-  mySystem.restic = {
-    enable  = true;
+  mySystem.restic.backups.fivenix = {
     nasPath = "tank/backups/laptops/linux/fivenix";
     paths   = [ "/home/robie" ];
     exclude = [

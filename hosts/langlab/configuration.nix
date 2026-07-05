@@ -51,8 +51,7 @@
 
   # ── Restic backups ────────────────────────────────────────────────────────
   # study.db (SQLite) and languages/ audio files. Both are under /var/lib/langlab.
-  mySystem.restic = {
-    enable  = true;
+  mySystem.restic.backups.langlab = {
     nasPath = "tank/backups/services/langlab";
     paths   = [ "/var/lib/langlab" ];
   };

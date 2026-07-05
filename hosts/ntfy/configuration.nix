@@ -57,8 +57,7 @@
   };
 
   # ── Restic backups ────────────────────────────────────────────────────────
-  mySystem.restic = {
-    enable  = true;
+  mySystem.restic.backups.ntfy = {
     nasPath = "tank/backups/services/ntfy";
     paths   = [ "/var/lib/ntfy-sh" ];
   };

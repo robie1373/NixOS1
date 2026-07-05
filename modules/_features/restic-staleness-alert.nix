@@ -12,9 +12,9 @@
 #
 # Both need the root-only agenix repo creds, so they run as ROOT systemd
 # services (no interactive sudo — root reads the secrets directly, exactly like
-# the backup job). They read mySystem.restic.{nasUser,nasHost,nasPath,paths} +
-# the agenix secret paths declared by modules/_features/restic.nix, so host
-# params never drift.
+# the backup job). This module is a CONSUMER of the restic API: it reads one named
+# set, mySystem.restic.backups.<cfg.backup>.{nasUser,nasHost,nasPath,paths} + that
+# set's agenix secret names, so its params never drift from the backup job.
 #
 # Alerts: each check writes/clears its own file under ${stateDir}/alerts/ and
 # sends a deduped (1/24h) ntfy. The user `restic-staleness-notify` timer raises a
@@ -27,19 +27,23 @@
 
 let
   cfg      = config.mySystem.resticStalenessAlert;
-  rcfg     = config.mySystem.restic;
   hostname = config.networking.hostName;
 
-  pwPath  = config.age.secrets."restic-repo-password-${hostname}".path;
-  keyPath = config.age.secrets."restic-backup-${hostname}".path;
-  repo    = "sftp:${rcfg.nasUser}@${rcfg.nasHost}:/mnt/${rcfg.nasPath}";
+  # This monitor is a CONSUMER of the restic API: it watches ONE named backup set
+  # (cfg.backup, default = this host's same-named set) and reads that set's NAS
+  # params + agenix secret names so nothing drifts from the backup job itself.
+  b       = config.mySystem.restic.backups.${cfg.backup};
+
+  pwPath  = config.age.secrets.${b.repoPasswordSecret}.path;
+  keyPath = config.age.secrets.${b.sshKeySecret}.path;
+  repo    = "sftp:${b.nasUser}@${b.nasHost}:/mnt/${b.nasPath}";
 
   sshCmd = pkgs.writeShellScript "restic-monitor-ssh" ''
     exec ${pkgs.openssh}/bin/ssh \
       -s -i ${keyPath} \
       -o BatchMode=yes \
       -o StrictHostKeyChecking=accept-new \
-      ${rcfg.nasUser}@${rcfg.nasHost} sftp
+      ${b.nasUser}@${b.nasHost} sftp
   '';
 
   stateDir = "/var/lib/restic-staleness";
@@ -121,7 +125,7 @@ let
     # paths. head closes the pipe early so `restic ls` stops (bounded time).
     # NOTE: selection is biased toward the traversal-early part of the tree;
     # good enough to rotate files, not a uniform sample. See restic.md.
-    restic -o sftp.command=${sshCmd} ls -l latest ${lib.escapeShellArgs rcfg.paths} 2>/dev/null \
+    restic -o sftp.command=${sshCmd} ls -l latest ${lib.escapeShellArgs b.paths} 2>/dev/null \
       | while read -r mode uid gid size rest; do
           case "$mode" in -*) ;; *) continue ;; esac
           case "$size" in ""|*[!0-9]*) continue ;; esac
@@ -209,6 +213,15 @@ in
 {
   options.mySystem.resticStalenessAlert = {
     enable = lib.mkEnableOption "real restic backup monitoring (snapshot-age + restore test) with persistent desktop + ntfy alerts";
+
+    backup = lib.mkOption {
+      type        = lib.types.str;
+      default     = hostname;
+      description = ''
+        Which mySystem.restic.backups.<name> set this monitor watches. Defaults to
+        this host's same-named set (the common single-backup case).
+      '';
+    };
 
     user = lib.mkOption {
       type = lib.types.str; default = "robie";

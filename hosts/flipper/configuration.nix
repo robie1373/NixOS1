@@ -214,8 +214,7 @@
   programs.fish.package = self.packages.${pkgs.stdenv.hostPlatform.system}.fish;
 
   # ── Restic backups ───────────────────────────────────────────────────────────
-  mySystem.restic = {
-    enable  = true;
+  mySystem.restic.backups.flipper = {
     nasPath = "tank/backups/laptops/linux/flipper";
     paths   = [ "/home/robie" ];
     exclude = [

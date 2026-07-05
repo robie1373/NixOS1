@@ -70,8 +70,7 @@
   # Back up only the MongoDB data directory. logs/ and work/ are transient.
   # Note: Omada controller runs MongoDB live during backup — restore may require
   # stopping the container and doing a clean restore. See backup runbook.
-  mySystem.restic = {
-    enable  = true;
+  mySystem.restic.backups.omada = {
     nasPath = "tank/backups/services/omada";
     paths   = [ "/var/lib/omada-controller/data" ];
   };
