@@ -98,6 +98,12 @@
         bridgeVLANs = [ { PVID = 20; EgressUntagged = 20; } ];
         linkConfig.RequiredForOnline = "no";
       };
+      "40-vm-omada" = {
+        matchConfig.Name = "vm-omada";
+        networkConfig.Bridge = "br0";
+        bridgeVLANs = [ { PVID = 20; EgressUntagged = 20; } ];
+        linkConfig.RequiredForOnline = "no";
+      };
     };
   };
 
@@ -125,6 +131,12 @@
   microvm.vms.pages = {
     specialArgs = { inherit inputs; };
     config = import ./guests/pages.nix;
+  };
+  # omada is stateful (block volume) and, once restic is decided, will also need
+  # `self` in specialArgs for restic.nix (see ./guests/omada.nix bottom note).
+  microvm.vms.omada = {
+    specialArgs = { inherit inputs; };
+    config = import ./guests/omada.nix;
   };
 
   # ── Tailscale: OFF ────────────────────────────────────────────────────────────
