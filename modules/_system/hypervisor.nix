@@ -66,5 +66,16 @@
     # and re-key when it joins (vhost1 at its rung-5 host-key ceremony).
     age.secrets.root-recovery.file = ../../secrets/root-recovery.age;
     users.users.root.hashedPasswordFile = config.age.secrets.root-recovery.path;
+
+    # A declarative password is ONLY applied to an existing user when mutableUsers
+    # is false — nixpkgs update-users-groups.pl line ~300:
+    #   $sp_pwdp = $u->{hashedPassword} if defined ... && !$spec->{mutableUsers};
+    # With the default mutableUsers=true, root (created Locked at install) keeps its
+    # `!` and hashedPasswordFile is silently ignored (verified on vhost2 2026-07-05).
+    # These hypervisors have no imperative users (root only, key-managed), so making
+    # them fully declarative is correct AND is what makes the recovery password take.
+    # Safe with agenix: age.nix sets `users.deps = [ "agenixInstall" ]`, so the secret
+    # is decrypted before the users script reads it (no lock-out-on-boot race).
+    users.mutableUsers = false;
   };
 }
