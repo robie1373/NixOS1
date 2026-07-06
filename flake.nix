@@ -32,6 +32,10 @@
     # import-tree: auto-discovers all .nix files under ./modules as flake-parts modules.
     # Directories prefixed with _ are excluded (used to quarantine legacy NixOS modules
     # during migration — see modules/_system/ and modules/_home/).
+    # Impermanence: tmpfs-root hosts with an explicit persist allowlist
+    # (ledger stateless-doctrine.md law 6 / hypervisor-impermanence.md).
+    impermanence.url = "github:nix-community/impermanence";
+
     import-tree.url = "github:vic/import-tree";
 
     # nix-wrapper-modules: wraps programs as standalone derivations with embedded config.

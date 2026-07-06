@@ -29,6 +29,7 @@
     ./hardware-configuration.nix
     ./disko.nix
     inputs.disko.nixosModules.disko
+    inputs.impermanence.nixosModules.impermanence
     ../../modules/_system/server-common.nix   # boot, ssh, agenix, observability agent
     ../../modules/_system/hypervisor.nix       # KVM/libvirt + Podman + microvm.host
     ../../modules/_features/restic.nix         # per-guest backup sets (multi-set API)
@@ -36,6 +37,35 @@
 
   # ── Identity ────────────────────────────────────────────────────────────────
   networking.hostName = "vhost1";
+
+  # ── Impermanence (Robie's ruling 2026-07-06) ─────────────────────────────────
+  # `/` is RAM and dies at poweroff. The attrset below is THE persist list — the
+  # exhaustive statement of what this host is beyond its flake (ledger
+  # hypervisor-impermanence.md; every entry needs a loss story per stateless-
+  # doctrine law 7). nixos-anywhere plants the host key under /persist/etc/ssh/
+  # (--extra-files path gains the /persist prefix — the ONLY runbook difference).
+  # Deliberately ephemeral, no persist entry (loss story = rehydrates or nothing
+  # to lose): /var/log/journal (Alloy ships to observ continuously — pending
+  # Robie's journal ruling), libvirt + podman state (escape-hatch tooling, no
+  # declared VMs/containers; images re-pull).
+  fileSystems."/" = {
+    device  = "none";
+    fsType  = "tmpfs";
+    options = [ "defaults" "size=2G" "mode=755" ];
+  };
+  fileSystems."/persist".neededForBoot = true;   # binds happen in early boot — required by the module
+  environment.persistence."/persist" = {
+    hideMounts = true;
+    files = [
+      "/etc/ssh/ssh_host_ed25519_key"       # host identity: agenix anchor (loss story: replant from op)
+      "/etc/ssh/ssh_host_ed25519_key.pub"
+      "/etc/machine-id"                      # journald identity (loss story: regenerates, cosmetic)
+    ];
+    directories = [
+      "/var/lib/microvms"                    # guest volumes + booted-closure pins (loss story: class-3/4 from NAS restic; class-2 priced in)
+      "/var/lib/nixos"                       # uid/gid maps (loss story: regenerates, chown fixups at worst)
+    ];
+  };
 
   # ── Networking: VLAN-aware bridge (systemd-networkd) ─────────────────────────
   # Replaces Proxmox's vlan-aware vmbr0. Physical NIC "nic0" is a trunk from the

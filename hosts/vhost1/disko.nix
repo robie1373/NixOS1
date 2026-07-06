@@ -9,10 +9,13 @@
 # leave the SATA entirely alone — it is not part of vhost1 and disko must never
 # reference it. Pinning `device` to the NVMe by-id guarantees that.
 #
-# btrfs root with zstd — same rationale as vhost2/nixsrv1: cheap snapshots to roll
-# back a failed microvm/host experiment, compression stretches the disk, and the
-# /nix/store is shared read-only into every guest (D8). 1 TB is ample for the host
-# store + every guest state volume (langlab 16G, observ 20G, the rest tiny).
+# IMPERMANENCE LAYOUT (Robie's ruling 2026-07-06, ledger hypervisor-impermanence.md):
+# there is NO root subvolume on disk — `/` is tmpfs, declared in configuration.nix,
+# and dies at poweroff. Only three things live on the NVMe: /boot (ESP), /nix
+# (btrfs subvol, zstd), /persist (btrfs subvol — the allowlist storage; guest
+# volumes get cheap snapshots HERE, which is where the btrfs rationale pays).
+# Everything else is bind-mounted out of /persist at boot by the impermanence
+# module (see configuration.nix) or is ephemeral on purpose.
 
 { ... }:
 
@@ -44,16 +47,14 @@
               type      = "btrfs";
               extraArgs = [ "-L" "nixos" "-f" ];
               subvolumes = {
-                "@" = {
-                  mountpoint   = "/";
-                  mountOptions = [ "compress=zstd:1" "noatime" "space_cache=v2" ];
-                };
+                # No "@" (root) and no "@var": / is tmpfs (impermanence); /var is
+                # ephemeral except the /persist binds.
                 "@nix" = {
                   mountpoint   = "/nix";
                   mountOptions = [ "compress=zstd:1" "noatime" "space_cache=v2" ];
                 };
-                "@var" = {
-                  mountpoint   = "/var";
+                "@persist" = {
+                  mountpoint   = "/persist";
                   mountOptions = [ "compress=zstd:1" "noatime" "space_cache=v2" ];
                 };
               };
