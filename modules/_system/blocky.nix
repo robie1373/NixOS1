@@ -27,8 +27,8 @@
         # Hypervisors
         "pve.home.lab"  = "192.168.7.40";     # alias — keep ~1 transition month post-rung-5
         "vhost1.home.lab" = "192.168.7.40";   # all-nixos-lab rung 5 (pve → vhost1)
-        "pve2.home.lab" = "192.168.7.159";   # alias — keep ~1 transition month post-rung-4
-        "vhost2.home.lab" = "192.168.7.159";  # all-nixos-lab rung 4 (pve2 → vhost2)
+        "pve2.home.lab" = "192.168.20.41";   # alias — keep ~1 transition month post-rung-4
+        "vhost2.home.lab" = "192.168.20.41";  # rung 4 (pve2→vhost2); mgmt moved VLAN10→20 2026-07-05
         # NixOS lab services (VLAN 20)
         "ntfy.home.lab"    = "192.168.20.10";
         "langlab.home.lab" = "192.168.20.11";

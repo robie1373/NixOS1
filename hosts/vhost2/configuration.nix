@@ -5,7 +5,10 @@
 # for this host AND its guests. See ledger proxmox-to-microvm.md Phase B2.
 #
 # Hardware: Intel i5-4590 (Haswell), 16 GB, Samsung 840 PRO 238 GB SSD, UEFI.
-# Mgmt IP: 192.168.7.159/24 (untagged VLAN 10), gateway 192.168.7.1  |  name: vhost2
+# Mgmt IP: 192.168.20.41/24 (VLAN 20), gateway 192.168.20.254  |  name: vhost2
+#   (Was 192.168.7.159 untagged VLAN 10. Moved to VLAN 20 2026-07-05 — Robie's call:
+#    the vhosts sat on VLAN 10 only because they predate the VLANs; hypervisor mgmt
+#    belongs on VLAN 20 with the workloads. Smoke test for the same move on vhost1.)
 #
 # Role: runs its services as declarative microVMs (D1 reprovision-never-migrate),
 # NOT on the host. Post-Project-A residents to recreate as microVMs at Phase B2
@@ -72,12 +75,18 @@
         ];
       };
 
-      # The bridge itself carries the host management IP on VLAN 10.
+      # The bridge itself carries the host management IP on VLAN 20 (moved off
+      # VLAN 10, 2026-07-05). br0-self is a VLAN-20 access port (PVID 20 +
+      # EgressUntagged 20) — identical form to the guest taps below — so the host's
+      # own traffic egresses the uplink tagged as VLAN 20, which the switch trunk
+      # already carries (the guests prove that path). The uplink ("20-uplink")
+      # keeps native VLAN 10 + tagged VLAN 20 unchanged; the host simply no longer
+      # uses VLAN 10.
       "30-br0" = {
         matchConfig.Name = "br0";
-        address = [ "192.168.7.159/24" ];
-        routes  = [ { Gateway = "192.168.7.1"; } ];
-        bridgeVLANs = [ { PVID = 10; EgressUntagged = 10; } ];
+        address = [ "192.168.20.41/24" ];
+        routes  = [ { Gateway = "192.168.20.254"; } ];
+        bridgeVLANs = [ { PVID = 20; EgressUntagged = 20; } ];
         linkConfig.RequiredForOnline = "routable";
       };
 

@@ -30,10 +30,10 @@ let
     { host = "dns1";    addr = "192.168.20.53:9100"; }
     { host = "dns2";    addr = "192.168.20.54:9100"; }  # deployed 2026-07-03 (all-nixos-lab Project A)
     { host = "pages";   addr = "192.168.20.57:9100"; }
-    # vhost2 — NixOS hypervisor (all-nixos-lab rung 4, formerly pve2). Mgmt is on
-    # VLAN 10 (.7.159); observ scrapes it cross-VLAN fine (verified HTTP 200,
-    # 2026-07-05). Replaces pve2's old pve-exporter/vmagent-push path (D9).
-    { host = "vhost2";  addr = "192.168.7.159:9100"; }
+    # vhost2 — NixOS hypervisor (all-nixos-lab rung 4, formerly pve2). Mgmt moved
+    # VLAN 10 (.7.159) → VLAN 20 (.20.41) on 2026-07-05, so this scrape is now
+    # SAME-VLAN as observ. Replaces pve2's old pve-exporter/vmagent-push path (D9).
+    { host = "vhost2";  addr = "192.168.20.41:9100"; }
     # fw is the edge router (OPNsense/FreeBSD), pulled on its VLAN-20 leg (.254).
     # Needs os-node_exporter on fw AND a LAB-interface allow rule for observ→.254:9100
     # (fw blocks lab→RFC1918 by default, same as the explicit :53 pass). Shows up=0
