@@ -44,8 +44,22 @@ let
   # All servers that use tailscale-autoconnect.nix must be listed here.
   # Re-key after adding each new server: cd secrets && nix run github:ryantm/agenix -- -r
   tailscaleServers = [ admin ntfy omada langlab dns1 dns2 nixsrv1 observ pages ];
+
+  # Bare-metal NixOS hypervisors — recipients of the fleet console-recovery root
+  # password (consumed by modules/_system/hypervisor.nix hashedPasswordFile). Only
+  # machines with a real console belong here; the microVM guests never do (no
+  # console — recovered from their host). vhost1 joins at its host-key ceremony
+  # (all-nixos-lab rung 5). Re-key after adding: cd secrets && agenix -- -r.
+  hypervisors = [ admin vhost2 nixsrv1 ];
 in
 {
+  # Fleet root console-recovery password (sha-512 crypt hash). Break-glass login
+  # at the JetKVM/physical console when a hypervisor is up but unreachable — the
+  # locked-root trap we dodged on the vhost2 conversion (Robie, 2026-07-05).
+  # Consumed by hypervisor.nix (users.users.root.hashedPasswordFile). Plaintext is
+  # in 1Password devops/"Hypervisor root recovery (fleet)".
+  "root-recovery.age".publicKeys = hypervisors;
+
   # ntfy admin password — local user database (pre-Kanidm migration)
   # After Kanidm is deployed, migrate ntfy auth to LDAP and remove this secret.
   "ntfy-admin-password.age".publicKeys = [ admin ntfy ];
