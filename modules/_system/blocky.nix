@@ -25,7 +25,8 @@
       # override per-host only with a deliberate reason.
       default = {
         # Hypervisors
-        "pve.home.lab"  = "192.168.7.40";
+        "pve.home.lab"  = "192.168.7.40";     # alias — keep ~1 transition month post-rung-5
+        "vhost1.home.lab" = "192.168.7.40";   # all-nixos-lab rung 5 (pve → vhost1)
         "pve2.home.lab" = "192.168.7.159";   # alias — keep ~1 transition month post-rung-4
         "vhost2.home.lab" = "192.168.7.159";  # all-nixos-lab rung 4 (pve2 → vhost2)
         # NixOS lab services (VLAN 20)
