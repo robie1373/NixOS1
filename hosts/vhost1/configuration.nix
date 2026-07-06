@@ -6,7 +6,9 @@
 #
 # Hardware: Intel i7-6700K (Skylake), 16 GB, Samsung 970 EVO Plus 1TB NVMe (boot),
 # Samsung 870 EVO 2TB SATA (LEFT ALONE — not touched), UEFI.
-# Mgmt IP: 192.168.7.40/24 (untagged VLAN 10), gateway 192.168.7.1  |  name: vhost1
+# Mgmt IP: 192.168.20.40/24 (VLAN 20), gateway 192.168.20.254  |  name: vhost1
+#   (Hypervisor mgmt on VLAN 20 with the workloads — Robie's exec decision 2026-07-05,
+#    smoke-tested end-to-end on vhost2 first. NOT VLAN 10 like the old pve.)
 #
 # Role: runs its services as declarative microVMs (D1 reprovision-never-migrate),
 # NOT on the host. Post rung-1/2 residents to recreate as microVMs at the window:
@@ -15,12 +17,10 @@
 # Bring-up order (spec B3): observ + ntfy FIRST (restore eyes/alerts after the
 # blind window), then dns1, langlab.
 #
-# ⚠️ WIP 2026-07-05 (Opus 4.8): only dns1 is authored+wired below. ntfy and langlab
-# reach the network via TAILSCALE today (access hostname + TLS cert on the tailnet)
-# — a coupling vhost2's guests never had, and the guest doctrine forces Tailscale
-# OFF. That fork is OPEN pending Robie's call; their guest defs are deliberately
-# NOT written yet. observ (LAN-IP Grafana at :3000) is likely clean but its
-# alert-delivery path to ntfy must be confirmed first. See the TODO block below.
+# Tailscale is DEAD fleet-wide (Robie, 2026-07-05). ntfy and langlab used the tailnet
+# for their access hostname + TLS cert; that's gone. They (and observ) are reached by
+# LAN IP on VLAN 20 — static, unchanged addresses (.20.10 / .20.11 / .20.56). Guest
+# defs are authored below in hosts/vhost1/guests/.
 
 { inputs, config, lib, pkgs, ... }:
 
@@ -44,13 +44,15 @@
   # tagged member of its VLAN. NIC matched by permanent MAC (1c:1b:0d:73:7c:21 —
   # was "nic0" on pve) so the predictable rename under NixOS can't break the match.
   #
+  # br0-self sits on VLAN 20 (host mgmt moved off VLAN 10 — see header). Same design
+  # proven on vhost2 2026-07-05: br0-self is a VLAN-20 access port; the uplink keeps
+  # native VLAN 10 + tagged VLAN 20, so host traffic egresses tagged VLAN 20.
   # ⚠️ VERIFY AT INSTALL (spec B3, mirrors vhost2 B2 step 4): br0 up, host reachable
-  # on .7.40, a VLAN-20 tap can ping a VLAN-20 peer. Authored, not yet proven on
-  # this metal. Rung-4 gotcha to expect: after kexec, nixos-anywhere may loop "No
-  # route to host" because the mgmt IP was a bridge IP the installer doesn't
-  # recreate — add it by hand on the JetKVM console (`ip addr add 192.168.7.40/24
-  # dev <uplink>`) to let nixos-anywhere reconnect. pve's /etc/network/interfaces
-  # was clean (no legacy route / no OOB vmbr1), so nothing extra to drop here.
+  # on .20.40, a VLAN-20 tap can ping a VLAN-20 peer. Rung-4 gotcha to expect: after
+  # kexec, nixos-anywhere may loop "No route to host" because the mgmt IP was a bridge
+  # IP the installer doesn't recreate — add it by hand on the JetKVM console
+  # (`ip addr add 192.168.20.40/24 dev <uplink>`) to let nixos-anywhere reconnect.
+  # pve's /etc/network/interfaces was clean (no legacy route / no OOB vmbr1).
   networking.useNetworkd = true;
   networking.useDHCP = false;
   networking.nameservers = [ "1.1.1.1" "1.0.0.1" ];   # host uses public DNS — never
@@ -81,12 +83,13 @@
         ];
       };
 
-      # The bridge itself carries the host management IP on VLAN 10.
+      # The bridge itself carries the host management IP on VLAN 20 (access port,
+      # same form as the guest taps — proven on vhost2 2026-07-05).
       "30-br0" = {
         matchConfig.Name = "br0";
-        address = [ "192.168.7.40/24" ];
-        routes  = [ { Gateway = "192.168.7.1"; } ];
-        bridgeVLANs = [ { PVID = 10; EgressUntagged = 10; } ];
+        address = [ "192.168.20.40/24" ];
+        routes  = [ { Gateway = "192.168.20.254"; } ];
+        bridgeVLANs = [ { PVID = 20; EgressUntagged = 20; } ];
         linkConfig.RequiredForOnline = "routable";
       };
 
