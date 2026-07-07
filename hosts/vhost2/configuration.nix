@@ -68,6 +68,9 @@
     directories = [
       "/var/lib/microvms"                    # guest volumes (omada class-3 from NAS restic; class-2 priced in)
       "/var/lib/nixos"                       # uid/gid maps (loss story: regenerates)
+      "/var/lib/omada-backups"               # omada .cfg autobackups via virtiofs share (loss story: restic —
+                                             # exercised for real 2026-07-07 after the retrofit wipe ate this
+                                             # dir; ANY host-side virtiofs share dir must be listed here)
     ];
   };
 
