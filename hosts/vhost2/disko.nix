@@ -28,6 +28,14 @@
           ESP = {
             size = "1G";                     # headroom for kernels/generations (configurationLimit 20)
             type = "EF00";
+            # Pinned partition GUID: firmware boot entries reference the ESP by
+            # its GPT partition UUID. A reinstall that regenerates the GUID
+            # invalidates the entry and the BIOS boot-priority pin silently
+            # falls back to the legacy device entry — the machine then needs a
+            # human at the console (bit us 2026-07-05 AND 2026-07-07). A stable
+            # GUID keeps the firmware entry (and the pinned priority) valid
+            # across reinstalls — self-healing by construction.
+            uuid = "471b697e-dc75-485c-a24f-2666bcedef21";
             content = {
               type         = "filesystem";
               format       = "vfat";

@@ -42,6 +42,22 @@
     options = [ "defaults" "size=2G" "mode=755" ];
   };
   fileSystems."/persist".neededForBoot = true;   # binds happen in early boot — module asserts this
+
+  # agenix activation runs from the INITRD, before the impermanence bind-mounts
+  # exist — pointing it at the bind target (/etc/ssh/...) finds nothing and every
+  # secret silently fails to decrypt (found live at the 2026-07-07 retrofit drill).
+  # Read the persisted key directly; /persist is mounted in initrd (neededForBoot).
+  age.identityPaths = [ "/persist/etc/ssh/ssh_host_ed25519_key" ];
+
+  # No root partition to grow — / is tmpfs (server-common's growPartition fails
+  # loudly on every boot otherwise; drill finding 2026-07-07).
+  boot.growPartition = lib.mkForce false;
+
+  # libvirt is unused on microvm vhosts (guests run as microvm@ qemu units, not
+  # virsh domains) and its secrets-encryption oneshot fails on the ephemeral
+  # /var/lib (drill finding 2026-07-07). hypervisor.nix keeps it for nixsrv1.
+  virtualisation.libvirtd.enable = lib.mkForce false;
+
   environment.persistence."/persist" = {
     hideMounts = true;
     files = [
