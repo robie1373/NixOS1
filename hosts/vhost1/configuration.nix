@@ -161,6 +161,11 @@
   };
 
   # ── TODO(rung5) — guests pending decisions ────────────────────────────────────
+  # CLASS-2 VOLUMES (if Robie licenses them — spec w/ exact sizes/mounts/cadence:
+  # ledger new-service-protocol.md → Appendix): observ = split narrow volumes
+  # victoriametrics 8G + victorialogs 8G (grafana ephemeral), MONTHLY wipe; ntfy =
+  # ntfy-cache 1G on /var/lib/ntfy-sh, weekly wipe. Register each in
+  # patchAutomation.phase2.class2Volumes or it escapes law 8.
   # ntfy (.20.10)  : state /var/lib/ntfy-sh (restic-covered). BLOCKED on the
   #                  Tailscale fork — ntfy's access URL + TLS cert ride the tailnet
   #                  today; the guest doctrine forces Tailscale off. Load-bearing
