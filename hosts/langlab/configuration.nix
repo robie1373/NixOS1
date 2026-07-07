@@ -3,13 +3,14 @@
 # LangLab language learning suite.
 # VMID: 111  |  IP: 192.168.20.11/24  |  Node: pve  |  VLAN: 20
 #
-# Access: https://langlab.vimba-stairs.ts.net (Tailscale only)
+# Access: http://langlab.home.lab (LAN only — Blocky localDns zone)
+#
+# Tailscale stripped 2026-07-06 per the 2026-06-22 decommission decision —
+# first host cleaned; the mkForce below counters server-common.nix until the
+# fleet-wide removal lands there.
 #
 # After provisioning:
-#   1. Tailscale joins automatically on first boot (tailscale-autoconnect.nix).
-#   2. tailscale-cert.service provisions TLS on each boot automatically.
-#   3. Import Korean vocab: python3 scripts/import_apkg.py <deck.apkg> --user robie --language korean
-#   4. Access: https://langlab.vimba-stairs.ts.net
+#   Import Korean vocab: python3 scripts/import_apkg.py <deck.apkg> --user robie --language korean
 
 { inputs, config, lib, pkgs, ... }:
 
@@ -20,13 +21,16 @@
     inputs.disko.nixosModules.disko
     ../../modules/_system/server-common.nix
     ../../modules/_system/langlab.nix
-    ../../modules/_system/tailscale-autoconnect.nix
-    ../../modules/_features/tailscale-watchdog.nix
     ../../modules/_features/restic.nix
   ];
 
   # ── Identity ─────────────────────────────────────────────────────────────
   networking.hostName = "langlab";
+
+  # ── Tailscale: OFF ────────────────────────────────────────────────────────
+  # server-common.nix still enables Tailscale fleet-wide; override until the
+  # fleet cleanup removes it there.
+  services.tailscale.enable = lib.mkForce false;
 
   # ── Network ──────────────────────────────────────────────────────────────
   networking.interfaces.ens18.ipv4.addresses = [{
@@ -46,7 +50,7 @@
   # ── LangLab service ───────────────────────────────────────────────────────
   mySystem.langlab = {
     enable   = true;
-    hostname = "langlab.vimba-stairs.ts.net";
+    hostname = "langlab.home.lab";
   };
 
   # ── Restic backups ────────────────────────────────────────────────────────

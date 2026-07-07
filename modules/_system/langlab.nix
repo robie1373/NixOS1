@@ -4,7 +4,10 @@
 # Python stdlib server + SQLite + Gemini AI (lessons, tutor).
 # Two users: Robie (Korean) and Anna (Spanish).
 #
-# TLS: Tailscale HTTPS certs → /var/lib/nginx-certs/ (same pattern as ntfy).
+# Access: plain HTTP on the LAN (same pattern as pages). LAN-only tool on
+# VLAN 20; HTTPS returns when the planned VLAN 20 Let's Encrypt reverse
+# proxy lands. Until then browser SpeechRecognition (tutor voice input)
+# is unavailable — it requires a secure context. TTS is unaffected.
 # Secrets: langlab-env.age — EnvironmentFile with GEMINI_API_KEY + CLAUDE_API_KEY.
 # State: /var/lib/langlab/ — study.db + languages/ audio files.
 # Source: pinned via flake input `langlab` (github:robie1373/langlab).
@@ -12,9 +15,8 @@
 { config, lib, pkgs, inputs, ... }:
 
 let
-  cfg     = config.mySystem.langlab;
-  certDir = "/var/lib/nginx-certs";
-  src     = inputs.langlab;
+  cfg = config.mySystem.langlab;
+  src = inputs.langlab;
 in
 {
   options.mySystem.langlab = {
@@ -22,7 +24,7 @@ in
 
     hostname = lib.mkOption {
       type        = lib.types.str;
-      description = "Tailscale FQDN (e.g. langlab.vimba-stairs.ts.net)";
+      description = "LAN FQDN nginx serves (e.g. langlab.home.lab — Blocky localDns zone)";
     };
 
     listenPort = lib.mkOption {
@@ -75,49 +77,18 @@ in
       };
     };
 
-    # ── Tailscale HTTPS certificate ───────────────────────────────────────────
-    # Identical pattern to ntfy — certs land in /var/lib/nginx-certs/.
-    services.tailscale.permitCertUid = "nginx";
-
-    systemd.services.tailscale-cert = {
-      description = "Provision Tailscale TLS cert for nginx";
-      after    = [ "tailscaled.service" "network-online.target" "tailscaled-autoconnect.service" ];
-      wants    = [ "network-online.target" ];
-      before   = [ "nginx.service" ];
-      wantedBy = [ "multi-user.target" ];
-      serviceConfig = {
-        Type            = "oneshot";
-        RemainAfterExit = true;
-        Restart         = "on-failure";
-        RestartSec      = "30";  # tailscale cert fails with "no netmap" if TS isn't fully up yet
-        ExecStart = pkgs.writeShellScript "tailscale-cert" ''
-          set -euo pipefail
-          mkdir -p ${certDir}
-          chmod 711 ${certDir}
-          ${pkgs.tailscale}/bin/tailscale cert \
-            --cert-file ${certDir}/${cfg.hostname}.crt \
-            --key-file  ${certDir}/${cfg.hostname}.key \
-            ${cfg.hostname}
-          chown root:nginx ${certDir}/${cfg.hostname}.key
-          chmod 640        ${certDir}/${cfg.hostname}.key
-          chmod 644        ${certDir}/${cfg.hostname}.crt
-        '';
-      };
-    };
-
     # ── nginx reverse proxy ───────────────────────────────────────────────────
+    # Plain HTTP on the LAN. default = true makes this vhost answer on the
+    # bare IP too, so the service works even if a client bypasses DNS.
     # recommendedProxySettings sets Host/X-Forwarded-* — do NOT redeclare them.
     services.nginx = {
       enable                 = true;
       recommendedProxySettings = true;
-      recommendedTlsSettings  = true;
       recommendedOptimisation = true;
       recommendedGzipSettings = true;
 
       virtualHosts."${cfg.hostname}" = {
-        sslCertificate    = "${certDir}/${cfg.hostname}.crt";
-        sslCertificateKey = "${certDir}/${cfg.hostname}.key";
-        forceSSL          = true;
+        default = true;
 
         locations."/" = {
           proxyPass       = "http://127.0.0.1:${toString cfg.listenPort}";
@@ -139,7 +110,7 @@ in
     };
 
     # ── Firewall ──────────────────────────────────────────────────────────────
-    # HTTPS only — HTTP (80) intentionally omitted.
-    networking.firewall.allowedTCPPorts = [ 443 ];
+    # HTTP only — LAN-only tool; TLS returns via the planned VLAN 20 LE proxy.
+    networking.firewall.allowedTCPPorts = [ 80 ];
   };
 }
