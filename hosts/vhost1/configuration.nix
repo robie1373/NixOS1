@@ -33,6 +33,7 @@
     ../../modules/_system/server-common.nix   # boot, ssh, agenix, observability agent
     ../../modules/_system/hypervisor.nix       # KVM/libvirt + Podman + microvm.host
     ../../modules/_features/restic.nix         # per-guest backup sets (multi-set API)
+    ../../modules/_features/patch-automation.nix  # staggered unattended patch days (ledger patch-automation.md)
   ];
 
   # ── Identity ────────────────────────────────────────────────────────────────
@@ -177,6 +178,18 @@
   # A hypervisor must not depend on the tailnet. server-common enables it by
   # default — force off here (vhost2/dns2 precedent).
   services.tailscale.enable = lib.mkForce false;
+
+  # ── Patch automation (phase 2: this host's set day) ─────────────────────────
+  # ⛔ Enable AFTER Robie mints the git deploy key (see patch-automation.nix header)
+  # and the patch-deploy-key.age secret exists for this host. Set day: vhost1 =
+  # Saturday (set A); vhost2 = Tuesday (set B) — redundant pairs straddle sets.
+  # class2Volumes: none yet — observ/ntfy class-2 volumes pending Robie's rung-5
+  # ruling; add entries here when licensed (NEVER class-3/4 volumes).
+  # mySystem.patchAutomation.phase2 = {
+  #   enable = true;
+  #   onCalendar = "Sat 03:00";
+  #   class2Volumes = [ ];
+  # };
 
   system.stateVersion = "25.05";
 }
