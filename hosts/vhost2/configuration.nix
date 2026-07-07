@@ -23,6 +23,7 @@
     ./hardware-configuration.nix
     ./disko.nix
     inputs.disko.nixosModules.disko
+    inputs.impermanence.nixosModules.impermanence
     ../../modules/_system/server-common.nix   # boot, ssh, agenix, observability agent
     ../../modules/_system/hypervisor.nix       # KVM/libvirt + Podman + microvm.host
     ../../modules/_features/patch-automation.nix  # staggered patch days (ledger patch-automation.md)
@@ -31,6 +32,28 @@
 
   # ── Identity ────────────────────────────────────────────────────────────────
   networking.hostName = "vhost2";
+
+  # ── Impermanence (retrofit branch — deploy ONLY at the retrofit window) ──────
+  # Same pattern as vhost1 (authored first, 2026-07-06); see ledger
+  # hypervisor-impermanence.md for mechanism + loss stories (doctrine law 7).
+  fileSystems."/" = {
+    device  = "none";
+    fsType  = "tmpfs";
+    options = [ "defaults" "size=2G" "mode=755" ];
+  };
+  fileSystems."/persist".neededForBoot = true;   # binds happen in early boot — module asserts this
+  environment.persistence."/persist" = {
+    hideMounts = true;
+    files = [
+      "/etc/ssh/ssh_host_ed25519_key"       # host identity: agenix anchor (loss story: replant from op)
+      "/etc/ssh/ssh_host_ed25519_key.pub"
+      "/etc/machine-id"                      # journald identity (loss story: regenerates, cosmetic)
+    ];
+    directories = [
+      "/var/lib/microvms"                    # guest volumes (omada class-3 from NAS restic; class-2 priced in)
+      "/var/lib/nixos"                       # uid/gid maps (loss story: regenerates)
+    ];
+  };
 
   # ── Networking: VLAN-aware bridge (systemd-networkd) ─────────────────────────
   # Replaces Proxmox's vlan-aware vmbr0. The physical NIC is a trunk from the

@@ -6,9 +6,13 @@
 # Device: Samsung SSD 840 PRO 238.5G, confirmed /dev/sda on pve2 (lsblk 2026-07-04).
 # Pinned by-id so disko can't grab the wrong disk (the 3.7G install USB is /dev/sdb).
 #
-# btrfs root with zstd — same rationale as nixsrv1: cheap snapshots to roll back a
-# failed microvm/host experiment, and compression stretches the 16 GB node's SSD
-# while the /nix/store is shared read-only into every guest (D8).
+# IMPERMANENCE RETROFIT LAYOUT (Robie's ruling 2026-07-06, ledger
+# hypervisor-impermanence.md — this branch deploys at the retrofit window ONLY):
+# no root/@var subvolume — / is tmpfs (configuration.nix); only /boot, @nix and
+# @persist live on disk. Guest volumes sit under the persisted+snapshottable
+# @persist. ⚠️ DO NOT merge to main outside the retrofit window: a routine
+# switch+reboot on the OLD disk layout with THIS config = unbootable (no
+# @persist subvolume exists until nixos-anywhere re-runs disko).
 
 { ... }:
 
@@ -38,16 +42,14 @@
               type      = "btrfs";
               extraArgs = [ "-L" "nixos" "-f" ];
               subvolumes = {
-                "@" = {
-                  mountpoint   = "/";
-                  mountOptions = [ "compress=zstd:1" "noatime" "space_cache=v2" ];
-                };
+                # No "@" (root) and no "@var": / is tmpfs (impermanence); /var is
+                # ephemeral except the /persist binds.
                 "@nix" = {
                   mountpoint   = "/nix";
                   mountOptions = [ "compress=zstd:1" "noatime" "space_cache=v2" ];
                 };
-                "@var" = {
-                  mountpoint   = "/var";
+                "@persist" = {
+                  mountpoint   = "/persist";
                   mountOptions = [ "compress=zstd:1" "noatime" "space_cache=v2" ];
                 };
               };
