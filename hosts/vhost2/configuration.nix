@@ -25,6 +25,7 @@
     inputs.disko.nixosModules.disko
     ../../modules/_system/server-common.nix   # boot, ssh, agenix, observability agent
     ../../modules/_system/hypervisor.nix       # KVM/libvirt + Podman + microvm.host
+    ../../modules/_features/patch-automation.nix  # staggered patch days (ledger patch-automation.md)
     ../../modules/_features/restic.nix         # per-guest backup sets (multi-set API)
   ];
 
@@ -177,6 +178,23 @@
   # it, and new hosts don't join the tailnet (dns2 precedent). server-common
   # enables the service by default — force it off here. Veto if you want it on.
   services.tailscale.enable = lib.mkForce false;
+
+  # ── Patch automation (Robie's rulings 2026-07-06) ────────────────────────────
+  # phase1 (lock-bump robot) lives HERE until clauded exists. Runs Fri+Mon nights
+  # so the gate result is fresh for each set day. phase2: vhost2 = set B, Tuesday.
+  # class2Volumes empty: omada is class 3 (NEVER wiped), dns2/pages stateless.
+  mySystem.patchAutomation = {
+    phase1 = {
+      enable = true;
+      onCalendar = "Fri,Mon 01:00";
+      gateHosts = [ "vhost1" "vhost2" "flipper" ];
+    };
+    phase2 = {
+      enable = true;
+      onCalendar = "Tue 03:00";
+      class2Volumes = [ ];
+    };
+  };
 
   system.stateVersion = "25.05";
 }

@@ -74,6 +74,13 @@ in
   # model, hence secret-grade handling.
   "ntfy-alert-topic.age".publicKeys = [ admin observ ];
 
+  # Patch-automation git deploy key — read+write to the NixOS1 repo (GitHub
+  # deploy key, minted 2026-07-06). The lab's first standing off-op push
+  # credential: held by hypervisors (doctrine law 3), Robie minted it
+  # deliberately. Recipients = admin + vhost2 today; ADD vhost1 AT ITS HOST-KEY
+  # CEREMONY (agenix -r). Source: 1Password devops/"patch-automation deploy key".
+  "patch-deploy-key.age".publicKeys = [ admin vhost2 ];
+
   # Grafana admin password (observ visibility host). Makes the admin login
   # durable across redeploys — otherwise the UI-set password lives on the
   # disposable disk and resets to the module default on reinstall.
