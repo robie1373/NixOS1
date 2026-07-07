@@ -60,10 +60,6 @@ in
   # in 1Password devops/"Hypervisor root recovery (fleet)".
   "root-recovery.age".publicKeys = hypervisors;
 
-  # THROWAWAY rung-5 B-mechanism test secret (2026-07-06). Pass 1: keyed to admin
-  # only (guest can't read it). Pass 2: bproof's persisted guest key added. Remove after.
-  "testsecret.age".publicKeys = [ admin ];
-
   # ntfy admin password — local user database (pre-Kanidm migration)
   # After Kanidm is deployed, migrate ntfy auth to LDAP and remove this secret.
   "ntfy-admin-password.age".publicKeys = [ admin ntfy ];

@@ -149,12 +149,6 @@
     specialArgs = { inherit inputs; };
     config = import ./guests/omada.nix;
   };
-  # THROWAWAY rung-5 B-mechanism test guest (2026-07-06) — remove after proving.
-  microvm.vms.bproof = {
-    specialArgs = { inherit inputs; };
-    config = import ./guests/bproof.nix;
-  };
-
   # ── Per-guest backup sets ─────────────────────────────────────────────────────
   # vhost2 is a hypervisor, so backups are keyed per hosted GUEST, not per host —
   # each stateful guest gets its own named set → its own service repo. As guests
