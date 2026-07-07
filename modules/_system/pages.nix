@@ -1,26 +1,24 @@
 # modules/_system/pages.nix
 #
 # Static web HOST — infrastructure only. This module stands up nginx to serve a
-# directory of static files over plain HTTP on the LAN, and nothing else. It
-# deliberately carries NO content: nixos-config owns the webserver, never the
-# pages it serves.
+# directory of static files over plain HTTP on the LAN, and nothing else.
 #
-# Content lives off-repo on the NAS (~/nas/web/pages/) and is pushed to this
-# host's local disk at `serveRoot` by `~/nas/web/deploy-pages` (rsync). Keeping
-# content out of the flake is the whole point: a future Quartz-rendered view of
-# the Ledger ships through the SAME push pipeline, so the Ledger is never baked
-# into nixos-config and never reaches GitHub. See ledger [[pages]] and
-# inbox/distributed-bearing-architecture.md.
+# Content model: BAKE (Robie's ruling 2026-07-06, pages-stateless-content).
+# Content lives in its own LOCAL git repo (~/proj/pages-content on flipper),
+# pinned as the `pages-content` flake input; the serving guest sets serveRoot
+# to that store path. Pointer-not-payload: nixos-config (and GitHub) carry only
+# the lock hash, never the content — so a future Quartz-rendered Ledger view
+# still never reaches GitHub. Content survives guest restarts/wipes because it
+# IS part of the closure. The old model (rsync push via ~/nas/web/deploy-pages
+# to a mutable /var/www/pages) is RETIRED — it was undeclared state; the guest
+# came back 403 after every restart. Publishing protocol: ledger [[pages]].
 #
 # Design decisions:
 #   - LAN-first, plain HTTP/80. Content is non-sensitive (running plans); there
 #     is no auth and nothing worth a TLS dependency. Reachable at http://<ip>.
-#     Tailscale still runs (server-common) for SSH/management — but nothing here
-#     DEPENDS on Tailscale. A Tailscale HTTPS vhost can be added later if wanted.
-#   - serveRoot is a plain local directory populated out-of-band, NOT a Nix-store
-#     path. Deploy copies to LOCAL disk, so serving has no NAS runtime dependency
-#     (NAS down != site down — chaos-monkey). After a host wipe, serveRoot is
-#     empty (branded 404s) until the next deploy: content is lost, not a service.
+#   - serveRoot may be a store path (baked content — the normal case) or a
+#     mutable directory (the tmpfiles rule below only applies then; kept so the
+#     vestigial standalone pages host still evals until it's removed).
 
 { config, lib, pkgs, ... }:
 
@@ -35,9 +33,9 @@ in
       type = lib.types.str;
       default = "/var/www/pages";
       description = ''
-        Local directory nginx serves at the web root. Populated out-of-band by
-        the deploy script (~/nas/web/deploy-pages) — NOT baked from the repo.
-        Created empty by tmpfiles so nginx starts cleanly before the first deploy.
+        Directory nginx serves at the web root. Normal case: the pages-content
+        flake input's store path (baked content). A non-store path is created
+        empty by tmpfiles so nginx starts cleanly (legacy push model).
       '';
     };
 
@@ -55,10 +53,9 @@ in
 
   config = lib.mkIf cfg.enable {
 
-    # Ensure the serve root exists (world-readable) even before the first deploy,
-    # so nginx starts cleanly and an unprovisioned host shows the branded 404
-    # rather than failing. Content is delivered separately by deploy-pages.
-    systemd.tmpfiles.rules = [
+    # For a mutable (non-store) serveRoot only: ensure it exists so nginx starts
+    # cleanly. A store-path serveRoot needs (and permits) no creation.
+    systemd.tmpfiles.rules = lib.mkIf (!lib.hasPrefix builtins.storeDir cfg.serveRoot) [
       "d ${cfg.serveRoot} 0755 root root - -"
     ];
 

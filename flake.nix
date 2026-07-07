@@ -56,6 +56,19 @@
       flake = false;  # plain source tree, not a flake
     };
 
+    # pages site content — BAKE model (Robie's ruling 2026-07-06): content lives in
+    # its own LOCAL repo on flipper; nixos-config carries only this pointer, so the
+    # payload never reaches GitHub (only the lock's rev/narHash does).
+    # INTERIM until Forgejo: git+file means ONLY flipper can update this input, and
+    # a content bump MUST be deployed to the serving vhost from flipper before the
+    # next unattended patch run (the vhost can't fetch this URL; it builds from the
+    # store path the deploy already copied over). Protocol: ledger [[pages]].
+    # Update with: nix flake update pages-content
+    pages-content = {
+      url   = "git+file:///home/robie/proj/pages-content";
+      flake = false;
+    };
+
     # Noctalia: Qt6/QML desktop shell (bar, notifications, lock screen, wallpaper, launcher).
     # Not in nixpkgs; requires flake input. Cachix available for pre-built binaries.
     noctalia = {

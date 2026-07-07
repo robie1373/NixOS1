@@ -2,10 +2,10 @@
 #
 # pages — static web host, as a microVM guest of vhost2.
 # all-nixos-lab rung 4 / Phase B2 step 5. Reprovision-never-migrate (D1): replaces
-# the old pages Proxmox VM (VMID 115). Stateless (D10) — the served content is NOT
-# in the flake; it is pushed out-of-band from the NAS (~/nas/web/pages/) via
-# deploy-pages after the guest is up. So there is no state to restore: build the
-# microVM, boot it, re-run deploy-pages.
+# the old pages Proxmox VM (VMID 115). Stateless (D10) — content is BAKED from the
+# pages-content flake input (Robie's ruling 2026-07-06; local repo on flipper,
+# pointer-not-payload). No state to restore, no push step: the content ships in
+# the guest closure and survives every restart. Publishing protocol: ledger [[pages]].
 #
 # Passed to the host as `microvm.vms.pages.config`. See ../configuration.nix for
 # the guest pattern rationale (mirrors ./dns2.nix).
@@ -60,6 +60,10 @@ in
   # ── Static site ───────────────────────────────────────────────────────────────
   mySystem.pages.enable = true;
   mySystem.pages.serverNames = [ "pages.home.lab" "192.168.20.57" ];
+  # Content baked from the pages-content input: nginx serves the store path
+  # directly. A content update = commit in ~/proj/pages-content + lock bump +
+  # vhost2 switch (restarts ONLY this guest — granularity proven 2026-07-07).
+  mySystem.pages.serveRoot = "${inputs.pages-content}";
 
   # ── microVM boot overrides (see ./dns2.nix) ───────────────────────────────────
   boot.loader.systemd-boot.enable = lib.mkForce false;
