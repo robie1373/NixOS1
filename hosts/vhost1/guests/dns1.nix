@@ -84,5 +84,11 @@ in
   # load-bearing may depend on it). DNS is served on the LAN IP, so no loss.
   services.tailscale.enable = lib.mkForce false;
 
+  # Guests do NOT embed the nixos-config git rev (server-common sets it from
+  # inputs.self.rev). With it, EVERY commit changes every guest closure and a
+  # host switch restarts all guests — defeating per-guest restart granularity
+  # (proven 2026-07-07). Hosts keep theirs; guests are identity-less anyway.
+  system.configurationRevision = lib.mkForce null;
+
   system.stateVersion = "25.05";
 }
