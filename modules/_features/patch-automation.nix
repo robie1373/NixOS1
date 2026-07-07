@@ -145,6 +145,12 @@ in
         file = ../../secrets/patch-deploy-key.age;
         mode = "0400";
       };
+      # Same declaration as alerting.nix (identical values merge cleanly) — this
+      # module runs on hosts that don't import alerting.nix.
+      age.secrets.ntfy-alert-topic = {
+        file = ../../secrets/ntfy-alert-topic.age;
+        mode = "0444";
+      };
     })
     (lib.mkIf cfg.phase1.enable {
       systemd.services.patch-phase1 = {

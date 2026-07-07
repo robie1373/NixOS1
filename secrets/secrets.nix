@@ -72,7 +72,7 @@ in
   # publishes to; same topic Robie's phone subscribes to (source of truth:
   # /home/robie/work/.ntfy-topic on flipper). Topic obscurity is ntfy's access
   # model, hence secret-grade handling.
-  "ntfy-alert-topic.age".publicKeys = [ admin observ ];
+  "ntfy-alert-topic.age".publicKeys = [ admin observ vhost2 ];  # vhost2 added 2026-07-06: patch-automation ntfy reports
 
   # Patch-automation git deploy key — read+write to the NixOS1 repo (GitHub
   # deploy key, minted 2026-07-06). The lab's first standing off-op push
