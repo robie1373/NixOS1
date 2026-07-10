@@ -456,12 +456,12 @@
       },
       "targets": [
         {
-          "expr": "app_name:omada-homeLab",
+          "expr": "app_name:~\"[Oo]mada\"",
           "queryType": "instant",
           "refId": "A"
         }
       ],
-      "title": "Device event log (app_name=omada-homeLab)",
+      "title": "Device event log (OC200 · app_name=Omada)",
       "type": "logs"
     }
   ],

@@ -26,7 +26,13 @@ let
     { host = "observ";  addr = "192.168.20.56:9100"; }
     { host = "ntfy";    addr = "192.168.20.10:9100"; }
     { host = "langlab"; addr = "192.168.20.11:9100"; }
-    { host = "omada";   addr = "192.168.20.50:9100"; }
+    # omada — RETIRED as a scrape target 2026-07-09: migrated to the OC200 hardware
+    # appliance, and the microVM is now a stopped rollback (autostart=false). An
+    # appliance runs no node-exporter, and the OC200 (.134) answers no SNMP either
+    # (timed out) — its only signals are ICMP reachability + syslog (app_name="Omada",
+    # already flowing to VL). Scraping the stopped .50 would just page InstanceDown.
+    # To put OC200 liveness on the board, build a blackbox ICMP probe (TASKS #44).
+    # { host = "omada";   addr = "192.168.20.50:9100"; }
     { host = "dns1";    addr = "192.168.20.53:9100"; }
     { host = "dns2";    addr = "192.168.20.54:9100"; }  # deployed 2026-07-03 (all-nixos-lab Project A)
     { host = "pages";   addr = "192.168.20.57:9100"; }
