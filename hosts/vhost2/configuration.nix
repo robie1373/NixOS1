@@ -187,7 +187,13 @@
   };
   # omada is stateful (block volume) and, once restic is decided, will also need
   # `self` in specialArgs for restic.nix (see ./guests/omada.nix bottom note).
+  # autostart=false (2026-07-09): omada migrated to the OC200 hardware appliance; this
+  # microVM is a KEPT-BUT-STOPPED rollback. Still declared, so its state at
+  # /var/lib/microvms/omada is preserved and rebuilds won't delete it — but it is NOT
+  # started on vhost2 boot/rebuild. Bring the rollback up manually if ever needed:
+  # `systemctl start microvm@omada.service`. See ledger oc200-migration.md Phase 5.
   microvm.vms.omada = {
+    autostart = false;
     specialArgs = { inherit inputs; };
     config = import ./guests/omada.nix;
   };
