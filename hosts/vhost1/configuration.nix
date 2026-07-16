@@ -149,8 +149,24 @@
         bridgeVLANs = [ { PVID = 20; EgressUntagged = 20; } ];
         linkConfig.RequiredForOnline = "no";
       };
-      # TODO(rung5): add 40-vm-ntfy / 40-vm-langlab / 40-vm-observ once their guest
-      # defs are authored (pending the Tailscale fork — see header + TODO block).
+      "40-vm-ntfy" = {
+        matchConfig.Name = "vm-ntfy";
+        networkConfig.Bridge = "br0";
+        bridgeVLANs = [ { PVID = 20; EgressUntagged = 20; } ];
+        linkConfig.RequiredForOnline = "no";
+      };
+      "40-vm-langlab" = {
+        matchConfig.Name = "vm-langlab";
+        networkConfig.Bridge = "br0";
+        bridgeVLANs = [ { PVID = 20; EgressUntagged = 20; } ];
+        linkConfig.RequiredForOnline = "no";
+      };
+      "40-vm-observ" = {
+        matchConfig.Name = "vm-observ";
+        networkConfig.Bridge = "br0";
+        bridgeVLANs = [ { PVID = 20; EgressUntagged = 20; } ];
+        linkConfig.RequiredForOnline = "no";
+      };
     };
   };
 
@@ -172,25 +188,59 @@
     specialArgs = { inherit inputs; };
     config = import ./guests/dns1.nix;
   };
+  # rung-5 guests — AUTHORED 2026-07-16 (Fable 5, prep session). Volume classes
+  # per new-service-protocol appendix pre-classification; license at the rung-5
+  # review. The old TODO's Tailscale questions live ON each guest file now
+  # (ntfy = the load-bearing one: phone-subscription URL + cert must be decided
+  # BEFORE migration — see guests/ntfy.nix header).
+  microvm.vms.ntfy = {
+    specialArgs = { inherit inputs; };
+    config = import ./guests/ntfy.nix;
+  };
+  microvm.vms.langlab = {
+    specialArgs = { inherit inputs; };
+    config = import ./guests/langlab.nix;
+  };
+  microvm.vms.observ = {
+    specialArgs = { inherit inputs; };
+    config = import ./guests/observ.nix;
+  };
 
-  # ── TODO(rung5) — guests pending decisions ────────────────────────────────────
-  # CLASS-2 VOLUMES (if Robie licenses them — spec w/ exact sizes/mounts/cadence:
-  # ledger new-service-protocol.md → Appendix): observ = split narrow volumes
-  # victoriametrics 8G + victorialogs 8G (grafana ephemeral), MONTHLY wipe; ntfy =
-  # ntfy-cache 1G on /var/lib/ntfy-sh, weekly wipe. Register each in
-  # patchAutomation.phase2.class2Volumes or it escapes law 8.
-  # ntfy (.20.10)  : state /var/lib/ntfy-sh (restic-covered). BLOCKED on the
-  #                  Tailscale fork — ntfy's access URL + TLS cert ride the tailnet
-  #                  today; the guest doctrine forces Tailscale off. Load-bearing
-  #                  (backup alerts), so this needs a real answer, not a silent flip.
-  # langlab (.20.11): state /var/lib/langlab (restic-covered). Same Tailscale
-  #                  coupling as ntfy; lower stakes (interactive access).
-  # observ (.20.56) : VM/VL/Grafana, state VOLATILE (no restore — Robie 2026-07-05).
-  #                  Grafana is LAN-IP (:3000), likely fine Tailscale-off; CONFIRM
-  #                  the Alertmanager→ntfy delivery path doesn't ride the tailnet.
-  # For stateful guests (ntfy, langlab), backups likely move HOST-SIDE per the omada
-  # rung-4 precedent (planting a private host key in a microVM is unproven) — that
-  # becomes a `mySystem.restic.backups.<name>` set here.
+  # ── Host-staged guest secrets + backups — UNCOMMENT AT THE KEY CEREMONY ──────
+  # Guests hold no agenix (doctrine; keys churn). The host decrypts and stages
+  # read-only virtiofs shares. Every secret below must first be RE-ENCRYPTED to
+  # vhost1's host key (created at the ceremony): agenix -r after adding the
+  # vhost1 recipient in secrets/secrets.nix — see ledger vhost1-conversion.md.
+  #
+  # age.secrets = {
+  #   "langlab-env-vhost1"        = { file = ../../secrets/langlab-env-vhost1.age; };
+  #   "ntfy-alert-topic-vhost1"   = { file = ../../secrets/ntfy-alert-topic-vhost1.age; };
+  #   "snmp-config-vhost1"        = { file = ../../secrets/snmp-config-vhost1.age; };
+  #   "grafana-admin-pass-vhost1" = { file = ../../secrets/grafana-admin-pass-vhost1.age; };
+  # };
+  # systemd.services.guest-secrets-stage = {
+  #   description = "Stage decrypted guest secrets for virtiofs shares";
+  #   wantedBy = [ "multi-user.target" ]; before = [ "microvms.target" ];
+  #   after = [ "agenix.service" ];
+  #   serviceConfig.Type = "oneshot";
+  #   script = ''
+  #     umask 077; mkdir -p /var/lib/guest-secrets/{langlab,observ}
+  #     cp ${"$"}{config.age.secrets."langlab-env-vhost1".path}        /var/lib/guest-secrets/langlab/langlab-env
+  #     cp ${"$"}{config.age.secrets."ntfy-alert-topic-vhost1".path}   /var/lib/guest-secrets/observ/ntfy-alert-topic
+  #     cp ${"$"}{config.age.secrets."snmp-config-vhost1".path}        /var/lib/guest-secrets/observ/snmp-config
+  #     cp ${"$"}{config.age.secrets."grafana-admin-pass-vhost1".path} /var/lib/guest-secrets/observ/grafana-admin-pass
+  #   '';
+  # };
+  # mySystem.restic.backups.langlab = {          # class-4 volume (omada precedent:
+  #   nasPath            = "tank/backups/services/langlab";   # same repo → history kept)
+  #   paths              = [ "/var/lib/microvms/langlab" ];
+  #   sshKeySecret       = "restic-backup-vhost1-langlab";
+  #   repoPasswordSecret = "restic-repo-password-vhost1-langlab";
+  # };
+  # patchAutomation.phase2.class2Volumes (when phase2 is enabled here):
+  #   [ { guest = "ntfy"; image = "/var/lib/microvms/ntfy/ntfy-cache.img"; } ]
+  #   observ's volumes are deliberately NOT listed — monthly-wipe exception
+  #   mechanism doesn't exist yet; wipe manually (see guests/observ.nix).
 
   # ── Tailscale: OFF (host) ─────────────────────────────────────────────────────
   # A hypervisor must not depend on the tailnet. server-common enables it by
