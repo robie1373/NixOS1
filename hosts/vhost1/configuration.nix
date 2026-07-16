@@ -155,12 +155,6 @@
         bridgeVLANs = [ { PVID = 20; EgressUntagged = 20; } ];
         linkConfig.RequiredForOnline = "no";
       };
-      "40-vm-langlab" = {
-        matchConfig.Name = "vm-langlab";
-        networkConfig.Bridge = "br0";
-        bridgeVLANs = [ { PVID = 20; EgressUntagged = 20; } ];
-        linkConfig.RequiredForOnline = "no";
-      };
       "40-vm-observ" = {
         matchConfig.Name = "vm-observ";
         networkConfig.Bridge = "br0";
@@ -197,50 +191,45 @@
     specialArgs = { inherit inputs; };
     config = import ./guests/ntfy.nix;
   };
-  microvm.vms.langlab = {
-    specialArgs = { inherit inputs; };
-    config = import ./guests/langlab.nix;
-  };
+  # langlab: OUT of rung 5 (Robie, 2026-07-16) — "problem vibes"; not currently
+  # used; VM shut down, redesign queued in TASKS.md. Its NAS restic repo
+  # (tank/backups/services/langlab, study.db) is the survival path.
   microvm.vms.observ = {
     specialArgs = { inherit inputs; };
     config = import ./guests/observ.nix;
   };
 
-  # ── Host-staged guest secrets + backups — UNCOMMENT AT THE KEY CEREMONY ──────
-  # Guests hold no agenix (doctrine; keys churn). The host decrypts and stages
-  # read-only virtiofs shares. Every secret below must first be RE-ENCRYPTED to
-  # vhost1's host key (created at the ceremony): agenix -r after adding the
-  # vhost1 recipient in secrets/secrets.nix — see ledger vhost1-conversion.md.
-  #
-  # age.secrets = {
-  #   "langlab-env-vhost1"        = { file = ../../secrets/langlab-env-vhost1.age; };
-  #   "ntfy-alert-topic-vhost1"   = { file = ../../secrets/ntfy-alert-topic-vhost1.age; };
-  #   "snmp-config-vhost1"        = { file = ../../secrets/snmp-config-vhost1.age; };
-  #   "grafana-admin-pass-vhost1" = { file = ../../secrets/grafana-admin-pass-vhost1.age; };
-  # };
-  # systemd.services.guest-secrets-stage = {
-  #   description = "Stage decrypted guest secrets for virtiofs shares";
-  #   wantedBy = [ "multi-user.target" ]; before = [ "microvms.target" ];
-  #   after = [ "agenix.service" ];
-  #   serviceConfig.Type = "oneshot";
-  #   script = ''
-  #     umask 077; mkdir -p /var/lib/guest-secrets/{langlab,observ}
-  #     cp ${"$"}{config.age.secrets."langlab-env-vhost1".path}        /var/lib/guest-secrets/langlab/langlab-env
-  #     cp ${"$"}{config.age.secrets."ntfy-alert-topic-vhost1".path}   /var/lib/guest-secrets/observ/ntfy-alert-topic
-  #     cp ${"$"}{config.age.secrets."snmp-config-vhost1".path}        /var/lib/guest-secrets/observ/snmp-config
-  #     cp ${"$"}{config.age.secrets."grafana-admin-pass-vhost1".path} /var/lib/guest-secrets/observ/grafana-admin-pass
-  #   '';
-  # };
-  # mySystem.restic.backups.langlab = {          # class-4 volume (omada precedent:
-  #   nasPath            = "tank/backups/services/langlab";   # same repo → history kept)
-  #   paths              = [ "/var/lib/microvms/langlab" ];
-  #   sshKeySecret       = "restic-backup-vhost1-langlab";
-  #   repoPasswordSecret = "restic-repo-password-vhost1-langlab";
-  # };
-  # patchAutomation.phase2.class2Volumes (when phase2 is enabled here):
+  # ── Host-staged guest secrets — activates once the KEY CEREMONY re-keys the
+  # four secrets to the vhost1 recipient (agenix -r; ledger vhost1-conversion.md).
+  # Guests hold no agenix (doctrine; keys churn): the host decrypts the SAME
+  # .age files (vhost1 added as recipient — no -vhost1 copies needed) and stages
+  # read-only virtiofs shares; guests mkForce their consumer paths to the share.
+  age.secrets = {
+    ntfy-admin-password.file = ../../secrets/ntfy-admin-password.age;
+    ntfy-alert-topic.file    = ../../secrets/ntfy-alert-topic.age;
+    snmp-config.file         = ../../secrets/snmp-config.age;
+    grafana-admin-pass.file  = ../../secrets/grafana-admin-pass.age;
+  };
+  systemd.services.guest-secrets-stage = {
+    description = "Stage decrypted guest secrets for virtiofs shares";
+    wantedBy = [ "multi-user.target" ];
+    before   = [ "microvms.target" ];
+    after    = [ "agenix.service" ];
+    serviceConfig = { Type = "oneshot"; RemainAfterExit = true; };
+    script = ''
+      umask 077
+      mkdir -p /var/lib/guest-secrets/ntfy /var/lib/guest-secrets/observ
+      cp ${config.age.secrets.ntfy-admin-password.path} /var/lib/guest-secrets/ntfy/ntfy-admin-password
+      cp ${config.age.secrets.ntfy-alert-topic.path}    /var/lib/guest-secrets/observ/ntfy-alert-topic
+      cp ${config.age.secrets.snmp-config.path}         /var/lib/guest-secrets/observ/snmp-config
+      cp ${config.age.secrets.grafana-admin-pass.path}  /var/lib/guest-secrets/observ/grafana-admin-pass
+    '';
+  };
+  # patchAutomation.phase2.class2Volumes (when phase2 is enabled here) — ntfy
+  # LICENSED class 2 (Robie, 2026-07-16):
   #   [ { guest = "ntfy"; image = "/var/lib/microvms/ntfy/ntfy-cache.img"; } ]
-  #   observ's volumes are deliberately NOT listed — monthly-wipe exception
-  #   mechanism doesn't exist yet; wipe manually (see guests/observ.nix).
+  # observ's volumes (also licensed) are deliberately NOT listed — monthly-wipe
+  # exception mechanism doesn't exist yet; wipe manually (see guests/observ.nix).
 
   # ── Tailscale: OFF (host) ─────────────────────────────────────────────────────
   # A hypervisor must not depend on the tailnet. server-common enables it by

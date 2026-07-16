@@ -40,6 +40,9 @@ let
   # No agenix secrets target it yet (guests carry their own); listed so `agenix -r`
   # includes it and future host secrets can be added. NOT in tailscaleServers.
   vhost2  = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN9de13zdtiIsB15rigtdziSOLWbYSQuBZn6KE8ynPCq";
+  # vhost1 host key — minted at the rung-5 ceremony 2026-07-16 (Fable 5); private
+  # half in 1Password devops/"vhost1 host key"; injected at nixos-anywhere install.
+  vhost1  = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIORUyvqKDCQX7SiWW4wzRMZ9z+DOTruMiJYtv7nsAISK";
 
   # All servers that use tailscale-autoconnect.nix must be listed here.
   # Re-key after adding each new server: cd secrets && nix run github:ryantm/agenix -- -r
@@ -50,7 +53,7 @@ let
   # machines with a real console belong here; the microVM guests never do (no
   # console — recovered from their host). vhost1 joins at its host-key ceremony
   # (all-nixos-lab rung 5). Re-key after adding: cd secrets && agenix -- -r.
-  hypervisors = [ admin vhost2 nixsrv1 ];
+  hypervisors = [ admin vhost1 vhost2 nixsrv1 ];
 in
 {
   # Fleet root console-recovery password (sha-512 crypt hash). Break-glass login
@@ -62,26 +65,26 @@ in
 
   # ntfy admin password — local user database (pre-Kanidm migration)
   # After Kanidm is deployed, migrate ntfy auth to LDAP and remove this secret.
-  "ntfy-admin-password.age".publicKeys = [ admin ntfy ];
+  "ntfy-admin-password.age".publicKeys = [ admin ntfy vhost1 ];  # vhost1 added at ceremony 2026-07-16 (host-staged guest secret)
 
   # ntfy alert topic — the (secret) topic name the alerting spine on observ
   # publishes to; same topic Robie's phone subscribes to (source of truth:
   # /home/robie/work/.ntfy-topic on flipper). Topic obscurity is ntfy's access
   # model, hence secret-grade handling.
-  "ntfy-alert-topic.age".publicKeys = [ admin observ vhost2 ];  # vhost2 added 2026-07-06: patch-automation ntfy reports
+  "ntfy-alert-topic.age".publicKeys = [ admin observ vhost2 vhost1 ];  # vhost2 added 2026-07-06: patch-automation ntfy reports
 
   # Patch-automation git deploy key — read+write to the NixOS1 repo (GitHub
   # deploy key, minted 2026-07-06). The lab's first standing off-op push
   # credential: held by hypervisors (doctrine law 3), Robie minted it
   # deliberately. Recipients = admin + vhost2 today; ADD vhost1 AT ITS HOST-KEY
   # CEREMONY (agenix -r). Source: 1Password devops/"patch-automation deploy key".
-  "patch-deploy-key.age".publicKeys = [ admin vhost2 ];
+  "patch-deploy-key.age".publicKeys = [ admin vhost2 vhost1 ];  # vhost1 added at ceremony 2026-07-16 per this comment's instruction
 
   # Grafana admin password (observ visibility host). Makes the admin login
   # durable across redeploys — otherwise the UI-set password lives on the
   # disposable disk and resets to the module default on reinstall.
   # Source: 1Password devops/"grafana - homelab".
-  "grafana-admin-pass.age".publicKeys = [ admin observ ];
+  "grafana-admin-pass.age".publicKeys = [ admin observ vhost1 ];  # vhost1 added at ceremony 2026-07-16
 
   # snmp_exporter config for the Omada fabric (switch + EAP773 APs) — the WHOLE
   # snmp.yml with the community baked in. (snmp_exporter 0.30.1's env-var expansion
@@ -90,7 +93,7 @@ in
   # configurationPath and read by the exporter's DynamicUser, so it's mode 0444.
   # Regenerate from modules/_system/snmp.yml — see that file's header.
   # Source community: 1Password devops/"Omada SNMP community string".
-  "snmp-config.age".publicKeys = [ admin observ ];
+  "snmp-config.age".publicKeys = [ admin observ vhost1 ];  # vhost1 added at ceremony 2026-07-16
 
   # Tailscale reusable auth key — shared across all lab servers.
   # Source: 1Password devops/"Tailscale Auth Key" — must be a reusable key.

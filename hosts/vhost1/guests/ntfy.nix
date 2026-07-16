@@ -4,12 +4,10 @@
 # replaces the ntfy Proxmox VM 109 at the same IP .20.10; authored 2026-07-16,
 # Fable 5, as rung-5 prep).
 #
-# ⚠️ EXECUTION-DAY DECISION (Robie): mySystem.ntfy.hostname is the Tailscale
-# name (vimba-stairs cert) and the PHONE APP subscribes to that URL. Tailscale
-# is off in guests (and being decommissioned fleet-wide) — the cert acquisition
-# path dies with the VM. Options: serve plain HTTP on LAN (pages precedent) and
-# re-point the phone subscription, or a home.lab cert story. Decide BEFORE
-# migrating; the phone alert path is production-enabling ([[ntfy]]).
+# URL DECIDED (Robie, 2026-07-16): phone already re-subscribed to the LAN URL
+# (http://ntfy.home.lab — the plain-HTTP vhost the module has served since
+# 2026-07-03). "Tailscale is dead." → mySystem.ntfy.tls = false drops the
+# TS-cert vhost + cert service; base-url becomes http://ntfy.home.lab.
 
 { inputs, config, lib, pkgs, ... }:
 
@@ -29,16 +27,26 @@ in
     vcpu = 1;
     mem  = 1024;
 
-    shares = [{
-      source     = "/nix/store";
-      mountPoint = "/nix/.ro-store";
-      tag        = "ro-store";
-      proto      = "virtiofs";
-    }];
+    shares = [
+      {
+        source     = "/nix/store";
+        mountPoint = "/nix/.ro-store";
+        tag        = "ro-store";
+        proto      = "virtiofs";
+      }
+      # Host-staged secrets, read-only (guests hold no agenix): the admin
+      # password arrives from the host — see ../configuration.nix stage service.
+      {
+        source     = "/var/lib/guest-secrets/ntfy";
+        mountPoint = "/run/host-secrets";
+        tag        = "host-secrets";
+        proto      = "virtiofs";
+      }
+    ];
 
     # ── Licensed volume: CLASS 2 — ntfy cache + config-recreated user.db,
-    # exactly /var/lib/ntfy-sh (pre-classified in [[new-service-protocol]];
-    # license it at the rung-5 review). Loss story (law 7): 24h message cache —
+    # exactly /var/lib/ntfy-sh. **LICENSED by Robie 2026-07-16** (weekly wipe;
+    # register in class2Volumes when phase2 enables). Loss story (law 7): 24h cache —
     # AM re-pages anything still firing; user.db recreated from config.
     # Class 2 ⇒ REGISTER in vhost1 patchAutomation.phase2.class2Volumes
     # (weekly wipe fine per the pre-classification) and NEVER restic.
@@ -65,8 +73,11 @@ in
 
   mySystem.ntfy = {
     enable = true;
-    hostname = "ntfy.vimba-stairs.ts.net";   # see EXECUTION-DAY DECISION above
+    hostname = "ntfy.home.lab";   # LAN-only (see header); phone already re-subscribed
+    tls = false;
   };
+  # Admin password from the host-staged share, NOT in-guest agenix.
+  age.secrets.ntfy-admin-password.path = lib.mkForce "/run/host-secrets/ntfy-admin-password";
   # NOTE: the VM's restic set (tank/backups/services/ntfy) is deliberately NOT
   # carried over — class-2 state is never restic'd (law 8). History stays on NAS.
 

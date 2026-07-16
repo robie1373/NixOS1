@@ -24,6 +24,17 @@ in
   options.mySystem.ntfy = {
     enable = lib.mkEnableOption "ntfy push notification server";
 
+    tls = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Serve the Tailscale-cert HTTPS vhost (VM-era default). false = LAN-only:
+        plain-HTTP ntfy-lan vhost only, base-url http://, no tailscale-cert
+        service. Added 2026-07-16 (rung 5 — Tailscale is dead; the phone
+        subscribes to http://ntfy.home.lab).
+      '';
+    };
+
     hostname = lib.mkOption {
       type = lib.types.str;
       description = "Tailscale hostname for this host (e.g. ntfy.vimba-stairs.ts.net)";
@@ -42,8 +53,8 @@ in
     services.ntfy-sh = {
       enable = true;
       settings = {
-        # Tailscale HTTPS hostname — used in notification URLs
-        base-url = "https://${cfg.hostname}";
+        # Public hostname — used in notification URLs (scheme follows cfg.tls)
+        base-url = "${if cfg.tls then "https" else "http"}://${cfg.hostname}";
 
         # Relay push notifications through ntfy.sh → APNs/Firebase.
         # Without this, iOS/Android only receive messages when the app is open
@@ -104,9 +115,9 @@ in
     # read them without any changes to Tailscale's state directory permissions.
     # The service re-runs on each boot; tailscale cert is a no-op if the cert is
     # still valid, so the copy is cheap.
-    services.tailscale.permitCertUid = "nginx";
+    services.tailscale.permitCertUid = lib.mkIf cfg.tls "nginx";
 
-    systemd.services.tailscale-cert = {
+    systemd.services.tailscale-cert = lib.mkIf cfg.tls {
       description = "Provision Tailscale TLS cert for nginx";
       after    = [ "tailscaled.service" "network-online.target" "tailscaled-autoconnect.service" ];
       wants    = [ "network-online.target" ];
@@ -142,7 +153,7 @@ in
       recommendedOptimisation = true;
       recommendedGzipSettings = true;
 
-      virtualHosts."${cfg.hostname}" = {
+      virtualHosts."${cfg.hostname}" = lib.mkIf cfg.tls {
         sslCertificate    = "${certDir}/${cfg.hostname}.crt";
         sslCertificateKey = "${certDir}/${cfg.hostname}.key";
         forceSSL = true;

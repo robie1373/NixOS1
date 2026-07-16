@@ -50,8 +50,8 @@ in
     ];
 
     # ── Licensed volumes: CLASS 2 — the trailing metrics/logs windows, split
-    # narrow per the pre-classification in [[new-service-protocol]] (license at
-    # the rung-5 review). Loss story (law 7): the 10-day troubleshooting window
+    # narrow per the pre-classification in [[new-service-protocol]].
+    # **LICENSED by Robie 2026-07-16.** Loss story (law 7): the 10-day troubleshooting window
     # is priced in as losable; dashboards/alerts are code and rebuild.
     # ⚠️ Wipe cadence must be MONTHLY, not weekly — the data IS the trailing
     # window. The phase-2 monthly-exception mechanism does NOT exist yet, so
