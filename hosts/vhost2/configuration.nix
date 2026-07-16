@@ -157,6 +157,12 @@
         bridgeVLANs = [ { PVID = 20; EgressUntagged = 20; } ];
         linkConfig.RequiredForOnline = "no";
       };
+      "40-vm-git" = {
+        matchConfig.Name = "vm-git";
+        networkConfig.Bridge = "br0";
+        bridgeVLANs = [ { PVID = 20; EgressUntagged = 20; } ];
+        linkConfig.RequiredForOnline = "no";
+      };
     };
   };
 
