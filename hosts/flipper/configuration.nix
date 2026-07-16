@@ -159,6 +159,15 @@
     };
   };
 
+  # Bearing operational output is a rolling log (Robie, 2026-07-16): briefing
+  # gathers and lint reports age out at 21 days via the user tmpfiles cleaner —
+  # they're point-in-time artifacts, and letting them accumulate polluted
+  # research (grep/qmd) surfaces. Knowledge worth keeping lives in the Ledger.
+  systemd.user.tmpfiles.users.robie.rules = [
+    "e /home/robie/work/briefing - - - 21d"
+    "e /home/robie/work/lint - - - 21d"
+  ];
+
   # Battery/UPS desktop notifications via upower.
   # (Moved from HM services.poweralertd in hosts/flipper/home.nix — Phase B.)
   systemd.user.services.poweralertd = {
