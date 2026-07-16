@@ -127,5 +127,10 @@ in
   "restic-repo-password-ntfy.age".publicKeys     = [ admin ntfy ];
   "restic-repo-password-omada.age".publicKeys    = [ admin omada ];
   "restic-repo-password-vhost2-omada.age".publicKeys = [ admin vhost2 ];
+  # git guest's repo password — NEW repo (tank/backups/services/git); transport
+  # reuses restic-backup-vhost2-omada (same svc_backup NAS key; documented reuse
+  # path in restic.nix — separate repo + password keep the piles apart). Also in
+  # 1Password devops/"restic-repo-password-vhost2-git". (2026-07-16, Fable 5)
+  "restic-repo-password-vhost2-git.age".publicKeys = [ admin vhost2 ];
   "restic-repo-password-langlab.age".publicKeys  = [ admin langlab ];
 }

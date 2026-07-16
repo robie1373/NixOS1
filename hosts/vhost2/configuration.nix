@@ -197,6 +197,12 @@
     specialArgs = { inherit inputs; };
     config = import ./guests/omada.nix;
   };
+  # git — in-lab git server (bare repos over SSH, class-4 volume). New-service
+  # protocol run 2026-07-16 (Fable 5); see guests/git.nix + ledger git.md.
+  microvm.vms.git = {
+    specialArgs = { inherit inputs; };
+    config = import ./guests/git.nix;
+  };
   # ── Per-guest backup sets ─────────────────────────────────────────────────────
   # vhost2 is a hypervisor, so backups are keyed per hosted GUEST, not per host —
   # each stateful guest gets its own named set → its own service repo. As guests
@@ -213,6 +219,18 @@
     paths              = [ "/var/lib/omada-backups" ];
     sshKeySecret       = "restic-backup-vhost2-omada";
     repoPasswordSecret = "restic-repo-password-vhost2-omada";
+  };
+  # git: nightly capture of the guest's class-4 volume image (bare repos). Loss
+  # story is layered — working copies on flipper (restic'd) + GitHub for four
+  # repos — so an image-level copy is the right realness rung for now; a
+  # bundle-export upgrade is tracked in TASKS.md. Transport reuses the
+  # vhost2-omada NAS key (documented reuse path in restic.nix — same svc_backup
+  # key, DIFFERENT repo + password, so the piles stay separate; no NAS-side change).
+  mySystem.restic.backups.git = {
+    nasPath            = "tank/backups/services/git";
+    paths              = [ "/var/lib/microvms/git" ];
+    sshKeySecret       = "restic-backup-vhost2-omada";
+    repoPasswordSecret = "restic-repo-password-vhost2-git";
   };
 
   # ── Tailscale: OFF ────────────────────────────────────────────────────────────

@@ -39,6 +39,7 @@
         "nixsrv1.home.lab" = "192.168.20.55";
         "observ.home.lab"  = "192.168.20.56";
         "pages.home.lab"   = "192.168.20.57";
+        "git.home.lab"     = "192.168.20.58";
         # NAS
         "nas.home.lab"     = "192.168.20.12";
         # Legacy Ubuntu services (VLAN 10 — update IPs as services migrate to VLAN 20)
