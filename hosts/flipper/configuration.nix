@@ -227,5 +227,14 @@
   # outage skips are silent otherwise). maxAgeDays default 3.
   mySystem.resticStalenessAlert.enable = true;
 
+  # Docker — general workstation container runtime (Robie: "second time it'd be
+  # useful on flipper"). Chosen over podman deliberately to MATCH the lab's omada
+  # host (vhost2 runs omada under Docker via oci-containers) — keeps the omada
+  # reproduction testbed environmentally identical to production, minimising
+  # confounds (storage driver, overlay/volume semantics, container-recreation
+  # internals). See ~/work/postmortem-omada-2026-07-07.md, Round 6.
+  virtualisation.docker.enable = true;
+  users.users.robie.extraGroups = [ "docker" ];
+
   system.stateVersion = "25.11";
 }
