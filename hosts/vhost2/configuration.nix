@@ -191,18 +191,10 @@
     specialArgs = { inherit inputs; };
     config = import ./guests/pages.nix;
   };
-  # omada is stateful (block volume) and, once restic is decided, will also need
-  # `self` in specialArgs for restic.nix (see ./guests/omada.nix bottom note).
-  # autostart=false (2026-07-09): omada migrated to the OC200 hardware appliance; this
-  # microVM is a KEPT-BUT-STOPPED rollback. Still declared, so its state at
-  # /var/lib/microvms/omada is preserved and rebuilds won't delete it — but it is NOT
-  # started on vhost2 boot/rebuild. Bring the rollback up manually if ever needed:
-  # `systemctl start microvm@omada.service`. See ledger oc200-migration.md Phase 5.
-  microvm.vms.omada = {
-    autostart = false;
-    specialArgs = { inherit inputs; };
-    config = import ./guests/omada.nix;
-  };
+  # omada microVM DECOMMISSIONED 2026-07-16 (oc200-migration Phase 5, Robie's
+  # ruling after the 7-day OC200 soak): guest block + guests/omada.nix removed,
+  # state dir + host backup share deleted. Rollback path is now restore-from-
+  # restic (.cfg history through 2026-07-09 in tank/backups/services/omada).
   # git — in-lab git server (bare repos over SSH, class-4 volume). New-service
   # protocol run 2026-07-16 (Fable 5); see guests/git.nix + ledger git.md.
   microvm.vms.git = {
@@ -214,18 +206,10 @@
   # each stateful guest gets its own named set → its own service repo. As guests
   # are added, add a set here; they never share a pile.
   #
-  # omada: the guest writes its scheduled Omada .cfg exports to a writable virtiofs
-  # share sourced at /var/lib/omada-backups on THIS host (see guests/omada.nix); we
-  # back that dir up with vhost2's own key — no key is planted in the guest. Secrets
-  # override to the vhost2-scoped copies (byte-identical re-encryptions of omada's,
-  # so it reuses omada's NAS repo → history preserved, no NAS-side change). Snapshots
-  # are tagged host=vhost2 (the honest runner); the repo path is the service owner.
-  mySystem.restic.backups.omada = {
-    nasPath            = "tank/backups/services/omada";
-    paths              = [ "/var/lib/omada-backups" ];
-    sshKeySecret       = "restic-backup-vhost2-omada";
-    repoPasswordSecret = "restic-repo-password-vhost2-omada";
-  };
+  # omada set removed with the guest (2026-07-16); its NAS repo + .cfg history
+  # stay on the NAS, and BOTH vhost2-omada secrets stay in secrets/ — the ssh key
+  # is the git set's transport, and the repo password is needed to ever read the
+  # old omada repo.
   # git: nightly capture of the guest's class-4 volume image (bare repos). Loss
   # story is layered — working copies on flipper (restic'd) + GitHub for four
   # repos — so an image-level copy is the right realness rung for now; a
