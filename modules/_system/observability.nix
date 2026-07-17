@@ -23,9 +23,15 @@ let
   # pushed hosts (pve/pve2 set host via vmagent external_labels). Comment a line
   # to drop a target; a down target shows as up=0, which is itself useful signal.
   nodeTargets = [
+    # ── Hypervisor hosts (all-nixos-lab) ──
+    { host = "vhost1";  addr = "192.168.20.40:9100"; }  # rung 5 (pve→vhost1) 2026-07-17 — was MISSING (why vhost1 didn't show in the fleet-summary boot-disk panel); node-exporter verified up
+    { host = "vhost2";  addr = "192.168.20.41:9100"; }  # rung 4 (pve2→vhost2) — mgmt moved to VLAN 20 (.20.41) 2026-07-05, same-VLAN as observ (D9 replaced pve2's vmagent-push)
+    # ── Guests / services ──
     { host = "observ";  addr = "192.168.20.56:9100"; }
     { host = "ntfy";    addr = "192.168.20.10:9100"; }
-    { host = "langlab"; addr = "192.168.20.11:9100"; }
+    # langlab — RETIRED as a scrape target 2026-07-17: VM decommissioned pending its
+    # redesign ([[langlab]]/TASKS). Was a phantom up=0 target. Re-add when rebuilt.
+    # { host = "langlab"; addr = "192.168.20.11:9100"; }
     # omada — RETIRED as a scrape target 2026-07-09: migrated to the OC200 hardware
     # appliance, and the microVM is now a stopped rollback (autostart=false). An
     # appliance runs no node-exporter, and the OC200 (.134) answers no SNMP either
@@ -36,10 +42,7 @@ let
     { host = "dns1";    addr = "192.168.20.53:9100"; }
     { host = "dns2";    addr = "192.168.20.54:9100"; }  # deployed 2026-07-03 (all-nixos-lab Project A)
     { host = "pages";   addr = "192.168.20.57:9100"; }
-    # vhost2 — NixOS hypervisor (all-nixos-lab rung 4, formerly pve2). Mgmt moved
-    # VLAN 10 (.7.159) → VLAN 20 (.20.41) on 2026-07-05, so this scrape is now
-    # SAME-VLAN as observ. Replaces pve2's old pve-exporter/vmagent-push path (D9).
-    { host = "vhost2";  addr = "192.168.20.41:9100"; }
+    # (vhost2 moved up to the hypervisor-hosts group at the top of this list, 2026-07-17)
     # fw is the edge router (OPNsense/FreeBSD), pulled on its VLAN-20 leg (.254).
     # Needs os-node_exporter on fw AND a LAB-interface allow rule for observ→.254:9100
     # (fw blocks lab→RFC1918 by default, same as the explicit :53 pass). Shows up=0
