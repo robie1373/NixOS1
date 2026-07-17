@@ -44,15 +44,22 @@ in
       }
     ];
 
-    # ── Licensed volume: CLASS 2 — ntfy cache + config-recreated user.db,
-    # exactly /var/lib/ntfy-sh. **LICENSED by Robie 2026-07-16** (weekly wipe;
-    # register in class2Volumes when phase2 enables). Loss story (law 7): 24h cache —
-    # AM re-pages anything still firing; user.db recreated from config.
-    # Class 2 ⇒ REGISTER in vhost1 patchAutomation.phase2.class2Volumes
-    # (weekly wipe fine per the pre-classification) and NEVER restic.
+    # ── Licensed volume: CLASS 2 — ntfy cache + config-recreated user.db.
+    # **LICENSED by Robie 2026-07-16** (weekly wipe; register in class2Volumes
+    # when phase2 enables). Loss story (law 7): 24h cache — AM re-pages anything
+    # still firing; user.db recreated from config. NEVER restic.
+    #
+    # ⚠️ MOUNT AT /var/lib/private/ntfy-sh, NOT /var/lib/ntfy-sh (fix 2026-07-17,
+    # Opus 4.8). ntfy-sh runs DynamicUser=yes + StateDirectory=ntfy-sh: systemd
+    # keeps the real state in /var/lib/private/ntfy-sh and puts only a SYMLINK at
+    # /var/lib/ntfy-sh. A volume mounted at the symlink target collides →
+    # "Failed to set up special execution directory: Device or resource busy".
+    # Mounting at the private path IS the state dir, so the narrow single-dataset
+    # mount (law 8) and DynamicUser hardening both hold. systemd mkdir -p's the
+    # mountpoint and enforces /var/lib/private mode 0700 at service start.
     volumes = [{
       image      = "ntfy-cache.img";
-      mountPoint = "/var/lib/ntfy-sh";
+      mountPoint = "/var/lib/private/ntfy-sh";
       size       = 1024;              # 1 GiB
       fsType     = "ext4";
       autoCreate = true;              # load-bearing: how class-2 wipe-rehydrate works

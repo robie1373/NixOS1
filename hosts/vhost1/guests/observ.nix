@@ -57,10 +57,16 @@ in
     # window. The phase-2 monthly-exception mechanism does NOT exist yet, so
     # these are NOT registered in class2Volumes; wipe manually on a monthly
     # patch day until the exception lands. Grafana state stays ephemeral.
+    #
+    # ⚠️ MOUNT AT /var/lib/private/<name>, NOT /var/lib/<name> (fix 2026-07-17,
+    # Opus 4.8). Both services run DynamicUser=yes + StateDirectory: real state
+    # lives in /var/lib/private/<name>, only a symlink at /var/lib/<name>. A
+    # volume at the symlink target → "Device or resource busy" (start-limit loop).
+    # See guests/ntfy.nix for the full rationale.
     volumes = [
-      { image = "observ-vm.img"; mountPoint = "/var/lib/victoriametrics";
+      { image = "observ-vm.img"; mountPoint = "/var/lib/private/victoriametrics";
         size = 8192; fsType = "ext4"; autoCreate = true; }
-      { image = "observ-vl.img"; mountPoint = "/var/lib/victorialogs";
+      { image = "observ-vl.img"; mountPoint = "/var/lib/private/victorialogs";
         size = 8192; fsType = "ext4"; autoCreate = true; }
     ];
 
