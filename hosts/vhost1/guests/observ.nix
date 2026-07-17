@@ -53,12 +53,13 @@ in
     # narrow per the pre-classification in [[new-service-protocol]].
     # **LICENSED by Robie 2026-07-16.** Loss story (law 7): the 10-day troubleshooting window
     # is priced in as losable; dashboards/alerts are code and rebuild.
-    # WIPED WEEKLY on vhost1's patch day, like any class-2 volume (Robie's ruling
-    # 2026-07-17 — no monthly exception). observ is a current-time-diagnosis tool
-    # by design; historic data is a bonus, not part of the design, so wiping the
-    # trailing window on patch day is fine. Registered in vhost1's
+    # WIPED AS PART OF THE PATCH CYCLE on vhost1, like any class-2 volume (Robie's
+    # ruling 2026-07-17 — no monthly exception). The wipe fires only when a patch
+    # actually applies (phase-2 no-ops on a quiet week), not on a bare calendar.
+    # observ is a current-time-diagnosis tool by design; historic data is a bonus,
+    # so wiping the trailing window on patch is fine. Registered in vhost1's
     # patchAutomation.phase2.class2Volumes. Grafana state stays ephemeral.
-    # (retention = 7d below matches the weekly wipe — self-documenting.)
+    # (retention = 7d below ~matches the typical patch cadence — self-documenting.)
     #
     # ⚠️ MOUNT AT /var/lib/private/<name>, NOT /var/lib/<name> (fix 2026-07-17,
     # Opus 4.8). Both services run DynamicUser=yes + StateDirectory: real state

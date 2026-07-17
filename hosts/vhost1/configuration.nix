@@ -251,11 +251,13 @@
   # recipient; ntfy/observ class-2 volumes licensed + rehydration-tested (Gate D
   # passed both). Set day: vhost1 = Saturday (set A); vhost2 = Tuesday (set B) —
   # redundant pairs straddle sets so a bad bump can't take both DNS/observ at once.
-  # class2Volumes: ntfy-cache + BOTH observ volumes, all WEEKLY (Robie's ruling
-  # 2026-07-17 — no monthly exception; observ's volume is class 2 and gets wiped
-  # like any other. The wipe is discipline-enforcement, not disk management; observ
-  # is a current-time-diagnosis tool by design, historic data is a bonus. See
-  # [[stateless-doctrine]] "defense stack" + guests/observ.nix).
+  # class2Volumes: ntfy-cache + BOTH observ volumes (Robie's ruling 2026-07-17 —
+  # no monthly exception; observ's volume is class 2 and gets wiped like any other).
+  # The wipe fires AS PART OF APPLYING A PATCH (phase-2 only wipes when there's a new
+  # generation; a quiet week wipes nothing) — not an independent weekly timer. The
+  # wipe is discipline-enforcement, not disk management; observ is a current-time-
+  # diagnosis tool by design, historic data is a bonus. See [[stateless-doctrine]]
+  # "defense stack" + guests/observ.nix.
   mySystem.patchAutomation.phase2 = {
     enable = true;
     onCalendar = "Sat 03:00";
