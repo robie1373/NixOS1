@@ -92,10 +92,26 @@ in
     systemd.services.ntfy-sh-admin-setup = {
       description = "Provision ntfy admin user";
       after = [ "ntfy-sh.service" ];
+      requires = [ "ntfy-sh.service" ];
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
+        # ntfy-sh being "active" (systemd) ≠ auth-file created yet. On a COLD start
+        # (fresh boot or class-2 volume wipe/rehydrate) this service raced ahead and
+        # died with "auth-file does not exist; start the server at least once" —
+        # caught by the 2026-07-17 rehydration test; it would fail every patch-day
+        # wipe. Wait for the auth-file (up to 60s) before adding the user.
+        ExecStartPre = pkgs.writeShellScript "wait-ntfy-authfile" ''
+          for _ in $(seq 1 60); do
+            [ -f ${config.services.ntfy-sh.settings.auth-file} ] && exit 0
+            sleep 1
+          done
+          echo "ntfy auth-file never appeared after 60s" >&2
+          exit 1
+        '';
+        Restart = "on-failure";
+        RestartSec = "5";
         ExecStart = pkgs.writeShellScript "ntfy-admin-setup" ''
           # ntfy user add prompts for password then confirm — pipe it twice.
           # --ignore-exists makes this idempotent across rebuilds.
