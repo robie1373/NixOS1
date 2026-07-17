@@ -245,16 +245,22 @@
   services.tailscale.enable = lib.mkForce false;
 
   # ── Patch automation (phase 2: this host's set day) ─────────────────────────
-  # ⛔ Enable AFTER Robie mints the git deploy key (see patch-automation.nix header)
-  # and the patch-deploy-key.age secret exists for this host. Set day: vhost1 =
-  # Saturday (set A); vhost2 = Tuesday (set B) — redundant pairs straddle sets.
-  # class2Volumes: none yet — observ/ntfy class-2 volumes pending Robie's rung-5
-  # ruling; add entries here when licensed (NEVER class-3/4 volumes).
-  # mySystem.patchAutomation.phase2 = {
-  #   enable = true;
-  #   onCalendar = "Sat 03:00";
-  #   class2Volumes = [ ];
-  # };
+  # ENABLED 2026-07-17 (Opus 4.8): patch-deploy-key.age exists + vhost1 is a
+  # recipient; ntfy/observ class-2 volumes licensed + rehydration-tested (Gate D
+  # passed both). Set day: vhost1 = Saturday (set A); vhost2 = Tuesday (set B) —
+  # redundant pairs straddle sets so a bad bump can't take both DNS/observ at once.
+  # class2Volumes: ONLY ntfy-cache (weekly wipe, proven). observ VM/VL are
+  # deliberately EXCLUDED — they need MONTHLY not weekly cadence and the phase-2
+  # monthly-exception mechanism doesn't exist yet; they persist through weekly
+  # patch days and get wiped manually until then (see guests/observ.nix).
+  # ⚠️ First run should be SUPERVISED (vhost2 canary precedent 2026-07-16).
+  mySystem.patchAutomation.phase2 = {
+    enable = true;
+    onCalendar = "Sat 03:00";
+    class2Volumes = [
+      { guest = "ntfy"; image = "/var/lib/microvms/ntfy/ntfy-cache.img"; }
+    ];
+  };
 
   system.stateVersion = "25.05";
 }
