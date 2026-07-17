@@ -53,10 +53,12 @@ in
     # narrow per the pre-classification in [[new-service-protocol]].
     # **LICENSED by Robie 2026-07-16.** Loss story (law 7): the 10-day troubleshooting window
     # is priced in as losable; dashboards/alerts are code and rebuild.
-    # ⚠️ Wipe cadence must be MONTHLY, not weekly — the data IS the trailing
-    # window. The phase-2 monthly-exception mechanism does NOT exist yet, so
-    # these are NOT registered in class2Volumes; wipe manually on a monthly
-    # patch day until the exception lands. Grafana state stays ephemeral.
+    # WIPED WEEKLY on vhost1's patch day, like any class-2 volume (Robie's ruling
+    # 2026-07-17 — no monthly exception). observ is a current-time-diagnosis tool
+    # by design; historic data is a bonus, not part of the design, so wiping the
+    # trailing window on patch day is fine. Registered in vhost1's
+    # patchAutomation.phase2.class2Volumes. Grafana state stays ephemeral.
+    # (retention = 7d below matches the weekly wipe — self-documenting.)
     #
     # ⚠️ MOUNT AT /var/lib/private/<name>, NOT /var/lib/<name> (fix 2026-07-17,
     # Opus 4.8). Both services run DynamicUser=yes + StateDirectory: real state
@@ -84,6 +86,10 @@ in
   services.resolved.enable = false;
 
   mySystem.observability.enable = true;
+  # 7d matches the weekly class-2 patch-day wipe — self-documenting (Robie,
+  # 2026-07-17). Retention is short by PURPOSE (current-time diagnosis; historic
+  # is a bonus), not resource management; the wipe means it's never reached anyway.
+  mySystem.observability.retention = "7d";
   mySystem.alerting.enable = true;
   # pve-exporter stays off: its target dies at this very rung.
 

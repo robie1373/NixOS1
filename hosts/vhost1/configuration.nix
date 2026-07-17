@@ -251,16 +251,18 @@
   # recipient; ntfy/observ class-2 volumes licensed + rehydration-tested (Gate D
   # passed both). Set day: vhost1 = Saturday (set A); vhost2 = Tuesday (set B) —
   # redundant pairs straddle sets so a bad bump can't take both DNS/observ at once.
-  # class2Volumes: ONLY ntfy-cache (weekly wipe, proven). observ VM/VL are
-  # deliberately EXCLUDED — they need MONTHLY not weekly cadence and the phase-2
-  # monthly-exception mechanism doesn't exist yet; they persist through weekly
-  # patch days and get wiped manually until then (see guests/observ.nix).
-  # ⚠️ First run should be SUPERVISED (vhost2 canary precedent 2026-07-16).
+  # class2Volumes: ntfy-cache + BOTH observ volumes, all WEEKLY (Robie's ruling
+  # 2026-07-17 — no monthly exception; observ's volume is class 2 and gets wiped
+  # like any other. The wipe is discipline-enforcement, not disk management; observ
+  # is a current-time-diagnosis tool by design, historic data is a bonus. See
+  # [[stateless-doctrine]] "defense stack" + guests/observ.nix).
   mySystem.patchAutomation.phase2 = {
     enable = true;
     onCalendar = "Sat 03:00";
     class2Volumes = [
-      { guest = "ntfy"; image = "/var/lib/microvms/ntfy/ntfy-cache.img"; }
+      { guest = "ntfy";   image = "/var/lib/microvms/ntfy/ntfy-cache.img"; }
+      { guest = "observ"; image = "/var/lib/microvms/observ/observ-vm.img"; }
+      { guest = "observ"; image = "/var/lib/microvms/observ/observ-vl.img"; }
     ];
   };
 
