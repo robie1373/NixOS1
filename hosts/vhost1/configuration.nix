@@ -4,6 +4,8 @@
 # Formerly pve (Proxmox). Converted in place; the flake is the entire truth for
 # this host AND its guests. See ledger proxmox-to-microvm.md Phase B3.
 #
+# patch-automation phase-2 first-supervised-run validation marker: 2026-07-17.
+#
 # Hardware: Intel i7-6700K (Skylake), 16 GB, Samsung 970 EVO Plus 1TB NVMe (boot),
 # Samsung 870 EVO 2TB SATA (LEFT ALONE — not touched), UEFI.
 # Mgmt IP: 192.168.20.40/24 (VLAN 20), gateway 192.168.20.254  |  name: vhost1
