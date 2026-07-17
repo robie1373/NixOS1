@@ -25,14 +25,16 @@
       # override per-host only with a deliberate reason.
       default = {
         # Hypervisors
-        "pve.home.lab"  = "192.168.7.40";     # live until rung-5 conversion; then → .20.40
-        "vhost1.home.lab" = "192.168.20.40";  # rung 5 (pve → vhost1); mgmt on VLAN 20 (like vhost2)
-        "pve2.home.lab" = "192.168.20.41";   # alias — keep ~1 transition month post-rung-4
+        "vhost1.home.lab" = "192.168.20.40";  # rung 5 (pve → vhost1), 2026-07-17; mgmt on VLAN 20
         "vhost2.home.lab" = "192.168.20.41";  # rung 4 (pve2→vhost2); mgmt moved VLAN10→20 2026-07-05
+        # Transition aliases → the vhost names. Drop ~2026-08-17 (a month post-rung-5).
+        "pve.home.lab"  = "192.168.20.40";    # was .7.40 (dead since rung 5); alias → vhost1
+        "pve2.home.lab" = "192.168.20.41";    # alias → vhost2
         # NixOS lab services (VLAN 20)
         "ntfy.home.lab"    = "192.168.20.10";
-        "langlab.home.lab" = "192.168.20.11";
-        "omada.home.lab"   = "192.168.20.50";
+        # langlab.home.lab — VM decommissioned 2026-07-16 pending redesign; re-add when rebuilt.
+        # "langlab.home.lab" = "192.168.20.11";
+        "omada.home.lab"   = "192.168.20.134"; # OC200 hardware appliance (was .20.50 microVM, retired 2026-07-16)
         "dns1.home.lab"    = "192.168.20.53";
         "dns2.home.lab"    = "192.168.20.54";
         "dns3.home.lab"    = "192.168.20.55";
