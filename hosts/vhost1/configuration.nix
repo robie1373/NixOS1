@@ -216,13 +216,21 @@
     before   = [ "microvms.target" ];
     after    = [ "agenix.service" ];
     serviceConfig = { Type = "oneshot"; RemainAfterExit = true; };
+    # Secrets land 0400 root by default. Two consumers read their secret as a
+    # NON-root user in the guest and so need 0444 (Robie's ruling 2026-07-17,
+    # option 2 — surgical, not blanket): grafana (static user `grafana`) reads
+    # grafana-admin-pass; snmp_exporter (DynamicUser `snmp-exporter`) reads
+    # snmp-config. World-readable only WITHIN each single-purpose LAN guest where
+    # only root has a shell → negligible real exposure. ntfy-admin-password stays
+    # 0400 (its consumer runs as root) and ntfy-alert-topic stays 0400 (read by a
+    # root helper, not the alertmanager uid).
     script = ''
       umask 077
       mkdir -p /var/lib/guest-secrets/ntfy /var/lib/guest-secrets/observ
-      cp ${config.age.secrets.ntfy-admin-password.path} /var/lib/guest-secrets/ntfy/ntfy-admin-password
-      cp ${config.age.secrets.ntfy-alert-topic.path}    /var/lib/guest-secrets/observ/ntfy-alert-topic
-      cp ${config.age.secrets.snmp-config.path}         /var/lib/guest-secrets/observ/snmp-config
-      cp ${config.age.secrets.grafana-admin-pass.path}  /var/lib/guest-secrets/observ/grafana-admin-pass
+      install -m 0400 ${config.age.secrets.ntfy-admin-password.path} /var/lib/guest-secrets/ntfy/ntfy-admin-password
+      install -m 0400 ${config.age.secrets.ntfy-alert-topic.path}    /var/lib/guest-secrets/observ/ntfy-alert-topic
+      install -m 0444 ${config.age.secrets.snmp-config.path}         /var/lib/guest-secrets/observ/snmp-config
+      install -m 0444 ${config.age.secrets.grafana-admin-pass.path}  /var/lib/guest-secrets/observ/grafana-admin-pass
     '';
   };
   # patchAutomation.phase2.class2Volumes (when phase2 is enabled here) — ntfy
