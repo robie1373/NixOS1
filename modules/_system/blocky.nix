@@ -27,9 +27,8 @@
         # Hypervisors
         "vhost1.home.lab" = "192.168.20.40";  # rung 5 (pve → vhost1), 2026-07-17; mgmt on VLAN 20
         "vhost2.home.lab" = "192.168.20.41";  # rung 4 (pve2→vhost2); mgmt moved VLAN10→20 2026-07-05
-        # Transition aliases → the vhost names. Drop ~2026-08-17 (a month post-rung-5).
-        "pve.home.lab"  = "192.168.20.40";    # was .7.40 (dead since rung 5); alias → vhost1
-        "pve2.home.lab" = "192.168.20.41";    # alias → vhost2
+        # pve/pve2 transition aliases removed 2026-07-17 (Robie's call) — the dead
+        # Proxmox names are retired; use vhost1.home.lab/.20.40 + vhost2.home.lab/.20.41.
         # NixOS lab services (VLAN 20)
         "ntfy.home.lab"    = "192.168.20.10";
         # langlab.home.lab — VM decommissioned 2026-07-16 pending redesign; re-add when rebuilt.
