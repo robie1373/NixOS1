@@ -10,8 +10,8 @@
 #   ./scripts/update-fleet.sh --no-reboot           # update + rebuild, skip reboots
 #   ./scripts/update-fleet.sh --no-update            # skip flake update, just rebuild
 #   ./scripts/update-fleet.sh --skip-local           # skip flipper (local rebuild)
-#   ./scripts/update-fleet.sh fivenix ntfy           # rebuild specific hosts only
-#   ./scripts/update-fleet.sh --no-update fivenix    # combo
+#   ./scripts/update-fleet.sh vhost1                 # rebuild specific hosts only
+#   ./scripts/update-fleet.sh --no-update vhost2     # combo
 #
 # Auth order for each remote host (Tailscale removed 2026-06-22 — fleet reaches hosts
 # over the wired LAN via home.lab names; Tailscale is no longer load-bearing here):
@@ -40,35 +40,41 @@ DISK_THRESHOLD_MIB="${DISK_THRESHOLD_MIB:-2048}"
 REBOOT_TIMEOUT="${REBOOT_TIMEOUT:-180}"
 
 # ── Host definitions ──────────────────────────────────────────────────────────
-# Remote hosts are reached over the wired LAN by their home.lab names (resolved by
-# dns1/Blocky). VLAN 20 hosts (ntfy, langlab, omada) ARE directly reachable from
-# flipper over the LAN (verified 2026-06-22). fivenix has no home.lab record yet —
-# use its LAN IP; it's the dual-boot rig, only reachable when booted to NixOS.
+# The all-NixOS lab (rung 5 complete 2026-07-17): the only remote NixOS hosts are the
+# two microVM hypervisors, reached over the wired LAN by home.lab name (VLAN 20, resolved
+# by dns1/dns2 Blocky, directly reachable from flipper). Their GUESTS are not rebuilt
+# here — a guest's config ships when its hypervisor is rebuilt, so rebuilding vhost1
+# updates dns1/ntfy/observ and vhost2 updates dns2/git/pages.
+#
+# NOTE: a hypervisor reboot cycles ALL its guests (impermanence — proven to self-recover,
+# chaos-monkey doctrine). Hosts run sequentially with wait-for-ssh between, so DNS never
+# fully drops (dns1 is back before dns2 reboots). Use --no-reboot to switch without cycling.
+#
+# Guest host-key churn: guests regenerate SSH host keys each boot ([[guest-hostkey-persistence]]).
+# It does NOT affect this script (it only SSHes to the hypervisors, whose keys are stable),
+# but any DIRECT guest SSH hits a known_hosts TOFU mismatch after a guest reboot (git guest
+# is the worst offender). See the "smooth guest SSH key churn" task.
 
 declare -A SSH_TARGET    # LAN target: home.lab name or IP
 declare -A SSH_FLAGS     # extra nixos-rebuild flags per host
 
-# fivenix: Windows-only until further notice (2026-06-23). Was the dual-boot
-# rig; its NixOS install is not in service. Re-enable here + in REMOTE_HOSTS
-# when it's booting NixOS again. Needs --sudo --ask-sudo-password (robie user,
-# interactive — can't be driven non-interactively).
+SSH_TARGET[vhost1]="root@vhost1.home.lab"
+SSH_FLAGS[vhost1]=""
+
+SSH_TARGET[vhost2]="root@vhost2.home.lab"
+SSH_FLAGS[vhost2]=""
+
+# fivenix: Windows-only until further notice (2026-06-23). Dual-boot rig; NixOS
+# install not in service. Re-enable here + in REMOTE_HOSTS when it's booting NixOS
+# again. Needs --sudo --ask-sudo-password (robie user, interactive).
 # SSH_TARGET[fivenix]="robie@192.168.7.137"
 # SSH_FLAGS[fivenix]="--sudo --ask-sudo-password"
 
-SSH_TARGET[ntfy]="root@ntfy.home.lab"
-SSH_FLAGS[ntfy]=""
+# nixsrv1: not yet installed (blocked). Uncomment when deployed.
+# SSH_TARGET[nixsrv1]="root@nixsrv1.home.lab"
+# SSH_FLAGS[nixsrv1]=""
 
-SSH_TARGET[langlab]="root@langlab.home.lab"
-SSH_FLAGS[langlab]=""
-
-SSH_TARGET[omada]="root@omada.home.lab"
-SSH_FLAGS[omada]=""
-
-# nixos1: local QEMU/KVM VM — SSH target unknown; uncomment when known.
-# SSH_TARGET[nixos1]="root@nixos1.home.lab"
-# SSH_FLAGS[nixos1]=""
-
-REMOTE_HOSTS=(ntfy langlab omada)   # fivenix Windows-only — see above
+REMOTE_HOSTS=(vhost1 vhost2)   # fivenix Windows-only / nixsrv1 not installed — see above
 
 # ── Arg parsing ───────────────────────────────────────────────────────────────
 
@@ -96,6 +102,18 @@ while [[ $# -gt 0 ]]; do
 done
 
 should_run() { [[ ${#HOSTS_FILTER[@]} -eq 0 ]] || printf '%s\n' "${HOSTS_FILTER[@]}" | grep -qx "$1"; }
+
+# Validate the host filter against known hosts. A filter that matches nothing is an
+# error, not a silent no-op that reports success (e.g. a typo or a since-removed host).
+if [[ ${#HOSTS_FILTER[@]} -gt 0 ]]; then
+  KNOWN_HOSTS=(flipper "${REMOTE_HOSTS[@]}")
+  for want in "${HOSTS_FILTER[@]}"; do
+    printf '%s\n' "${KNOWN_HOSTS[@]}" | grep -qx "$want" || {
+      echo "Error: '$want' is not a known host. Known: ${KNOWN_HOSTS[*]}" >&2
+      exit 1
+    }
+  done
+fi
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
