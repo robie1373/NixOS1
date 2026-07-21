@@ -61,13 +61,16 @@
     # served from the in-lab git host git.home.lab. nixos-config carries only this
     # pointer, so the payload never reaches GitHub (only the lock's rev/narHash does)
     # — and git.home.lab is in-lab, never GitHub, same boundary as ledger2.
-    # 2026-07-21: repinned git+file:// → git+ssh://git.home.lab (interim-Forgejo
-    # constraint DISSOLVED — the URL is now fetchable by any host, so vhost2's
-    # unattended phase-1 `nix flake update` no longer dies on a flipper-only path;
-    # the mandatory-same-sitting deploy is no longer required). Branch is master.
+    # 2026-07-21: repinned git+file:// → anonymous read-only git:// on git.home.lab
+    # (interim-Forgejo constraint DISSOLVED — any host fetches it with no ssh key and
+    # no host-key trust, so vhost2's unattended phase-1 `nix flake update` no longer
+    # dies on a flipper-only path OR on git's rotating host key; the mandatory-same-
+    # sitting deploy is no longer required). Served by services.gitDaemon on the git
+    # guest, exportAll=false + a git-daemon-export-ok marker so ONLY this repo is
+    # anonymous (content is already public-on-LAN over HTTP/80). Branch is master.
     # Update with: nix flake update pages-content
     pages-content = {
-      url   = "git+ssh://git@git.home.lab/var/lib/git/pages-content.git?ref=master";
+      url   = "git://git.home.lab/pages-content.git?ref=master";
       flake = false;
     };
 

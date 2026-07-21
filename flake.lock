@@ -353,12 +353,12 @@
         "rev": "1868875bc9c3c53c65504cf609a99374e8da1f7a",
         "revCount": 1,
         "type": "git",
-        "url": "ssh://git@git.home.lab/var/lib/git/pages-content.git"
+        "url": "git://git.home.lab/pages-content.git"
       },
       "original": {
         "ref": "master",
         "type": "git",
-        "url": "ssh://git@git.home.lab/var/lib/git/pages-content.git"
+        "url": "git://git.home.lab/pages-content.git"
       }
     },
     "qmd": {

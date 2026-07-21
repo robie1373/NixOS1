@@ -83,9 +83,23 @@ in
   # ── The git service ───────────────────────────────────────────────────────────
   environment.systemPackages = [ pkgs.git ];
 
-  users.groups.git = {};
+  # ── PINNED uid/gid (2026-07-21, Opus 4.8) — MANDATORY, not cosmetic ───────────
+  # This guest has a tmpfs /etc (regenerated every boot) and does NOT persist
+  # /var/lib/nixos, so an unpinned system user's auto-allocated UID DRIFTS whenever
+  # the declared-user set changes. git OWNS the persistent class-4 repo volume, so a
+  # drift orphans every repo (owner-uid ≠ git's new uid → "dubious ownership", writes
+  # denied). This actually happened 2026-07-21: before git-daemon, git auto-allocated
+  # to 999; enabling the git-daemon module (which statically pins git = ids.uids.git =
+  # 41) shifted it to 41, orphaning every 999-owned repo and breaking the whole host.
+  # 41 is a RESERVED static NixOS id (stable across rebuilds, no collision), so we
+  # adopt it EXPLICITLY here (mkForce agrees with the module, but makes the pin
+  # visible + independent — the pin must not silently depend on the daemon staying on).
+  # RULE (Robie 2026-07-21): pin the uid/gid of ANY user owning a persistent volume on
+  # a tmpfs-/etc guest; stateless users may drift harmlessly. See [[hypervisor-impermanence]].
+  users.groups.git = { gid = lib.mkForce 41; };
   users.users.git = {
     isSystemUser = true;
+    uid          = lib.mkForce 41;
     group        = "git";
     home         = "/var/lib/git";
     createHome   = false;             # the volume mounts there
@@ -99,11 +113,25 @@ in
   # Volume mounts root-owned; hand the tree to git before repo init.
   systemd.tmpfiles.rules = [ "d /var/lib/git 0750 git git -" ];
 
+  # Self-healing ownership: chown the whole repo tree to git before init/daemon.
+  # Idempotent + cheap (only touches mismatches). Repairs pre-pin 999-owned files
+  # once, and re-owns anything restored from a NAS image with foreign uids — the
+  # chaos-monkey guarantee that a reprovisioned volume always belongs to git.
+  systemd.services.git-chown-repos = {
+    description = "Ensure /var/lib/git is owned by git (uid-drift / restore repair)";
+    wantedBy = [ "multi-user.target" ];
+    after    = [ "local-fs.target" "systemd-tmpfiles-setup.service" ];
+    before   = [ "git-init-repos.service" "git-daemon.service" ];
+    serviceConfig = { Type = "oneshot"; User = "root"; };
+    script = "chown -R git:git /var/lib/git";
+  };
+
   # Idempotent bare-repo creation for the declared list (create-only, never delete).
   systemd.services.git-init-repos = {
     description = "Create declared bare git repositories";
     wantedBy = [ "multi-user.target" ];
-    after    = [ "local-fs.target" "systemd-tmpfiles-setup.service" ];
+    after    = [ "local-fs.target" "systemd-tmpfiles-setup.service" "git-chown-repos.service" ];
+    requires = [ "git-chown-repos.service" ];
     serviceConfig = { Type = "oneshot"; User = "git"; Group = "git"; };
     path = [ pkgs.git ];
     script = ''
@@ -112,8 +140,28 @@ in
       for r in ${lib.escapeShellArgs repos}; do
         [ -d "$r.git" ] || git init --bare --initial-branch=main "$r.git"
       done
+      # Anonymous read-only git:// export — pages-content ONLY (it is the flake
+      # input the unattended patch robot fetches; content is already public-on-LAN
+      # over HTTP/80, so anonymous git read adds no exposure). Every other repo
+      # stays ssh-key-only: git-daemon runs with exportAll=false, so a repo is
+      # served over git:// only if it carries this marker. 2026-07-21 (Opus 4.8).
+      touch /var/lib/git/pages-content.git/git-daemon-export-ok
     '';
   };
+
+  # ── Anonymous read-only git-daemon (git://) for the marked repo(s) ────────────
+  # Solves the unattended-fetch problem for pages-content: no ssh key to authorize,
+  # no host key to trust (git:// has neither), so vhost2's phase-1 robot can fetch
+  # the content input without credentials. exportAll=false keeps it to the marker.
+  services.gitDaemon = {
+    enable    = true;
+    basePath  = "/var/lib/git";
+    exportAll = false;           # serve ONLY repos with git-daemon-export-ok
+    user      = "git";           # needs group-read on /var/lib/git (0750 git:git)
+    group     = "git";
+    # enableWritable defaults false → read-only, which is exactly the intent.
+  };
+  networking.firewall.allowedTCPPorts = [ 9418 ];   # git protocol
 
   # ── microVM boot overrides (see ./dns2.nix) ───────────────────────────────────
   boot.loader.systemd-boot.enable = lib.mkForce false;
