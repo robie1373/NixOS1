@@ -58,7 +58,7 @@ in
     address = [ "192.168.20.53/24" ];
     routes  = [ { Gateway = "192.168.20.254"; } ];
   };
-  networking.nameservers = [ "192.168.20.254" "1.1.1.1" ];
+  networking.nameservers = [ "192.168.20.254" ];   # gateway-only (Robie policy 2026-07-21); no 1.1.1.1
 
   # ── The resolver ──────────────────────────────────────────────────────────────
   mySystem.blocky = {

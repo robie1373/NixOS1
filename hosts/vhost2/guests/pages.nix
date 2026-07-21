@@ -55,7 +55,7 @@ in
   };
   # External DNS by choice — pages serves static files and resolves nothing
   # internal, so it does not depend on a Blocky guest being up (same as the old VM).
-  networking.nameservers = [ "1.1.1.1" "1.0.0.1" ];
+  networking.nameservers = [ "192.168.20.254" ];   # gateway-only (Robie policy 2026-07-21); was public-DNS-only (bug)
 
   # ── Static site ───────────────────────────────────────────────────────────────
   mySystem.pages.enable = true;

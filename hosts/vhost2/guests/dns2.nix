@@ -66,7 +66,7 @@ in
   };
   # Blocky is the resolver; the host itself resolves via public DNS. dns2's own
   # stub resolver points at the gateway + public fallback (same as the old VM).
-  networking.nameservers = [ "192.168.20.254" "1.1.1.1" ];
+  networking.nameservers = [ "192.168.20.254" ];   # gateway-only (Robie policy 2026-07-21); no 1.1.1.1
 
   # ── The resolver ──────────────────────────────────────────────────────────────
   mySystem.blocky.enable = true;
