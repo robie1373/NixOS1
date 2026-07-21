@@ -90,8 +90,13 @@
   # path on nic1 (.20.250) — both were transitional scaffolding.
   networking.useNetworkd = true;
   networking.useDHCP = false;
-  networking.nameservers = [ "1.1.1.1" "1.0.0.1" ];   # host uses public DNS — never
-                                                       # depends on a Blocky guest it hosts
+  # Canonical resolver = the default gateway (fw), per Robie 2026-07-21: 1.1.1.1 is
+  # NOT a permitted resolver except in an emergency. The old public-DNS setting was
+  # meant to avoid depending on the dns2 Blocky guest this host runs — but the gateway
+  # is fw, NOT that guest, so it dodges the chicken-and-egg WITHOUT public DNS. It also
+  # resolves home.lab (git.home.lab → .58); 1.1.1.1 could not, which broke phase-1's
+  # pages-content fetch (the whole reason this was found).
+  networking.nameservers = [ "192.168.20.254" ];
 
   systemd.network = {
     enable = true;

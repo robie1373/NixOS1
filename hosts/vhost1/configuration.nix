@@ -101,8 +101,12 @@
   # pve's /etc/network/interfaces was clean (no legacy route / no OOB vmbr1).
   networking.useNetworkd = true;
   networking.useDHCP = false;
-  networking.nameservers = [ "1.1.1.1" "1.0.0.1" ];   # host uses public DNS — never
-                                                       # depends on a Blocky guest it hosts
+  # Canonical resolver = the default gateway (fw), per Robie 2026-07-21: 1.1.1.1 is
+  # NOT a permitted resolver except in an emergency. The old public-DNS setting meant
+  # to avoid depending on the dns1 Blocky guest this host runs — but the gateway is fw,
+  # NOT that guest, so it dodges the chicken-and-egg WITHOUT public DNS, and resolves
+  # home.lab. (vhost2 had the identical bug; fixed the same day.)
+  networking.nameservers = [ "192.168.20.254" ];
 
   systemd.network = {
     enable = true;
