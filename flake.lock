@@ -349,15 +349,16 @@
       "locked": {
         "lastModified": 1783422585,
         "narHash": "sha256-SO+fhB8rKoWAg1fBECYLWBqR6dwqz/lmtEbc6o5g9gI=",
-        "ref": "refs/heads/master",
+        "ref": "master",
         "rev": "1868875bc9c3c53c65504cf609a99374e8da1f7a",
         "revCount": 1,
         "type": "git",
-        "url": "file:///home/robie/proj/pages-content"
+        "url": "ssh://git@git.home.lab/var/lib/git/pages-content.git"
       },
       "original": {
+        "ref": "master",
         "type": "git",
-        "url": "file:///home/robie/proj/pages-content"
+        "url": "ssh://git@git.home.lab/var/lib/git/pages-content.git"
       }
     },
     "qmd": {

@@ -57,15 +57,17 @@
     };
 
     # pages site content — BAKE model (Robie's ruling 2026-07-06): content lives in
-    # its own LOCAL repo on flipper; nixos-config carries only this pointer, so the
-    # payload never reaches GitHub (only the lock's rev/narHash does).
-    # INTERIM until Forgejo: git+file means ONLY flipper can update this input, and
-    # a content bump MUST be deployed to the serving vhost from flipper before the
-    # next unattended patch run (the vhost can't fetch this URL; it builds from the
-    # store path the deploy already copied over). Protocol: ledger [[pages]].
+    # its own git repo, canonical working copy on flipper (~/proj/pages-content),
+    # served from the in-lab git host git.home.lab. nixos-config carries only this
+    # pointer, so the payload never reaches GitHub (only the lock's rev/narHash does)
+    # — and git.home.lab is in-lab, never GitHub, same boundary as ledger2.
+    # 2026-07-21: repinned git+file:// → git+ssh://git.home.lab (interim-Forgejo
+    # constraint DISSOLVED — the URL is now fetchable by any host, so vhost2's
+    # unattended phase-1 `nix flake update` no longer dies on a flipper-only path;
+    # the mandatory-same-sitting deploy is no longer required). Branch is master.
     # Update with: nix flake update pages-content
     pages-content = {
-      url   = "git+file:///home/robie/proj/pages-content";
+      url   = "git+ssh://git@git.home.lab/var/lib/git/pages-content.git?ref=master";
       flake = false;
     };
 
