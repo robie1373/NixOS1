@@ -167,7 +167,6 @@ in
   boot.loader.systemd-boot.enable = lib.mkForce false;
   boot.loader.grub.enable = lib.mkForce false;
   boot.growPartition = lib.mkForce false;
-  services.tailscale.enable = lib.mkForce false;
 
   # Guests do NOT embed the nixos-config git rev (per-guest restart granularity —
   # proven 2026-07-07; see ./dns2.nix).

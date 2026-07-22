@@ -80,9 +80,6 @@ in
   boot.loader.grub.enable = lib.mkForce false;
   boot.growPartition = lib.mkForce false;
 
-  # No Tailscale on a hypervisor guest (tailnet being decommissioned; nothing
-  # load-bearing may depend on it). DNS is served on the LAN IP, so no loss.
-  services.tailscale.enable = lib.mkForce false;
 
   # Guests do NOT embed the nixos-config git rev (server-common sets it from
   # inputs.self.rev). With it, EVERY commit changes every guest closure and a

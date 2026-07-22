@@ -72,9 +72,6 @@
     });
   '';
 
-  # Install tailscale
-  services.tailscale.enable = true;
-
   # Allow unfree packages
   # nixpkgs.config.allowUnfree = true;
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (pkgs.lib.getName pkg) [

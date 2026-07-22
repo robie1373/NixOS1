@@ -72,12 +72,8 @@
   # until its next rebuild. Degrades gracefully if observ is down (chaos-monkey).
   mySystem.observabilityAgent.enable = true;
 
-  # ── Tailscale ────────────────────────────────────────────────────────────────
-  # Enabled on all lab servers for mesh connectivity and Director access.
-  # After first boot: run `tailscale up --authkey <key>` to join the network.
-  # Future: automate via agenix-encrypted auth key.
-  services.tailscale.enable = true;
-  networking.firewall.trustedInterfaces = [ "tailscale0" ];
+  # Tailscale is NOT installed on lab servers/guests — flipper is the only fleet
+  # machine on the tailnet (Robie, 2026-07-21). See [[tailscale-removal]].
 
   # ── Locale and timezone ──────────────────────────────────────────────────────
   time.timeZone = "America/New_York";

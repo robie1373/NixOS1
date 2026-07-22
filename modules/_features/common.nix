@@ -92,9 +92,6 @@
   programs.neovim.enable        = true;
   programs.neovim.defaultEditor = true;
 
-  # Install tailscale
-  services.tailscale.enable = true;
-
   # Allow 1Password (unfree). The GUI is handled by features/1password.nix
   # which sets allowUnfree = true; this predicate is belt-and-suspenders.
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (pkgs.lib.getName pkg) [

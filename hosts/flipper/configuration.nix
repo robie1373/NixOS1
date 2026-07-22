@@ -86,6 +86,10 @@
     intel-media-driver
   ];
 
+  # Tailscale — flipper is the ONLY fleet machine on the tailnet (Robie, 2026-07-21).
+  # Joined manually with `tailscale up`; every server/guest had it removed. [[tailscale-removal]]
+  services.tailscale.enable = true;
+
   environment.systemPackages = with pkgs; [
     wget
     tree

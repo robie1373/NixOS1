@@ -22,7 +22,6 @@
       }) ]; }
       ../../../hosts/flipper/configuration.nix
       ../../_features/common.nix
-      ../../_features/tailscale-watchdog.nix
       ../../_features/1password.nix
       ../../_features/audio.nix
       ../../_features/desktop-niri.nix

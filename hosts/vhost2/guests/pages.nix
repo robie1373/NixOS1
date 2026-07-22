@@ -69,7 +69,6 @@ in
   boot.loader.systemd-boot.enable = lib.mkForce false;
   boot.loader.grub.enable = lib.mkForce false;
   boot.growPartition = lib.mkForce false;
-  services.tailscale.enable = lib.mkForce false;
 
   # Guests do NOT embed the nixos-config git rev (server-common sets it from
   # inputs.self.rev). With it, EVERY commit changes every guest closure and a

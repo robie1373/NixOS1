@@ -16,7 +16,6 @@ inputs.nixpkgs.lib.optionalAttrs online {
     modules = [
       ../../../hosts/fivenix/configuration.nix
       ../../_features/common.nix
-      ../../_features/tailscale-watchdog.nix
       ../../_features/1password.nix
       ../../_features/audio.nix
       ../../_features/nfs-data.nix

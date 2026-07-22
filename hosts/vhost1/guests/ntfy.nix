@@ -92,7 +92,6 @@ in
   boot.loader.systemd-boot.enable = lib.mkForce false;
   boot.loader.grub.enable = lib.mkForce false;
   boot.growPartition = lib.mkForce false;
-  services.tailscale.enable = lib.mkForce false;
   system.configurationRevision = lib.mkForce null;   # per-guest restart granularity
 
   system.stateVersion = "25.05";

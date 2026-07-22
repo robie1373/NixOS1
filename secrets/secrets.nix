@@ -38,15 +38,11 @@ let
   pages   = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICtcGrKW2op/gqVOUqS29Uhr7++xogRQo/fVlsaaNrof";
   # vhost2 (formerly pve2) — NixOS+microvm hypervisor, all-nixos-lab rung 4.
   # No agenix secrets target it yet (guests carry their own); listed so `agenix -r`
-  # includes it and future host secrets can be added. NOT in tailscaleServers.
+  # includes it and future host secrets can be added.
   vhost2  = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN9de13zdtiIsB15rigtdziSOLWbYSQuBZn6KE8ynPCq";
   # vhost1 host key — minted at the rung-5 ceremony 2026-07-16 (Fable 5); private
   # half in 1Password devops/"vhost1 host key"; injected at nixos-anywhere install.
   vhost1  = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIORUyvqKDCQX7SiWW4wzRMZ9z+DOTruMiJYtv7nsAISK";
-
-  # All servers that use tailscale-autoconnect.nix must be listed here.
-  # Re-key after adding each new server: cd secrets && nix run github:ryantm/agenix -- -r
-  tailscaleServers = [ admin ntfy omada langlab dns1 dns2 nixsrv1 observ pages ];
 
   # Bare-metal NixOS hypervisors — recipients of the fleet console-recovery root
   # password (consumed by modules/_system/hypervisor.nix hashedPasswordFile). Only
@@ -94,11 +90,6 @@ in
   # Regenerate from modules/_system/snmp.yml — see that file's header.
   # Source community: 1Password devops/"Omada SNMP community string".
   "snmp-config.age".publicKeys = [ admin observ vhost1 ];  # vhost1 added at ceremony 2026-07-16
-
-  # Tailscale reusable auth key — shared across all lab servers.
-  # Source: 1Password devops/"Tailscale Auth Key" — must be a reusable key.
-  # To create/re-encrypt: nix run github:ryantm/agenix -- -e secrets/tailscale-auth-key.age
-  "tailscale-auth-key.age".publicKeys = tailscaleServers;
 
   # LangLab API keys — systemd EnvironmentFile consumed by the langlab service.
   # Contents (KEY=value, one per line):

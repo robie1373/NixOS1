@@ -228,11 +228,6 @@
     repoPasswordSecret = "restic-repo-password-vhost2-git";
   };
 
-  # ── Tailscale: OFF ────────────────────────────────────────────────────────────
-  # Fleet-wide Tailscale is being decommissioned; a hypervisor must not depend on
-  # it, and new hosts don't join the tailnet (dns2 precedent). server-common
-  # enables the service by default — force it off here. Veto if you want it on.
-  services.tailscale.enable = lib.mkForce false;
 
   # ── Patch automation (Robie's rulings 2026-07-06) ────────────────────────────
   # phase1 (lock-bump robot) lives HERE until clauded exists. Runs Fri+Mon nights

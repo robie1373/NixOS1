@@ -23,8 +23,6 @@
     inputs.disko.nixosModules.disko
     ../../modules/_system/server-common.nix
     ../../modules/_system/hypervisor.nix
-    ../../modules/_system/tailscale-autoconnect.nix
-    ../../modules/_features/tailscale-watchdog.nix
   ];
 
   # ── Identity ──────────────────────────────────────────────────────────────

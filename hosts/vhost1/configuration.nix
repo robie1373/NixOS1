@@ -245,10 +245,6 @@
   # observ's volumes (also licensed) are deliberately NOT listed — monthly-wipe
   # exception mechanism doesn't exist yet; wipe manually (see guests/observ.nix).
 
-  # ── Tailscale: OFF (host) ─────────────────────────────────────────────────────
-  # A hypervisor must not depend on the tailnet. server-common enables it by
-  # default — force off here (vhost2/dns2 precedent).
-  services.tailscale.enable = lib.mkForce false;
 
   # ── Patch automation (phase 2: this host's set day) ─────────────────────────
   # ENABLED 2026-07-17 (Opus 4.8): patch-deploy-key.age exists + vhost1 is a

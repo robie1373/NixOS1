@@ -27,10 +27,6 @@
   # ── Identity ─────────────────────────────────────────────────────────────
   networking.hostName = "langlab";
 
-  # ── Tailscale: OFF ────────────────────────────────────────────────────────
-  # server-common.nix still enables Tailscale fleet-wide; override until the
-  # fleet cleanup removes it there.
-  services.tailscale.enable = lib.mkForce false;
 
   # ── Network ──────────────────────────────────────────────────────────────
   networking.interfaces.ens18.ipv4.addresses = [{
