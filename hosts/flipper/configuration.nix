@@ -90,6 +90,12 @@
   # Joined manually with `tailscale up`; every server/guest had it removed. [[tailscale-removal]]
   services.tailscale.enable = true;
 
+  # Build resilience: a down/flaky binary cache must never fail a build. flipper is
+  # the fleet build host (update-fleet builds server closures here), so a 5xx from any
+  # substituter would otherwise abort an unrelated deploy (noctalia.cachix.org did,
+  # 2026-07-22). fallback = build from source on substitution failure instead of erroring.
+  nix.settings.fallback = true;
+
   environment.systemPackages = with pkgs; [
     wget
     tree

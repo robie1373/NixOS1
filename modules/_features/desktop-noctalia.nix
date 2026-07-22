@@ -53,13 +53,11 @@ let
   '';
 in
 {
-  # Noctalia binary cache — avoids building Quickshell from source (~2h on flipper).
-  nix.settings = {
-    extra-substituters      = [ "https://noctalia.cachix.org" ];
-    extra-trusted-public-keys = [
-      "noctalia.cachix.org-1:pCOR47nnMEo5thcxNDtzWpOxNFQsBRglJzxWPp3dkU4="
-    ];
-  };
+  # No noctalia.cachix.org substituter: its founding reason (skip the ~2h Quickshell
+  # build) died when noctalia 5.0.0 rewrote quickshell → native Wayland/GL. As a
+  # GLOBAL, trusted, flaky third-party cache it added a per-path probe + supply-chain
+  # trust surface to EVERY build and once 5xx-failed a vhost2 deploy. Removed 2026-07-22.
+  # [[nixos-config]] / [[nixos-niri]].
 
   # power-profiles-daemon: noctalia's power-mode widget requires this.
   # bluetooth and upower already enabled in hosts/flipper/configuration.nix.
