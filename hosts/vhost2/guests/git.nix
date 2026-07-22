@@ -26,6 +26,7 @@ let
     "nibbles"
     "languages"
     "pages-content"
+    "work"           # Bearing operational state (TASKS/OBLIGATIONS/CLAUDE.md) — lab-local, never GitHub
     "test"           # probation/scratch repo (new-service protocol B3/B4)
   ];
 in
