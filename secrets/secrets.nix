@@ -30,7 +30,6 @@ let
   omada   = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMAptqMehU2xN/Oc/s26C9GC3TggyoxRuhisDkFrtxYo";
   langlab = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDb0aYMGmaB70EJZ32jqi9+tKncViDYp9CEYUAuoa2Td";
   flipper = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL8IYPm1NhuaOhtarrtZTCDXtETLqA7IHSBvQCKaAAjO";
-  fivenix = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOWzymn122S/aRhofQtfxsjze7dVxH/tmB/6UsVdG8Z0";
   dns1    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIG7QRVt1c+o7HR1OQBqcvrRY4T4fLksAKbPCmGJjC8hE";
   dns2    = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIK5FZLBveMFgzXA/xYHGgMRu9urFqf+H7Q43jilwF/n0";
   nixsrv1 = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJX6AZgzVx5nVNG8AujqQ6Knchc79NrowlUaYH1fPLIZ";
@@ -103,7 +102,6 @@ in
   # must be added to svc_backup's authorized_keys on the NAS.
   # Source: 1Password devops/"restic-backup-<hostname>"
   "restic-backup-flipper.age".publicKeys  = [ admin flipper ];
-  "restic-backup-fivenix.age".publicKeys  = [ admin fivenix ];
   "restic-backup-ntfy.age".publicKeys     = [ admin ntfy ];
   "restic-backup-omada.age".publicKeys    = [ admin omada ];
   # vhost2 runs the omada guest's backup (all-nixos-lab rung 4). Named per
@@ -117,7 +115,6 @@ in
   # Source: 1Password devops/"restic-repo-password-<hostname>"
   # Keep a copy in 1Password — needed at restore time when the host may be unavailable.
   "restic-repo-password-flipper.age".publicKeys  = [ admin flipper ];
-  "restic-repo-password-fivenix.age".publicKeys  = [ admin fivenix ];
   "restic-repo-password-ntfy.age".publicKeys     = [ admin ntfy ];
   "restic-repo-password-omada.age".publicKeys    = [ admin omada ];
   "restic-repo-password-vhost2-omada.age".publicKeys = [ admin vhost2 ];
