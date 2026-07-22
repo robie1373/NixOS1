@@ -89,8 +89,6 @@
   environment.systemPackages = with pkgs; [
     wget
     tree
-    terraform
-    ansible
     btop
     ripgrep
     ifuse 		# for mounting iphone
