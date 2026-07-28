@@ -237,7 +237,13 @@
     phase1 = {
       enable = true;
       onCalendar = "Fri,Mon 01:00";
-      gateHosts = [ "vhost1" "vhost2" "flipper" ];
+      # Fleet is decoupled from flipper: the vhosts (which auto-apply on set days)
+      # block the push; flipper is advisory-only — it's a desktop full of packages
+      # the fleet never runs and a frequent source of transient build breakage
+      # (e.g. the 2026-07-27 niri/libdisplay-info skew). A flipper failure now warns
+      # instead of blocking the fleet. (Robie, 2026-07-28.)
+      gateHosts = [ "vhost1" "vhost2" ];
+      advisoryHosts = [ "flipper" ];
     };
     phase2 = {
       enable = true;

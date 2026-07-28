@@ -73,6 +73,17 @@ All gate hosts built: ${lib.concatStringsSep ", " cfg.phase1.gateHosts}."
     git push origin ${cfg.branch}
     ${ntfySend "🟢 patch phase1: lock bumped + pushed" "min"
       "All gate hosts built clean. Set days will apply it."}
+    # Advisory (non-blocking): fleet is already pushed above. These hosts are
+    # decoupled from fleet health — a failure warns, it does NOT roll anything back.
+    ${lib.optionalString (cfg.phase1.advisoryHosts != [ ]) ''
+      for h in ${lib.concatStringsSep " " cfg.phase1.advisoryHosts}; do
+        echo "phase1: advisory build $h (non-blocking; fleet lock already pushed)"
+        if ! nix build .#nixosConfigurations.$h.config.system.build.toplevel --no-link; then
+          ${ntfySend "⚠️ patch phase1: advisory host did not build" "default"
+            "$h (advisory/desktop, not a fleet host) will NOT build the new lock. The fleet push already went through - this is only a heads-up. Fix $h before its next manual switch."}
+        fi
+      done
+    ''}
   '';
 
   phase2Script = pkgs.writeShellScript "patch-phase2" ''
@@ -115,8 +126,24 @@ in
       };
       gateHosts = lib.mkOption {
         type = lib.types.listOf lib.types.str;
-        default = [ "vhost1" "vhost2" "flipper" ];
-        description = "Every host that must build before the lock is pushed.";
+        default = [ "vhost1" "vhost2" ];
+        description = ''
+          BLOCKING gate: every host that must build before the lock is pushed.
+          A failure here aborts the push — the fleet stays on known-good.
+          Keep this to hosts that auto-apply (the phase-2 vhosts); a desktop
+          that only ever applies manually belongs in advisoryHosts, not here.
+        '';
+      };
+      advisoryHosts = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = ''
+          NON-BLOCKING gate: built AFTER the lock is already pushed. A failure
+          here only sends a warning ntfy — it never blocks the fleet. For hosts
+          decoupled from fleet health (e.g. flipper, a desktop full of packages
+          the fleet never runs) that you still want an early heads-up on before
+          your next manual switch. See ledger patch-automation.md.
+        '';
       };
     };
 
