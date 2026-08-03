@@ -13,9 +13,13 @@
 # (myHome.bearing.enable was never set there).
 let
   workDir    = "/home/robie/work";
-  ntfyServer = "https://ntfy.vimba-stairs.ts.net";
+  # LAN endpoint, not the Tailscale one (2026-08-02). Plain HTTP by design — no cert
+  # exists for home.lab and the topic name is the secret, not the payload. Publishers
+  # must not depend on Tailscale; see ledger2/ntfy.md and ledger2/tailscale-removal.md.
+  ntfyServer = "http://ntfy.home.lab";
   lintTime   = "16:00";  # daily Ledger lint (headless, ntfy summary)
   ingestTime = "02:00";  # nightly ~/raw/ ingestion
+  promptTime = "Sun 09:14";  # weekly notebook prompt
 
   # bearing: ad-hoc user command. Runs a bearing session in the current terminal.
   # exec replaces the shell — terminal closes when the session ends.
@@ -280,6 +284,109 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
     printf "\n"
   '';
 
+  # bearing-prompt: weekly notebook prompt, pushed to the phone via ntfy (Sundays).
+  #
+  # Robie's notebooks are kept as a deliberate legacy document (ledger2/interests/journaling.md).
+  # This is a self-administered version of Mass Observation's "Directive" mechanism: people don't
+  # spontaneously write about the contents of their pockets or the price of groceries — they have
+  # to be asked. It does NOT touch the daily free-writing; it's an optional weekly addition.
+  #
+  # The prompt bank is ~/work/templates/notebook-prompts.md, read at RUNTIME (not baked into the
+  # store) so Robie can edit prompts without a rebuild. Rotation state is ~/work/.prompt-state:
+  # nothing repeats until the bank is exhausted, and the same category doesn't run twice in a row.
+  # Prompts are identified by a hash of their text, so reordering the file is a no-op and editing
+  # a prompt makes it eligible again.
+  #
+  # `bearing-prompt --dry-run` prints the pick without sending or recording it.
+  bearingPrompt = pkgs.writeShellScriptBin "bearing-prompt" ''
+    exec ${pkgs.python3}/bin/python3 - "$@" <<'PYEOF'
+    import hashlib, json, os, random, subprocess, sys
+
+    WORK   = "${workDir}"
+    BANK   = os.path.join(WORK, "templates", "notebook-prompts.md")
+    STATE  = os.path.join(WORK, ".prompt-state")
+    TOPICF = os.path.join(WORK, ".ntfy-topic")
+    SERVER = "${ntfyServer}"
+    DRY    = "--dry-run" in sys.argv[1:]
+
+    if not os.path.exists(BANK):
+        print(f"bearing-prompt: no prompt bank at {BANK}", file=sys.stderr)
+        sys.exit(1)
+
+    # Parse the markdown table: | category | sketch | prompt |
+    prompts = []
+    for line in open(BANK, encoding="utf-8"):
+        line = line.strip()
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if len(cells) != 3:
+            continue
+        cat, sketch, text = cells
+        if cat.lower() == "category" or set(cat) <= set("-: "):
+            continue          # header row / separator row
+        prompts.append({
+            "id":     hashlib.sha256(text.encode("utf-8")).hexdigest()[:12],
+            "cat":    cat,
+            "sketch": sketch.lower() in ("yes", "y", "true"),
+            "text":   text,
+        })
+
+    if not prompts:
+        print("bearing-prompt: prompt bank parsed to zero prompts", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        state = json.load(open(STATE, encoding="utf-8"))
+    except Exception:
+        state = {}
+    used     = set(state.get("used", []))
+    last_cat = state.get("last_cat")
+
+    pool = [p for p in prompts if p["id"] not in used]
+    if not pool:                      # bank exhausted — start a fresh cycle
+        used, pool = set(), list(prompts)
+    spread = [p for p in pool if p["cat"] != last_cat]
+    choice = random.choice(spread or pool)
+
+    title = "Notebook prompt" + (" — draw + write" if choice["sketch"] else "")
+    body  = choice["text"] + f"\n\n[{choice['cat']}]"
+
+    if DRY:
+        print(f"{title}\n{body}")
+        sys.exit(0)
+
+    topic = ""
+    if os.path.exists(TOPICF):
+        topic = open(TOPICF, encoding="utf-8").read().strip()
+    if not topic:
+        # Same failure mode as bearing-checkin: no topic file, no push. Say so on stderr
+        # rather than silently succeeding — a silent no-op here means a missed week.
+        print("bearing-prompt: no ntfy topic in .ntfy-topic, not sending", file=sys.stderr)
+        sys.exit(1)
+
+    r = subprocess.run([
+        "${pkgs.curl}/bin/curl", "-sS", "--fail", "--max-time", "20",
+        "-H", f"Title: {title}",
+        "-H", "Priority: default",
+        "-H", "Tags: pencil2" if choice["sketch"] else "Tags: memo",
+        "-d", body,
+        f"{SERVER}/{topic}",
+    ], capture_output=True, text=True)
+    if r.returncode != 0:
+        print(f"bearing-prompt: ntfy publish failed: {r.stderr.strip()}", file=sys.stderr)
+        sys.exit(1)
+
+    # Only record the pick once it actually went out.
+    used.add(choice["id"])
+    tmp = STATE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        json.dump({"used": sorted(used), "last_cat": choice["cat"]}, f, indent=2)
+    os.replace(tmp, STATE)
+    print(f"sent [{choice['cat']}] {choice['text'][:60]}...")
+    PYEOF
+  '';
+
   # bearing-log: open (or create) today's log file in $EDITOR.
   # Creates ~/work/log/YYYY-MM-DD.md with the standard template if it doesn't exist.
   bearingLog = pkgs.writeShellScriptBin "bearing-log" ''
@@ -301,7 +408,7 @@ in
   # ── Scripts on PATH ──────────────────────────────────────────────────────
   environment.systemPackages = [
     bearingCmd bearingNotify bearingCheckin bearingBriefing bearingActivity
-    bearingLint bearingIngest bearingStatus bearingLog
+    bearingLint bearingIngest bearingStatus bearingLog bearingPrompt
     pkgs.qmd
   ];
 
@@ -342,6 +449,29 @@ in
     wantedBy    = [ "timers.target" ];
     timerConfig = {
       OnCalendar = "Mon-Sun ${ingestTime}";
+      Persistent = true;
+    };
+  };
+
+  # Weekly notebook prompt (2026-08-02). Not a "session" — it's a one-way push that
+  # feeds Robie's analog notebook, so it survives the pull-model rule against scheduled
+  # prompts: it asks nothing of The Bearing and nothing of him.
+  systemd.user.services.bearing-prompt = {
+    description = "The Bearing — weekly notebook prompt";
+    after       = [ "default.target" "network-online.target" ];
+    serviceConfig = {
+      Type        = "oneshot";
+      ExecStart   = "${bearingPrompt}/bin/bearing-prompt";
+      Environment = [ "SSH_AUTH_SOCK=" ];
+    };
+  };
+  systemd.user.timers.bearing-prompt = {
+    description = "The Bearing — weekly notebook prompt timer";
+    wantedBy    = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = promptTime;
+      # Persistent: if the laptop is asleep or off Sunday morning, the prompt fires
+      # on the next boot rather than skipping the week entirely.
       Persistent = true;
     };
   };
