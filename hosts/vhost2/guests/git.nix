@@ -50,6 +50,18 @@ in
       proto      = "virtiofs";
     }];
 
+    # ══ COPYING THIS FILE FOR THE VOLUME? READ THIS FIRST ═══════════════════════
+    # This guest has a volume because DURABILITY IS ITS JOB -- it is the canonical
+    # store. That does NOT make it precedent for persisting a working copy.
+    # A replica whose job is durability is licensed; a cache whose job is speed is
+    # NOT. Purpose, not content. (Robie, 2026-08-06 -- after a session proposed five
+    # volumes for guests that needed none: ledger2/doctrine-drift-audit.md.)
+    # HARD RULE: before adding `volumes` to any guest, read
+    # ledger2/stateless-doctrine.md (classification table + "The class-2 trap") and
+    # the checklist in ledger2/doctrine-drift-audit.md. See dns2.nix for the four
+    # questions. The stateless template is dns2.nix -- prefer it.
+    # ════════════════════════════════════════════════════════════════════════════
+    #
     # ── Licensed volume: CLASS 4 — bare git repositories, exactly /var/lib/git
     # Loss story (law 7): every repo has a full working copy on flipper (itself
     # restic'd nightly) and four have GitHub remotes; worst case = re-init + re-push.

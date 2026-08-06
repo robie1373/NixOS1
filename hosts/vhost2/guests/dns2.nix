@@ -46,6 +46,28 @@ in
       proto      = "virtiofs";
     }];
 
+    # ══ STOP — no `volumes` here, and that is deliberate ═════════════════════════
+    # dns2 is the STATELESS template. If you copied this file and are about to add
+    # `volumes = [ ... ]`, that is an ESCALATION, not a design step. HARD RULE
+    # (Robie, 2026-08-06): read ledger2/stateless-doctrine.md -> the classification
+    # table + "The class-2 trap", then the checklist in ledger2/doctrine-drift-audit.md,
+    # BEFORE writing the volume. Not optional, not a judgement call.
+    #
+    # The four questions that kill most proposed volumes:
+    #   1. Is this already classified? (doctrine's table pre-registers many services)
+    #   2. Where is the data CANONICAL? Elsewhere -> class 1 + a rehydration path.
+    #      A copy does NOT inherit the class of its original: a clone of a class-4
+    #      repo is a cache, not class 4. Persisting it is misappropriation.
+    #   3. Identity or secret? Law 3 owns it CATEGORICALLY -- no volume, ever.
+    #      Host-stage it read-only instead (see ../../vhost1/guests/ntfy.nix).
+    #   4. Have you tried DELETING it? Classification is by deletion, not inspection.
+    # "The rebuild is expensive" argues the CLASSIFICATION is wrong. It is never an
+    # argument for an exception -- the patch-day wipe is a discipline mechanism, not
+    # resource management (RULED 2026-07-17: no per-volume cadence exceptions).
+    #
+    # Volume-bearing template (once you have actually cleared the above): git.nix.
+    # ════════════════════════════════════════════════════════════════════════════
+
     # Single NIC as a tap; the host attaches vm-dns2 to br0 on VLAN 20.
     interfaces = [{
       type = "tap";
