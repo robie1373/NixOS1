@@ -347,11 +347,11 @@
     "pages-content": {
       "flake": false,
       "locked": {
-        "lastModified": 1783422585,
-        "narHash": "sha256-SO+fhB8rKoWAg1fBECYLWBqR6dwqz/lmtEbc6o5g9gI=",
+        "lastModified": 1786232722,
+        "narHash": "sha256-1C4NGxn2qWbQ02npytSf2i3A7l1cDca36hrhQtqSsE8=",
         "ref": "master",
-        "rev": "1868875bc9c3c53c65504cf609a99374e8da1f7a",
-        "revCount": 1,
+        "rev": "5a300f43de8e11a49af4a7f5750898c25bb5790d",
+        "revCount": 2,
         "type": "git",
         "url": "git://git.home.lab/pages-content.git"
       },
