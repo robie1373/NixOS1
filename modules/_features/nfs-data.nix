@@ -10,7 +10,7 @@
 # when TrueNAS was down (2026-05-10). Soft is the right tradeoff for a
 # personal NAS used for file storage — data corruption risk is low.
 
-{ ... }:
+{ config, ... }:
 {
   # NFSv4 kernel module support — no rpcbind needed, uses TCP 2049 directly.
   boot.supportedFilesystems = [ "nfs" ];
@@ -34,5 +34,42 @@
       "retrans=2"                  # 2 retries before failing
       "noatime"
     ];
+  };
+
+  # Clear the mount's failed state after a transient miss (2026-08-08).
+  #
+  # Activation restarts NetworkManager, which deauthenticates wlo1 for ~14s,
+  # and this share lives on VLAN 20 — reachable only over wifi. Anything that
+  # touches ~/nas in that window (yazi, rg, any filesystem walker) fires the
+  # automount, mount.nfs returns ENETUNREACH, and the .mount unit parks in
+  # `failed`. The mount itself is self-healing: the .automount stays armed and
+  # the next access succeeds.
+  #
+  # The damage is to the *switch*, not the mount. switch-to-configuration scans
+  # every unit on the system at the end of activation and exits 4 if any is
+  # failed; `nh os switch` treats that as fatal and never registers the
+  # generation, so the machine silently reverts on reboot. Clearing the state
+  # keeps a benign automount miss out of that scan.
+  #
+  # Tradeoff: a genuinely-down NAS also stops appearing in switch output. That's
+  # correct — an on-demand automount being unavailable is not a config failure.
+  # No restart loop: reset-failed does not re-trigger the mount.
+  systemd.units."home-robie-nas.mount" = {
+    overrideStrategy = "asDropin";
+    text = ''
+      [Unit]
+      OnFailure=nas-mount-reset-failed.service
+    '';
+  };
+
+  systemd.services.nas-mount-reset-failed = {
+    description = "Clear the transient failed state of home-robie-nas.mount";
+    serviceConfig = {
+      Type = "oneshot";
+      # config.systemd.package, not pkgs.systemd — the latter is a different
+      # store path from the system's systemd and pulls a second build into the
+      # closure.
+      ExecStart = "${config.systemd.package}/bin/systemctl reset-failed home-robie-nas.mount";
+    };
   };
 }
