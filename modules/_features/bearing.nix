@@ -18,6 +18,7 @@ let
   # must not depend on Tailscale; see ledger2/ntfy.md and ledger2/tailscale-removal.md.
   ntfyServer = "http://ntfy.home.lab";
   lintTime   = "16:00";  # daily Ledger lint (headless, ntfy summary)
+  doctorTime = "15:45";  # daily self-check — deliberately before the lint
   ingestTime = "02:00";  # nightly ~/raw/ ingestion
   promptTime = "Sun 09:14";  # weekly notebook prompt
 
@@ -161,6 +162,56 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
         -d "$MSG" \
         "${ntfyServer}/$TOPIC"
     fi
+  '';
+
+  # bearing-doctor: health check for The Bearing's OWN state (2026-08-09).
+  #
+  # Built after a single day surfaced four independent instances of the same
+  # failure: the Trust Vector protocol had been off for four sessions, the memory
+  # dir contradicted CLAUDE.md, briefings had been dead for ten days, and
+  # me/interests.md had been wrong about two domains for six weeks. Each was
+  # caught by accident. The lab has observ; the assistant had nothing.
+  #
+  # DELIBERATELY NOT a claude --print call, unlike bearing-lint. This checks
+  # Claude's own housekeeping, so a degraded session would produce a degraded
+  # check — the exact bug it exists to catch. Pure python, offline, deterministic.
+  #
+  # The script itself lives in ~/work/bin/ (versioned in the work repo) rather
+  # than inline here, so its checks can be edited without a rebuild — same
+  # pattern as the templates/ files the other jobs read at runtime.
+  #
+  # ntfy on FINDINGS ONLY — a clean run is silent, per the standing rule that
+  # success goes to the Bearing rather than a notification. Warnings notify as
+  # well as failures: everything this was built for was slow rot (a six-week-stale
+  # interests.md, ten days of dead briefings), so silent warnings would reproduce
+  # the bug. Severity rides in the message and the ntfy priority, not in whether
+  # Robie hears about it at all.
+  bearingDoctor = pkgs.writeShellScriptBin "bearing-doctor" ''
+    REPORT=$(${pkgs.python3}/bin/python3 ${workDir}/bin/bearing-doctor 2>&1)
+    EXIT=$?
+
+    printf "%s\n" "$REPORT"
+
+    # Exit 0 = clean, 1 = findings, anything else = the checker itself broke.
+    [ "$EXIT" -eq 0 ] && exit 0
+
+    TOPIC="$(cat ${workDir}/.ntfy-topic 2>/dev/null)"
+    if [ -n "$TOPIC" ]; then
+      if [ "$EXIT" -eq 1 ]; then
+        MSG=$(printf "%s" "$REPORT" | grep -v '^[[:space:]]*$' | tail -1)
+        PRI="default"; TAGS="stethoscope"
+      else
+        MSG="bearing-doctor itself failed (exit $EXIT) — the health check is blind."
+        PRI="high"; TAGS="rotating_light"
+      fi
+      ${pkgs.curl}/bin/curl -s \
+        -H "Title: Bearing doctor" \
+        -H "Priority: $PRI" \
+        -H "Tags: $TAGS" \
+        -d "$MSG" \
+        "${ntfyServer}/$TOPIC"
+    fi
+    exit "$EXIT"
   '';
 
   # bearing-ingest: runs claude non-interactively to ingest new files from ~/raw/.
@@ -408,7 +459,7 @@ in
   # ── Scripts on PATH ──────────────────────────────────────────────────────
   environment.systemPackages = [
     bearingCmd bearingNotify bearingCheckin bearingBriefing bearingActivity
-    bearingLint bearingIngest bearingStatus bearingLog bearingPrompt
+    bearingLint bearingIngest bearingStatus bearingLog bearingPrompt bearingDoctor
     pkgs.qmd
   ];
 
@@ -431,6 +482,30 @@ in
     wantedBy    = [ "timers.target" ];
     timerConfig = {
       OnCalendar = "Mon-Sun ${lintTime}";
+      Persistent = true;
+    };
+  };
+
+  # Runs 15 min before the lint so a broken Bearing is reported before the lint
+  # (which depends on a working Claude session) has a chance to fail confusingly.
+  systemd.user.services.bearing-doctor = {
+    description = "The Bearing — health check of its own state";
+    after       = [ "default.target" ];
+    serviceConfig = {
+      Type        = "oneshot";
+      ExecStart   = "${bearingDoctor}/bin/bearing-doctor";
+      Environment = [ "SSH_AUTH_SOCK=" ];
+      # Findings are a normal outcome, not a unit failure — otherwise every
+      # stale-interests warning leaves a failed unit lying around, which is
+      # exactly what poisons `nh os switch` (see nixos-config.md → Gotchas).
+      SuccessExitStatus = "0 1";
+    };
+  };
+  systemd.user.timers.bearing-doctor = {
+    description = "The Bearing — daily self-check timer";
+    wantedBy    = [ "timers.target" ];
+    timerConfig = {
+      OnCalendar = "Mon-Sun ${doctorTime}";
       Persistent = true;
     };
   };
