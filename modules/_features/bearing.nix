@@ -491,6 +491,11 @@ in
   systemd.user.services.bearing-doctor = {
     description = "The Bearing — health check of its own state";
     after       = [ "default.target" ];
+    # git is NOT in the default user-unit PATH. Proven on the first timer run
+    # (2026-08-09): without it the unpushed check reported both repos as "not a
+    # readable git repo" while journal-coverage saw no commits and silently
+    # PASSED. A blind check that reports success is worse than no check.
+    path        = [ pkgs.git ];
     serviceConfig = {
       Type        = "oneshot";
       ExecStart   = "${bearingDoctor}/bin/bearing-doctor";
