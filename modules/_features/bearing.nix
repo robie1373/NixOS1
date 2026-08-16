@@ -146,6 +146,29 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
           --allowedTools "Bash,Read,Glob,Grep,Write" 2>/dev/null)
     EXIT=$?
 
+    # A queued fix is one the lint FOUND but could not APPLY (the job is
+    # deliberately read-only on ~/ledger2 — it has no Edit tool). One such report
+    # is routine. The same queue recurring is the actual alarm: the Technitium
+    # reconciliation was queued by EIGHT consecutive passes (2026-07-28 → 08-16)
+    # and applied by none, while the drift spread from 8 pages to 11. Every one of
+    # those notifications was honest and none of them said "again". This counts the
+    # streak so a standing backlog escalates itself. See ~/ledger2/journal/2026-08-16.md.
+    #
+    # Precisely: this counts consecutive passes whose queue was non-empty, NOT
+    # consecutive passes queueing the SAME fix. A new finding the day after an old
+    # one is cleared still extends the count. That is the intended reading anyway —
+    # a persistently non-empty queue means fixes are not being applied, whatever
+    # they are — but do not read the number as "this one item is N passes old".
+    has_queue() {
+      awk '/^## Queued fixes/{f=1;next} /^## /{f=0} f' "$1" \
+        | sed 's/^[[:space:]]*//' | grep -v '^$' \
+        | grep -qivE '^-?[[:space:]]*(none|none / applied directly|\[.*\])$'
+    }
+    STREAK=0
+    for f in $(ls -r ${workDir}/lint/*.md 2>/dev/null); do
+      if has_queue "$f"; then STREAK=$((STREAK+1)); else break; fi
+    done
+
     TOPIC="$(cat ${workDir}/.ntfy-topic 2>/dev/null)"
     if [ -n "$TOPIC" ]; then
       if [ "$EXIT" -eq 124 ]; then
@@ -154,6 +177,10 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
         MSG=$(printf "%s" "$SUMMARY" | grep -v '^[[:space:]]*$' | tail -1)
         [ -z "$MSG" ] && MSG="Lint complete — see ~/work/lint/$TODAY.md"
         PRI="low"; TAGS="books"
+        if [ "$STREAK" -ge 2 ]; then
+          MSG="[$STREAK passes queued, UNAPPLIED] $MSG"
+          PRI="default"; TAGS="warning"
+        fi
       fi
       ${pkgs.curl}/bin/curl -s \
         -H "Title: Ledger lint" \
@@ -474,7 +501,12 @@ in
     serviceConfig = {
       Type        = "oneshot";
       ExecStart   = "${bearingLint}/bin/bearing-lint";
-      Environment = [ "SSH_AUTH_SOCK=" ];
+      # SHELL is mandatory here. systemd user units inherit almost no environment,
+      # and Robie's login shell is fish; without a POSIX shell Claude's Bash tool
+      # fails with "No suitable shell found" and silently skips 5 of the 8
+      # mechanical checks (stubs, undated, orphan scan, wikilink sweep, mtime
+      # drift). Diagnosed 2026-08-16 after the checks had been dark for weeks.
+      Environment = [ "SSH_AUTH_SOCK=" "SHELL=/bin/sh" ];
     };
   };
   systemd.user.timers.bearing-lint = {
