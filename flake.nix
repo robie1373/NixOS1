@@ -34,7 +34,18 @@
     # during migration — see modules/_system/ and modules/_home/).
     # Impermanence: tmpfs-root hosts with an explicit persist allowlist
     # (ledger stateless-doctrine.md law 6 / hypervisor-impermanence.md).
-    impermanence.url = "github:nix-community/impermanence";
+    impermanence = {
+      url = "github:nix-community/impermanence";
+      # The follows is load-bearing, not tidiness. Declared as a bare .url this input
+      # pulled its OWN nixpkgs, that copy claimed the lock node literally named
+      # "nixpkgs", root's real input was demoted to "nixpkgs_2", and every other
+      # input's follows = "nixpkgs" then bound BY NAME to impermanence's stale copy.
+      # Found 2026-08-16: ten inputs building against nixpkgs from 2026-01-16 while
+      # the systems built against 2026-08-13. Same trap as nix-wrapper-modules on
+      # 2026-06-23. Ledger nixos-config.md; verify with: the count of distinct
+      # nixpkgs* nodes in flake.lock must be 1.
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     import-tree.url = "github:vic/import-tree";
 
