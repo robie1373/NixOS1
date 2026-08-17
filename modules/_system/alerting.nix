@@ -50,6 +50,43 @@ let
             annotations:
               summary: "{{ $labels.host }} under 10% memory available (dns1-OOM class)"
 
+      - name: wan
+        interval: 30s
+        rules:
+          # Added 2026-08-17 after an edge outage that observ slept through entirely.
+          # THREE rules, not one, because the three failure shapes need different
+          # reactions and a single rule would blur them.
+
+          # 1. Everything external is unreachable => it is the edge, not a provider.
+          #    sum()==0 means no target succeeded. This is the one that means "call
+          #    Verizon" / "power-cycle the box".
+          - alert: WanDown
+            expr: sum(probe_success{job="blackbox-wan-dns"}) == 0
+            for: 2m
+            labels: { severity: critical }
+            annotations:
+              summary: "WAN DOWN — no external resolver answering (all probe targets failed). Lab DNS for home.lab is unaffected; anything off-LAN is not."
+
+          # 2. One provider down while the other answers => that provider's problem.
+          #    Deliberately NOT critical: this is the case a single-target probe would
+          #    have mistaken for an outage, which is how alerts lose credibility.
+          - alert: WanResolverDegraded
+            expr: probe_success{job="blackbox-wan-dns"} == 0
+            for: 5m
+            labels: { severity: warning }
+            annotations:
+              summary: "{{ $labels.instance }} not answering, but another external resolver still is — provider-specific, not the edge."
+
+          # 3. The metric vanished. A probe that stopped being scraped produces NO
+          #    series, so rules 1 and 2 both go quiet and silence reads exactly like
+          #    a healthy WAN. absent() is the only thing that catches a dead monitor.
+          - alert: WanProbeMissing
+            expr: absent(probe_success{job="blackbox-wan-dns"})
+            for: 10m
+            labels: { severity: warning }
+            annotations:
+              summary: "WAN DNS probe is reporting NO data — blackbox_exporter or its scrape job is broken. WAN state is UNKNOWN, not healthy."
+
       - name: blocky
         interval: 30s
         rules:

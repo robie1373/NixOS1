@@ -259,6 +259,18 @@ in
             # NOERROR only. A SERVFAIL/REFUSED answer means the resolver is reachable
             # but NOT resolving, which must read as failure, not success.
             valid_rcodes = [ "NOERROR" ];
+            # NOERROR alone is NOT enough, and this is the whole point of the probe.
+            # A resolver can return NOERROR with an EMPTY answer section (NODATA) and
+            # blackbox will still score probe_success=1 — a green light for a resolver
+            # that resolved nothing. Robie caught this by asking whether the alert made
+            # the same distinction the manual check did (2026-08-17); it did not.
+            # Asserting the answer HERE means probe_success itself carries the strong
+            # claim, so every consumer — alert rule, dashboard, ad-hoc query — inherits
+            # it. The alternative, remembering to AND in probe_dns_answer_rrs at every
+            # call site, is a rule that fires only when someone remembers it.
+            validate_answer_rrs.fail_if_not_matches_regexp = [
+              "cloudflare\\.com\\.\\s+\\d+\\s+IN\\s+A\\s+.*"
+            ];
           };
         };
       });
