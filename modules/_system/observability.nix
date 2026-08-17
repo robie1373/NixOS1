@@ -77,6 +77,44 @@ let
     ];
   }];
 
+  # ── WAN reachability probes (Robie's request, 2026-08-17) ───────────────────
+  # The gap this closes: on 2026-08-17 Robie lost everything outside his edge and
+  # observ stayed FULL GREEN throughout, because every scrape target is a lab host
+  # on a lab VLAN and none of them care whether the WAN exists. Same class as the
+  # 2026-07-07 outage note in ledger visibility-stack.md — a green dashboard is not
+  # a healthy network, it is a healthy set of things we happened to be watching.
+  #
+  # These are DNS probes, not ICMP, deliberately. What matters is not "does the box
+  # answer a ping" but "does the forwarding resolver still ANSWER A QUERY" — that is
+  # the function Blocky depends on. ICMP would go green against a resolver that had
+  # stopped resolving. (Ledger: feedback_monitor_the_artifact.)
+  #
+  # TWO providers on purpose. One external target cannot tell "my WAN is down" from
+  # "Cloudflare is having a bad day", and an alert that cannot distinguish those is
+  # an alert nobody trusts. Both down = the edge. One down = that provider.
+  #   1.1.1.2 — Cloudflare malware-blocking; ALSO Robie's configured fw fallback
+  #             resolver, so this probe covers a real dependency, not just a canary.
+  #   9.9.9.9 — Quad9, independent operator and network path.
+  wanDnsTargets = [ "1.1.1.2:53" "9.9.9.9:53" ];
+
+  blackboxScrape = [
+    {
+      job_name = "blackbox-wan-dns";
+      metrics_path = "/probe";
+      params.module = [ "dns_external" ];
+      # Probe every 30s like everything else; a WAN blip shorter than that is not
+      # actionable anyway.
+      static_configs = [ { targets = wanDnsTargets; } ];
+      relabel_configs = [
+        # Standard blackbox indirection: the scrape goes to the exporter, the target
+        # rides along as a URL param, and `instance` keeps the human-readable name.
+        { source_labels = [ "__address__" ]; target_label = "__param_target"; }
+        { source_labels = [ "__param_target" ]; target_label = "instance"; }
+        { target_label = "__address__"; replacement = "127.0.0.1:9115"; }
+      ];
+    }
+  ];
+
   # SNMP scrape jobs for the Omada fabric (switch + EAP773 APs). snmp_exporter
   # runs on loopback (:9116). Standard snmp_exporter relabel: pass the device IP
   # as ?target=, send the request to the local exporter, keep the device IP as
@@ -159,7 +197,7 @@ in
               labels = { host = t.host; };
             }) nodeTargets;
           }
-        ] ++ blockyScrape ++ pveScrape ++ snmpScrape;
+        ] ++ blockyScrape ++ pveScrape ++ snmpScrape ++ blackboxScrape;
       };
     };
 
@@ -197,6 +235,33 @@ in
         # controller being up — an Omada-SDN limitation, see ledger visibility-stack.md.)
         "-syslog.useRemoteIP.udp=true"
       ];
+    };
+
+    # ── WAN reachability — blackbox_exporter (DNS prober) ──────────────────────
+    # Loopback only, scraped by blackboxScrape above; no firewall port needed.
+    # DNS prober needs no elevated capability (unlike the ICMP prober), which is a
+    # second reason to prefer it here.
+    services.prometheus.exporters.blackbox = {
+      enable = true;
+      listenAddress = "127.0.0.1";
+      port = 9115;
+      configFile = pkgs.writeText "blackbox.yml" (builtins.toJSON {
+        modules.dns_external = {
+          prober = "dns";
+          timeout = "5s";
+          dns = {
+            # A name the whole internet resolves; we are testing the resolver, not
+            # the name. transport udp because that is how fw actually forwards.
+            query_name = "cloudflare.com";
+            query_type = "A";
+            transport_protocol = "udp";
+            preferred_ip_protocol = "ip4";
+            # NOERROR only. A SERVFAIL/REFUSED answer means the resolver is reachable
+            # but NOT resolving, which must read as failure, not success.
+            valid_rcodes = [ "NOERROR" ];
+          };
+        };
+      });
     };
 
     # ── Network fabric (Omada switch + APs) — SNMP metrics exporter ─────────────
