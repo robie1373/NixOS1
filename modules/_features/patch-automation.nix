@@ -112,8 +112,24 @@ in
   options.mySystem.patchAutomation = {
     repoUrl = lib.mkOption {
       type = lib.types.str;
-      default = "git@github.com:robie1373/NixOS1.git";
-      description = "Flake repo (deploy-key access).";
+      default = "ssh://git@git.home.lab/var/lib/git/nixos-config.git";
+      description = ''
+        Flake repo the robot clones and pushes (deploy-key access).
+
+        Points at the LAB git server, not GitHub (changed 2026-08-16, Robie's ruling).
+        The robot used to clone github:robie1373/NixOS1, which made `main` writable on
+        two servers with two independent writers — the robot on GitHub, interactive
+        work fanning out to both — and nothing reconciled them. GitHub and lab
+        diverged silently on 2026-07-28 and again on 2026-08-16.
+
+        Pointing it at the lab makes lab the single writable source of truth, so
+        divergence becomes impossible rather than merely detectable. It also drops an
+        internet dependency and a GitHub push credential out of the unattended path:
+        the robot runs in-lab, so it now reaches its repo over the LAN.
+
+        GitHub is a downstream mirror from here on. It may LAG, which is benign and
+        visible; it must never be written to by automation. See ledger patch-automation.md.
+      '';
     };
     branch = lib.mkOption { type = lib.types.str; default = "main"; };
     ntfyUrl = lib.mkOption { type = lib.types.str; default = "http://192.168.20.10"; };
