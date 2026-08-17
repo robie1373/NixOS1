@@ -90,6 +90,23 @@
         ];
 
         # ── Upstream resolvers ──────────────────────────────────────────
+        # ── Upstream init behaviour ─────────────────────────────────────
+        # `fast` (was the default `blocking`, changed 2026-08-17, Robie's call).
+        #
+        # THIS IS THE SAME TRAP AS THE BLOCKLIST strategy=fast FIX BELOW, in a
+        # different subsystem. With `blocking`, blocky refuses to start until it can
+        # resolve its DoH upstream hostnames (one.one.one.one, dns.google). During a
+        # WAN outage that resolution fails — and so does bootstrapDns, because
+        # 1.1.1.1/8.8.8.8 are also unreachable when the edge is down. Net effect: a
+        # blocky restart while the ISP is down leaves NO DNS AT ALL, including
+        # `home.lab`, which is the one thing that kept working during the 2026-08-17
+        # outage. That restart is reachable: a patch day, or Robie power-cycling gear
+        # while troubleshooting the ISP.
+        #
+        # `fast` serves immediately and resolves upstreams in the background. Local
+        # zones (customDNS) answer with no WAN whatsoever. Degraded, never dead.
+        upstreams.init.strategy = "fast";
+
         upstreams.groups.default = [
           "https://one.one.one.one/dns-query"   # Cloudflare DoH
           "https://dns.google/dns-query"         # Google DoH
@@ -164,10 +181,38 @@
         prometheus.enable = true;
 
         # ── Caching ─────────────────────────────────────────────────────
+        # Retuned 2026-08-17 (Robie) for WAN-outage survivability. The semantics are
+        # counterintuitive and were initially got backwards, so per blocky's own docs:
+        #   minTime — "if >0 use this value, IF TTL IS SMALLER"  → a FLOOR
+        #   maxTime — "if >0, use this value, IF TTL IS GREATER" → a CAP
+        # So maxTime only touches records whose TTL already exceeds it, and the names
+        # that matter in an outage (Dropbox, GitHub, nixos.org) are CDN-fronted with
+        # 60–300s TTLs. **minTime is the lever that actually extends their cache life.**
         caching = {
-          minTime     = "5m";
-          maxTime     = "30m";
+          # 5m → 1h. Every response is held at least an hour regardless of its TTL,
+          # so a short outage is invisible for anything queried in the last hour.
+          # Evidence this was the binding constraint: the cache held only ~190 entries
+          # at a 66% hit rate while maxItemsCount is unlimited — entries were expiring,
+          # not being evicted.
+          #
+          # ⚠️ TRADE-OFF, deliberate: DNS-based failover for external services is not
+          # followed for up to an hour. If a provider moves an endpoint mid-outage-free
+          # day, we chase it late. Acceptable for a homelab; dial back toward 15–30m if
+          # anything ever appears to be pinned to a dead IP.
+          minTime     = "1h";
+          # 30m → 24h. Secondary — only helps the minority of records with long TTLs.
+          maxTime     = "24h";
+          # Default is 30m, and "negative" includes EMPTY RESULTS, not just NXDOMAIN.
+          # At 30m a failure recorded during an outage keeps being served for half an
+          # hour after the WAN returns — the outage outliving the outage. 1m keeps the
+          # anti-hammering benefit while making recovery essentially immediate.
+          cacheTimeNegative = "1m";
           prefetching = true;
+          # Widen the window (default 2h) and lower the bar (default 5) so more of the
+          # working set stays warm and therefore survives. Prefetching already earns
+          # 25k/69k hits on dns1/dns2, so this is amplifying something that works.
+          prefetchExpires   = "4h";
+          prefetchThreshold = 3;
         };
 
         # ── Logging ─────────────────────────────────────────────────────
