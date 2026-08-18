@@ -183,6 +183,21 @@ in
     services.victoriametrics = {
       enable = true;
       retentionPeriod = cfg.retention;
+      # ── Graphite ingestion — for the NAS (2026-08-18) ──────────────────────
+      # The TrueNAS appliance has no node-exporter and no SNMP (port 161 closed),
+      # but its Reporting page offers "Add Reporting Exporter" whose ONLY type is
+      # GRAPHITE. VictoriaMetrics speaks Graphite plaintext natively, so the
+      # appliance's own supported push mechanism lands directly in the TSDB we
+      # already run — no container on the appliance, no SNMP MIB guesswork, and no
+      # SSH key needed on a box where none is installed.
+      #
+      # This is the [[appliances]] doctrine working as intended: take what the
+      # appliance offers rather than making it look like a NixOS host.
+      #
+      # PUSH, not scrape — so there is no `up` metric for the NAS. Absence of data
+      # is the only down-signal, which means any alert on this must be written with
+      # absent()/lag rather than up==0. Same shape as the WanProbeMissing rule.
+      extraOptions = [ "-graphiteListenAddr=:2003" ];
       prometheusConfig = {
         global.scrape_interval = "30s";
         scrape_configs = [
@@ -437,7 +452,9 @@ in
     # pulled across the firewall — see [[tailscale]]/[[visibility-stack]] transport).
     # NOTE: 8428 exposes the full VM HTTP API to the lab net; acceptable on the
     # internal VLAN. Harden later with vmauth or a source-scoped rule if needed.
-    networking.firewall.allowedTCPPorts = [ 3000 8428 9428 ];
+    #                                        3000 grafana · 8428 VM · 9428 VLogs
+    #                                        2003 Graphite ingest (NAS push, 2026-08-18)
+    networking.firewall.allowedTCPPorts = [ 3000 8428 9428 2003 ];
     # Syslog lands on udp/1514 (post-redirect — see below). Devices send to 514;
     # the nat PREROUTING redirect rewrites the dport to 1514 before the filter INPUT
     # check, so it's 1514 that must be allowed here, not 514.
