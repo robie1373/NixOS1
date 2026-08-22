@@ -29,6 +29,15 @@ let
     "work"           # Bearing operational state (TASKS/OBLIGATIONS/CLAUDE.md) — lab-local, never GitHub
     "test"           # probation/scratch repo (new-service protocol B3/B4)
   ];
+  # sshd runs a forced command THROUGH the account's login shell. With shell =
+  # git-shell that fails ("unrecognized command <script path>"), because git-shell
+  # only accepts git verbs. So the login shell is bash and BOTH keys are confined by
+  # their own forced command instead -- the restriction moved, it did not go away.
+  # Any key added here without a command= would get a real shell; do not add one.
+  adminGitShell = pkgs.writeShellScript "git-shell-all-repos" ''
+    exec ${pkgs.git}/bin/git-shell -c "''${SSH_ORIGINAL_COMMAND:-}"
+  '';
+
   # The patch robot's deploy key, scoped to nixos-config.git ONLY.
   #
   # The `git` user is shared by every repo above -- including ledger2 and work, which
@@ -143,10 +152,12 @@ in
     group        = "git";
     home         = "/var/lib/git";
     createHome   = false;             # the volume mounts there
-    shell        = "${pkgs.git}/bin/git-shell";   # push/pull only — no interactive login
+    # bash so that the per-key forced commands below can run at all (see adminGitShell).
+    # Neither key reaches this shell directly; each is pinned to a wrapper.
+    shell        = "${pkgs.bashInteractive}/bin/bash";
     openssh.authorizedKeys.keys = [
-      # robie@flipper (same key as the fleet admin recipient) — full access, all repos.
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC/F5DsOqJb2KM0JGV3Tx6kYVYOxR0xXGuJOyu/benFU"
+      # robie@flipper (same key as the fleet admin recipient) — git-shell, all repos.
+      "restrict,command=\"${adminGitShell}\" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC/F5DsOqJb2KM0JGV3Tx6kYVYOxR0xXGuJOyu/benFU"
       # patch-automation robot (patch-deploy-key.age, held by vhost1/vhost2). Confined by
       # forced command to nixos-config.git — it cannot read or write ledger2 or work.
       "restrict,command=\"${patchRobotGitShell}\" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGhQykaMU71LttS0sg17qhEgKzLF5WkVr7khRYiaeYmi"
