@@ -29,6 +29,33 @@ let
     "work"           # Bearing operational state (TASKS/OBLIGATIONS/CLAUDE.md) — lab-local, never GitHub
     "test"           # probation/scratch repo (new-service protocol B3/B4)
   ];
+  # The patch robot's deploy key, scoped to nixos-config.git ONLY.
+  #
+  # The `git` user is shared by every repo above -- including ledger2 and work, which
+  # hold Robie's personal and operational state and are deliberately never on GitHub.
+  # The robot's key is an UNATTENDED credential held by the hypervisors, so it must not
+  # inherit write access to the Ledger merely because it needs to bump a flake lock.
+  # This forced command allowlists the two git verbs against the one repo path and
+  # refuses everything else.
+  #
+  # Added 2026-08-21: the 2026-08-16 repoint (03e73df) moved the robot from GitHub to
+  # this server but changed the URL without the credential, so its clone had been denied
+  # ever since -- silently, because phase 1 read the failure as "lock unchanged".
+  # See ledger patch-automation.md.
+  patchRobotGitShell = pkgs.writeShellScript "patch-robot-git-shell" ''
+    set -eu
+    cmd="''${SSH_ORIGINAL_COMMAND:-}"
+    case "$cmd" in
+      "git-upload-pack '/var/lib/git/nixos-config.git'" | "git-upload-pack /var/lib/git/nixos-config.git" | "git-receive-pack '/var/lib/git/nixos-config.git'" | "git-receive-pack /var/lib/git/nixos-config.git")
+        exec ${pkgs.git}/bin/git-shell -c "$cmd"
+        ;;
+      *)
+        echo "patch-robot: this key is scoped to nixos-config.git; refused: $cmd" >&2
+        exit 1
+        ;;
+    esac
+  '';
+
 in
 {
   imports = [
@@ -118,8 +145,11 @@ in
     createHome   = false;             # the volume mounts there
     shell        = "${pkgs.git}/bin/git-shell";   # push/pull only — no interactive login
     openssh.authorizedKeys.keys = [
-      # robie@flipper (same key as the fleet admin recipient)
+      # robie@flipper (same key as the fleet admin recipient) — full access, all repos.
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC/F5DsOqJb2KM0JGV3Tx6kYVYOxR0xXGuJOyu/benFU"
+      # patch-automation robot (patch-deploy-key.age, held by vhost1/vhost2). Confined by
+      # forced command to nixos-config.git — it cannot read or write ledger2 or work.
+      "restrict,command=\"${patchRobotGitShell}\" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGhQykaMU71LttS0sg17qhEgKzLF5WkVr7khRYiaeYmi"
     ];
   };
 

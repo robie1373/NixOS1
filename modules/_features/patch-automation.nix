@@ -39,6 +39,26 @@ let
 
   workdir = "/var/lib/patch-automation/nixos-config";
 
+  # A step that CANNOT RUN must fail loudly. It must never be able to look like a
+  # step that simply had nothing to do.
+  #
+  # 2026-08-21: the git server denied the robot's clone. Both sha256sum calls then
+  # errored, `old` and `new` were both empty, they compared EQUAL, and phase 1 printed
+  # "lock unchanged, nothing to do" -- its quiet-week message -- and exited 0. Result=success,
+  # no alert, fleet unpatched for a full cycle. Third recurrence of one shape in this lab
+  # (update-fleet's silently skipped hosts; the git+file pages-content abort). The shape is:
+  # SUCCESS INFERRED FROM A COMPARISON THAT ABSENCE SATISFIES. Ledger patch-automation.md.
+  failLoudly = phase: ''
+    _alerted=0
+    _page() {
+      _topic=$(cat ${config.age.secrets.ntfy-alert-topic.path} 2>/dev/null || true)
+      [ -n "$_topic" ] && ${pkgs.curl}/bin/curl -fsS -m 10 \
+        -H "Title: 🚨 patch ${phase}: FAILED" -H "Priority: high" \
+        -d "$1" "${cfg.ntfyUrl}/$_topic" >/dev/null 2>&1 || true
+    }
+    trap '_rc=$?; if [ "$_rc" -ne 0 ] && [ "$_alerted" -eq 0 ]; then _page "${phase} exited $_rc on $(hostname). The fleet was NOT patched. journalctl -u patch-${phase}.service"; fi' EXIT
+  '';
+
   syncRepo = ''
     mkdir -p /var/lib/patch-automation
     if [ -d ${workdir}/.git ]; then
@@ -49,10 +69,14 @@ let
   '';
 
   phase1Script = pkgs.writeShellScript "patch-phase1" ''
-    set -u
+    set -euo pipefail
     ${gitEnv}
+    ${failLoudly "phase1"}
     ${syncRepo}
     cd ${workdir}
+    # Prove the repo actually arrived BEFORE any comparison can be satisfied by absence.
+    [ -f flake.nix ]  || { echo "phase1: ${workdir}/flake.nix missing - repo sync failed"; exit 1; }
+    [ -f flake.lock ] || { echo "phase1: ${workdir}/flake.lock missing - repo sync failed"; exit 1; }
     old=$(sha256sum flake.lock)
     nix flake update 2>&1 | tail -5
     new=$(sha256sum flake.lock)
@@ -62,6 +86,7 @@ let
       if ! nix build .#nixosConfigurations.$h.config.system.build.toplevel --no-link; then
         ${ntfySend "⚠️ patch phase1: build gate FAILED" "default"
           "nixpkgs bump broke the build for $h - lock NOT pushed, fleet stays on known-good. Fix manually."}
+        _alerted=1   # already paged with the specific cause; don't double-page from the trap
         exit 1
       fi
     done
@@ -87,10 +112,14 @@ All gate hosts built: ${lib.concatStringsSep ", " cfg.phase1.gateHosts}."
   '';
 
   phase2Script = pkgs.writeShellScript "patch-phase2" ''
-    set -u
+    set -euo pipefail
     ${gitEnv}
+    ${failLoudly "phase2"}
     ${syncRepo}
     cd ${workdir}
+    # Without this, a failed sync fell through to the class-2 wipe and rebooted the host
+    # into its OLD generation with its caches deleted -- disruptive, and reported as success.
+    [ -f flake.nix ] || { echo "phase2: ${workdir}/flake.nix missing - repo sync failed"; exit 1; }
     applied=$(readlink /run/current-system || true)
     target=$(nix build .#nixosConfigurations.$(hostname).config.system.build.toplevel --no-link --print-out-paths)
     if [ "$applied" = "$target" ]; then
