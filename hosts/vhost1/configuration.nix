@@ -36,6 +36,7 @@
     ../../modules/_system/hypervisor.nix       # KVM/libvirt + Podman + microvm.host
     ../../modules/_features/restic.nix         # per-guest backup sets (multi-set API)
     ../../modules/_features/patch-automation.nix  # staggered unattended patch days (ledger patch-automation.md)
+    ../../modules/_features/git-nas-mirror.nix    # pull-only git mirrors -> NAS (ledger git.md "NAS mirror")
   ];
 
   # ── Identity ────────────────────────────────────────────────────────────────
@@ -267,6 +268,26 @@
       { guest = "observ"; image = "/var/lib/microvms/observ/observ-vl.img"; }
     ];
   };
+
+  # ── Git -> NAS mirror (Robie's ruling 2026-08-27, ledger git.md) ────────────
+  # Canonical git is a class-4 volume on vhost2's SINGLE 238.5 GB disk with no
+  # RAID; its restic target is RAIDZ2 + a mirrored NVMe special vdev. The most
+  # valuable thing in the lab lives on the least redundant hardware and backs up
+  # to the most. This closes the gap the nightly restic image leaves: that image
+  # is COLD (restore + loop-mount an ext4 file), whereas these are git-native
+  # bare repos — recovery is `git clone`.
+  #
+  # Runs HERE, not on vhost2: the mirror must not share a fate with the thing it
+  # mirrors. The job is stateless and holds nothing worth keeping — a copy does
+  # not inherit the class of its original (stateless-doctrine), so these mirrors
+  # are class 1 on this host even though the originals are class 4 on the guest.
+  # Loss story: rebuild vhost1, the next timer tick re-mirrors. Nothing to restore.
+  #
+  # The NAS side is a DEDICATED dataset with an export restricted to this host —
+  # deliberately not the general /mnt/tank/data share, which is exported to VLAN
+  # 10 and VLAN 20 with mapall, and would make plaintext ledger2 and work
+  # readable by any NFS-capable device on the trusted VLAN (Robie's call).
+  mySystem.gitNasMirror.enable = true;
 
   system.stateVersion = "25.05";
 }

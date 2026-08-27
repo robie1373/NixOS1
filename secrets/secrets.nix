@@ -124,4 +124,13 @@ in
   # 1Password devops/"restic-repo-password-vhost2-git". (2026-07-16, Fable 5)
   "restic-repo-password-vhost2-git.age".publicKeys = [ admin vhost2 ];
   "restic-repo-password-langlab.age".publicKeys  = [ admin langlab ];
+
+  # NAS git-mirror key — the private half of a READ-ONLY account on the in-lab git
+  # server, used by vhost1's git-nas-mirror job. Confined on the server by a forced
+  # command to git-upload-pack + a list-repos verb (hosts/vhost2/guests/git.nix), so
+  # it cannot push: an unattended credential that could write to the canonical store
+  # would be a second way to corrupt the very thing the mirror protects.
+  # Cheap to rotate — re-mint, swap the pubkey in git.nix, re-encrypt here.
+  # Source: 1Password devops/"git-mirror-key". (2026-08-27)
+  "git-mirror-key.age".publicKeys = [ admin vhost1 ];
 }

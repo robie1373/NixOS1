@@ -65,6 +65,35 @@ let
     esac
   '';
 
+  # The NAS mirror's key (git-mirror-key.age, held by vhost1). READ-ONLY: it
+  # allowlists git-upload-pack only -- no receive-pack, so this credential cannot
+  # write to the canonical store. That is the point. The mirror exists so the
+  # Ledger survives the loss of this guest's single non-redundant disk; giving its
+  # unattended key a write path back into the original would create a second way
+  # to corrupt the thing being protected.
+  #
+  # `list-repos` is a deliberate extra verb. The mirror job asks the SERVER which
+  # repos exist rather than carrying its own copy of the list -- a duplicated list
+  # would drift the day a repo is added here, and the new repo would silently
+  # never be mirrored. The `repos` list above is the single source of truth for both.
+  # See modules/_features/git-nas-mirror.nix and ledger git.md.
+  gitMirrorShell = pkgs.writeShellScript "git-mirror-shell" ''
+    set -eu
+    cmd="''${SSH_ORIGINAL_COMMAND:-}"
+    case "$cmd" in
+      list-repos)
+        ${lib.concatMapStringsSep "\n        " (r: ''printf '%s\n' "${r}"'') repos}
+        ;;
+      "git-upload-pack /var/lib/git/"*".git" | "git-upload-pack '/var/lib/git/"*".git'")
+        exec ${pkgs.git}/bin/git-shell -c "$cmd"
+        ;;
+      *)
+        echo "git-mirror: this key is read-only (upload-pack + list-repos); refused: $cmd" >&2
+        exit 1
+        ;;
+    esac
+  '';
+
 in
 {
   imports = [
@@ -161,6 +190,9 @@ in
       # patch-automation robot (patch-deploy-key.age, held by vhost1/vhost2). Confined by
       # forced command to nixos-config.git — it cannot read or write ledger2 or work.
       "restrict,command=\"${patchRobotGitShell}\" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGhQykaMU71LttS0sg17qhEgKzLF5WkVr7khRYiaeYmi"
+      # NAS mirror job on vhost1 (git-mirror-key.age). Read-only by forced command:
+      # upload-pack + list-repos, no receive-pack. Added 2026-08-27.
+      "restrict,command=\"${gitMirrorShell}\" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMY+/lkPzE/cSeWiBb12MWd6SXefhRstatZJdfJFur1B"
     ];
   };
 
