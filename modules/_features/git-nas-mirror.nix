@@ -124,15 +124,24 @@ let
       d="$dest/$repo.git"
       url="ssh://$remote$src/$repo.git"
 
+      # git's stderr goes to the JOURNAL, not /dev/null. An earlier draft discarded it
+      # and the first real failure (a repo the server could not pack) arrived as a bare
+      # repo name with no reason attached -- the diagnosis then needed a hand-run of the
+      # same command. Alloy ships this host's journal to observ, so the reason is
+      # queryable after the fact.
+      log=$(mktemp)
       if [ -d "$d" ]; then
-        git --git-dir="$d" remote update --prune >/dev/null 2>&1 || {
-          failed="$failed $repo(fetch)"; continue
-        }
+        if ! git --git-dir="$d" remote update --prune >"$log" 2>&1; then
+          echo "git-nas-mirror: FETCH FAILED for $repo:" >&2; cat "$log" >&2
+          failed="$failed $repo(fetch)"; rm -f "$log"; continue
+        fi
       else
-        git clone --quiet --mirror "$url" "$d" >/dev/null 2>&1 || {
-          failed="$failed $repo(clone)"; rm -rf "$d"; continue
-        }
+        if ! git clone --quiet --mirror "$url" "$d" >"$log" 2>&1; then
+          echo "git-nas-mirror: CLONE FAILED for $repo:" >&2; cat "$log" >&2
+          failed="$failed $repo(clone)"; rm -rf "$d"; rm -f "$log"; continue
+        fi
       fi
+      rm -f "$log"
 
       # Track the source's HEAD symref. `git remote update` syncs refs but NEVER
       # moves HEAD, so a mirror made before a default-branch rename keeps
@@ -159,39 +168,63 @@ let
       count=$((count + 1))
     done
 
+    # Stamps live WITH the mirrors on the NAS, not in local state: they survive a
+    # rebuild of this host, and the staleness check then reads the artifact rather
+    # than this job's own self-report. Two stamps, because they answer different
+    # questions:
+    #   .last-run     — the job ran end to end (what the staleness timer watches)
+    #   .last-success — every repo verified ref-identical
+    now=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
+    printf '%s\n' "$now" > "$dest/.last-run" 2>/dev/null || true
+
     if [ -n "$failed" ]; then
+      echo "git-nas-mirror: mirrored $count repo(s); FAILED:$failed" >&2
       ${ntfySend} repos "Mirrored $count repo(s); FAILED:$failed"
-      exit 1
+      # Deliberately exit 0. A parked `failed` unit makes switch-to-configuration
+      # exit non-zero, so an unrelated deploy days later reports FAILED because of a
+      # NAS blip last night — the same trap nfs-data.nix documents for the automount.
+      # The signal lives where it is actually useful: an ntfy push, a loud journal
+      # line shipped to observ, and .last-success not advancing.
+      exit 0
     fi
 
-    # Stamp lives WITH the mirrors on the NAS, not in local state: it survives a
-    # rebuild of this host, and the staleness check then reads the artifact
-    # rather than this job's own self-report.
-    date -u '+%Y-%m-%dT%H:%M:%SZ' > "$dest/.last-success" 2>/dev/null || true
+    printf '%s\n' "$now" > "$dest/.last-success" 2>/dev/null || true
     rm -f ${runDir}/notified.* 2>/dev/null || true
     echo "git-nas-mirror: OK -- $count repo(s) verified ref-identical"
   '';
 
   stalenessScript = pkgs.writeShellScript "git-nas-mirror-staleness" ''
     set -u
-    PATH=${lib.makeBinPath [ pkgs.coreutils ]}
-    stamp="${cfg.mountPoint}/.last-success"
+    PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.systemd ]}
+    stamp="${cfg.mountPoint}/.last-run"
     max=$(( ${toString cfg.maxAgeHours} * 3600 ))
 
     # Covers the failure the per-run alert cannot see: the timer never firing at
     # all (unit masked, host down for days, mount silently gone). Success is
     # silent by design -- a mirror that is working should never buzz the phone.
+    #
+    # Watches .last-run, not .last-success: "did the job run" and "did every repo
+    # verify" are different questions, and the per-run alert already owns the
+    # second one. Watching .last-success here would double-alert on one fault.
+    #
+    # ALWAYS exits 0 -- see the note in the mirror script. A failed unit poisons
+    # the next unrelated deploy; the ntfy push and the journal line are the signal.
     if [ ! -e "$stamp" ]; then
-      ${ntfySend} staleness "No successful mirror run has ever been recorded at $stamp."
-      exit 1
+      # Nothing recorded yet. Only a problem if the job has actually had its turn --
+      # on a freshly-deployed host the timer simply has not fired, and alarming
+      # about that trains the alert into noise. (This fired once for real, at the
+      # first deploy, before the guard existed.)
+      if [ -n "$(systemctl show git-nas-mirror.service -p ExecMainStartTimestamp --value 2>/dev/null)" ]; then
+        ${ntfySend} staleness "The mirror job has run but never recorded a completed run at $stamp."
+      fi
+      exit 0
     fi
     age=$(( $(date +%s) - $(stat -c %Y "$stamp") ))
     if [ "$age" -ge "$max" ]; then
-      ${ntfySend} staleness "Last successful mirror was $(( age / 3600 ))h ago (limit ${toString cfg.maxAgeHours}h). The mirror on the NAS is going stale."
-      exit 1
+      ${ntfySend} staleness "Last completed mirror run was $(( age / 3600 ))h ago (limit ${toString cfg.maxAgeHours}h). The mirror on the NAS is going stale."
     fi
-  '';
-in
+    exit 0
+  '';in
 {
   options.mySystem.gitNasMirror = {
     enable = lib.mkEnableOption "pull-only git mirrors of the in-lab git server onto the NAS";
@@ -259,8 +292,13 @@ in
     };
     dedupHours = lib.mkOption {
       type = lib.types.int;
-      default = 6;
-      description = "Minimum interval between repeat ntfy pushes for the same problem.";
+      default = 24;
+      description = ''
+        Minimum interval between repeat ntfy pushes for the same problem. 24 h, matching
+        the restic monitor's sink: a fault that needs a code or config change to clear
+        would otherwise buzz every run until someone fixed it, which trains the alert
+        into noise.
+      '';
     };
     ntfyUrl = lib.mkOption {
       type = lib.types.str;
