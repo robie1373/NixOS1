@@ -78,13 +78,14 @@
     # dies on a flipper-only path OR on git's rotating host key; the mandatory-same-
     # sitting deploy is no longer required). Served by services.gitDaemon on the git
     # guest, exportAll=false + a git-daemon-export-ok marker so ONLY this repo is
-    # anonymous (content is already public-on-LAN over HTTP/80). Branch is master.
+    # anonymous (content is already public-on-LAN over HTTP/80). Branch is main
+    # (renamed from master 2026-08-27 with this pin; see ledger git.md).
     # Fetched by name — vhost2 (which runs the unattended phase-1) now resolves
     # home.lab via its default-gateway resolver (fixed 2026-07-21; it was wrongly on
     # 1.1.1.1, which can't resolve lab names — that was this fetch's last blocker).
     # Update with: nix flake update pages-content
     pages-content = {
-      url   = "git://git.home.lab/pages-content.git?ref=master";
+      url   = "git://git.home.lab/pages-content.git?ref=main";
       flake = false;
     };
 

@@ -335,14 +335,14 @@
       "locked": {
         "lastModified": 1786239217,
         "narHash": "sha256-hH+NpBMl/M88Te81fHpo6Eqv3gLaEUBr2ElzsH2oZTk=",
-        "ref": "master",
+        "ref": "main",
         "rev": "8f43eaaf5808d19a0ded3a77de08a433a07aa4e7",
         "revCount": 3,
         "type": "git",
         "url": "git://git.home.lab/pages-content.git"
       },
       "original": {
-        "ref": "master",
+        "ref": "main",
         "type": "git",
         "url": "git://git.home.lab/pages-content.git"
       }
