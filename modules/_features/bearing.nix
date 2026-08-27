@@ -143,12 +143,14 @@ sys.stdout.write(template.replace('{{RECENT_TOPICS}}', recent))
     PROMPT=$(sed "s|{{LINT_FILE}}|$LINT_FILE|g" ${workDir}/templates/ledger-lint.md)
     SUMMARY=$(echo "$PROMPT" \
       | timeout 600 ${pkgs.claude-code}/bin/claude --print \
-          --allowedTools "Bash,Read,Glob,Grep,Write" 2>/dev/null)
+          --allowedTools "Bash,Read,Glob,Grep,Write,Edit" 2>/dev/null)
     EXIT=$?
 
-    # A queued fix is one the lint FOUND but could not APPLY (the job is
-    # deliberately read-only on ~/ledger2 — it has no Edit tool). One such report
-    # is routine. The same queue recurring is the actual alarm: the Technitium
+    # A queued fix is one the lint FOUND but could not APPLY. Edit was granted
+    # 2026-08-26 (Opus 5) — the template has always said "if this pass has
+    # Edit/Write access, apply the structural fixes directly," and it never had
+    # Edit to do it with, so every pass queued instead. A queue should now be the
+    # exception, not the norm. The same queue recurring is the actual alarm: the Technitium
     # reconciliation was queued by EIGHT consecutive passes (2026-07-28 → 08-16)
     # and applied by none, while the drift spread from 8 pages to 11. Every one of
     # those notifications was honest and none of them said "again". This counts the
@@ -498,14 +500,23 @@ in
   systemd.user.services.bearing-lint = {
     description = "The Bearing — daily Ledger lint";
     after       = [ "default.target" ];
+    # Puts bash on the unit PATH — the other half of the shell fix below.
+    path        = [ pkgs.bashInteractive ];
     serviceConfig = {
       Type        = "oneshot";
       ExecStart   = "${bearingLint}/bin/bearing-lint";
-      # SHELL is mandatory here. systemd user units inherit almost no environment,
-      # and Robie's login shell is fish; without a POSIX shell Claude's Bash tool
-      # fails with "No suitable shell found" and silently skips 5 of the 8
-      # mechanical checks (stubs, undated, orphan scan, wikilink sweep, mtime
-      # drift). Diagnosed 2026-08-16 after the checks had been dark for weeks.
+      # SHELL is necessary but NOT sufficient. systemd user units inherit almost
+      # no environment and Robie's login shell is fish, so SHELL must be set — but
+      # Claude's Bash tool resolves a shell from PATH, and the default unit PATH
+      # (coreutils, findutils, gnugrep, gnused, systemd) contains no bash. /bin
+      # holds only `sh`. With SHELL=/bin/sh alone the tool still fails with "No
+      # suitable shell found" and silently skips 5 of the 8 mechanical checks
+      # (stubs, undated, orphan scan, wikilink sweep, mtime drift).
+      #
+      # Diagnosed 2026-08-16, fixed only halfway; the checks stayed dark for
+      # another ten days. Root cause found 2026-08-26 (Opus 5) by reproducing the
+      # unit environment verbatim and running claude --print inside it: with bash
+      # on PATH the same call returns SHELL_OK. Both halves are required.
       Environment = [ "SSH_AUTH_SOCK=" "SHELL=/bin/sh" ];
     };
   };
@@ -550,10 +561,14 @@ in
   systemd.user.services.bearing-ingest = {
     description = "The Bearing — nightly Ledger ingestion from ~/raw/";
     after       = [ "default.target" ];
+    # Same shell fix as bearing-lint: this unit also runs `claude --print` with the
+    # Bash tool allowed, and had neither half. Its Bash calls were failing silently
+    # for the same reason (found alongside the lint fix, 2026-08-26).
+    path        = [ pkgs.bashInteractive ];
     serviceConfig = {
       Type        = "oneshot";
       ExecStart   = "${bearingIngest}/bin/bearing-ingest";
-      Environment = [ "SSH_AUTH_SOCK=" ];
+      Environment = [ "SSH_AUTH_SOCK=" "SHELL=/bin/sh" ];
     };
   };
   systemd.user.timers.bearing-ingest = {
