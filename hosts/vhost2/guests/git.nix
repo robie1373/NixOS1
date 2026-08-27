@@ -235,6 +235,87 @@ in
     '';
   };
 
+  # ── Self-healing HEAD repair (2026-08-27, Opus 5) ────────────────────────────
+  #
+  # `git init --bare --initial-branch=main` points HEAD at refs/heads/main BEFORE
+  # any push. If the first push then comes from a local `master`, git creates
+  # refs/heads/master alongside and HEAD is left naming a ref that DOES NOT EXIST.
+  # Nothing errors. Pushes and fetches work forever. What breaks is `clone`: a bare
+  # repo with a dangling HEAD stops advertising HEAD at all, so a fresh clone has no
+  # default branch and lands the caller in an EMPTY working tree. That is a
+  # rehydration failure visible only on the day you need to rehydrate.
+  #
+  # Found on four repos 2026-08-27; three were fixed by renaming, `teacha` could not
+  # be (it has a GitHub origin, so the rename is a bigger job Robie deferred). This
+  # repairs HEAD *without* renaming anything — the two were never the same job.
+  # Idempotent and self-healing, same shape as git-chown-repos: it also re-repairs a
+  # volume restored from a NAS image.
+  #
+  # An EMPTY repo legitimately has HEAD -> refs/heads/main with no branches. That is
+  # not a fault and must not be "fixed"; the no-branches path leaves it alone.
+  systemd.services.git-repair-heads = {
+    description = "Repair bare repos whose HEAD names a nonexistent ref";
+    wantedBy = [ "multi-user.target" ];
+    after    = [ "git-init-repos.service" ];
+    requires = [ "git-init-repos.service" ];
+    before   = [ "git-daemon.service" ];
+    serviceConfig = { Type = "oneshot"; User = "git"; Group = "git"; };
+    path = [ pkgs.git ];
+    script = ''
+      set -eu
+      cd /var/lib/git
+      for d in *.git; do
+        [ -d "$d" ] || continue
+        target=$(git --git-dir="$d" symbolic-ref HEAD 2>/dev/null || true)
+        if [ -n "$target" ] && git --git-dir="$d" show-ref --verify --quiet "$target"; then
+          continue
+        fi
+        new=""
+        for c in refs/heads/main refs/heads/master; do
+          if git --git-dir="$d" show-ref --verify --quiet "$c"; then new="$c"; break; fi
+        done
+        if [ -z "$new" ]; then
+          new=$(git --git-dir="$d" for-each-ref --format='%(refname)' --count=1 refs/heads/ || true)
+        fi
+        if [ -n "$new" ]; then
+          git --git-dir="$d" symbolic-ref HEAD "$new"
+          echo "git-repair-heads: $d HEAD was dangling ($target) -> $new"
+        else
+          echo "git-repair-heads: $d has no branches yet — HEAD at $target is correct for an empty repo"
+        fi
+      done
+    '';
+  };
+
+  # ── Bound pack-objects' memory so this guest can serve what it stores ─────────
+  #
+  # WHY (2026-08-27): `git clone nibbles` failed for EVERY client — the kernel
+  # OOM-killed git-pack-objects inside this guest (964 MiB usable, MemAvailable
+  # floor 31 MiB, packer wanting ~780 MB RSS; confirmed from observ). The repo is
+  # NOT corrupt, though upload-pack reports the packer's death as "possible
+  # repository corruption", which sends you looking in the wrong place.
+  #
+  # Cause is object SHAPE, not repo size: nibbles holds three .xtch e-reader images
+  # of 292M / 256M / 191M. `teacha` is 907 MB and clones fine. With the default
+  # core.bigFileThreshold of 512m, git tries to DELTA-COMPRESS those blobs, which
+  # means holding them in memory; below the threshold it stores them whole and
+  # streams instead. That single default is the whole failure.
+  #
+  # Chosen over growing the guest: this makes the server able to serve what it
+  # holds, rather than making the VM big enough to survive the next larger blob.
+  # (Note if RAM is ever raised anyway: NOT 2048 — QEMU hang, microvm.nix #171.)
+  programs.git = {
+    enable = true;
+    config = {
+      core.bigFileThreshold = "16m";   # above this: no delta attempt, stream it
+      pack = {
+        windowMemory   = "32m";        # cap the delta-search window
+        deltaCacheSize = "64m";        # default 256m is a large fraction of this guest
+        threads        = 1;            # 1 vcpu anyway; makes the cap per-process, not per-thread
+      };
+    };
+  };
+
   # ── Anonymous read-only git-daemon (git://) for the marked repo(s) ────────────
   # Solves the unattended-fetch problem for pages-content: no ssh key to authorize,
   # no host key to trust (git:// has neither), so vhost2's phase-1 robot can fetch
